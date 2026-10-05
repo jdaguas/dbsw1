@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Stoop Gazette: Classified Advertisements</title>
+<style>
+  :root {
+    --paper: #f2ecdc;
+    --paper-dark: #e6dec8;
+    --ink: #1b1813;
+    --ink-soft: #3d382f;
+    --spot: #b2261c;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+    --cond: "Didot", "Bodoni 72", "Bodoni MT", "Times New Roman", serif;
+    --black: "Old English Text MT", "Goudy Text MT", "UnifrakturMaguntia", "Engravers MT", "Didot", "Times New Roman", serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: #cfc6ae; }
+  body {
+    margin: 0 auto; max-width: 1280px; padding: 18px 34px 50px;
+    background: var(--paper);
+    background-image:
+      radial-gradient(rgba(60,45,20,.06) 1px, transparent 1.2px),
+      radial-gradient(rgba(60,45,20,.04) 1px, transparent 1.2px);
+    background-size: 7px 7px, 11px 11px; background-position: 0 0, 3px 5px;
+    color: var(--ink); font-family: var(--serif); font-size: 13.5px; line-height: 1.32;
+    box-shadow: 0 0 40px rgba(0,0,0,.25);
+  }
+  a { color: inherit; }
+  .gallery {
+    display: inline-block; font-family: var(--serif); font-variant: small-caps; letter-spacing: .08em;
+    font-size: 13px; text-decoration: none; border: 1px solid var(--ink); padding: 2px 8px 3px;
+  }
+  .gallery:hover { background: var(--ink); color: var(--paper); }
+  .topline { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-style: italic; }
+
+  /* Masthead */
+  .masthead { display: grid; grid-template-columns: 190px 1fr 190px; align-items: center; gap: 18px; margin-top: 10px; }
+  .ear { border: 2px solid var(--ink); padding: 7px 9px; font-size: 11.5px; text-align: center; line-height: 1.25; }
+  .ear b { display: block; font-variant: small-caps; letter-spacing: .1em; font-size: 13px; border-bottom: 1px solid var(--ink); margin-bottom: 4px; padding-bottom: 2px; }
+  .ear .big { font-size: 22px; font-weight: bold; font-family: var(--cond); }
+  .nameplate { text-align: center; }
+  .nameplate h1 { font-family: var(--black); font-weight: normal; font-size: 92px; line-height: .95; margin: 0; letter-spacing: -.01em; }
+  .nameplate .motto { font-style: italic; font-size: 13px; margin-top: 4px; }
+  .dateline {
+    display: flex; justify-content: space-between; margin-top: 10px;
+    border-top: 3px double var(--ink); border-bottom: 1px solid var(--ink);
+    border-top-width: 4px; padding: 4px 2px; font-variant: small-caps; letter-spacing: .07em; font-size: 13px;
+  }
+  .dateline .spot { color: var(--spot); font-weight: bold; }
+
+  /* Banner */
+  .banner { text-align: center; padding: 14px 0 8px; border-bottom: 4px solid var(--ink); }
+  .banner h2 { font-family: var(--cond); font-size: 58px; letter-spacing: .14em; margin: 0; line-height: 1; font-weight: 900; text-transform: uppercase; }
+  .banner .deck { font-size: 16px; font-style: italic; margin-top: 6px; }
+  .banner .deck em { font-style: normal; font-variant: small-caps; letter-spacing: .06em; color: var(--spot); font-weight: bold; }
+
+  /* Index + search strip */
+  .strip { display: grid; grid-template-columns: 1fr 360px; gap: 0; border-bottom: 1px solid var(--ink); }
+  .index { padding: 8px 14px 8px 0; border-right: 1px solid var(--ink); font-size: 13px; }
+  .index b { font-variant: small-caps; letter-spacing: .1em; margin-right: 6px; }
+  .index a { text-decoration: none; font-variant: small-caps; letter-spacing: .05em; margin-right: 4px; white-space: nowrap; }
+  .index a:hover { color: var(--spot); text-decoration: underline; }
+  .index a span { font-variant: normal; font-size: 11px; color: var(--ink-soft); }
+  .search { padding: 8px 0 8px 14px; display: flex; align-items: center; gap: 8px; }
+  .search label { font-variant: small-caps; letter-spacing: .08em; font-weight: bold; white-space: nowrap; }
+  .search input {
+    flex: 1; min-width: 0; font: italic 14px var(--serif); background: transparent; color: var(--ink);
+    border: 0; border-bottom: 1px dotted var(--ink); padding: 3px 2px; outline: none;
+  }
+  .search input:focus { border-bottom: 1px solid var(--spot); }
+  .search button { font: bold 12px var(--serif); font-variant: small-caps; letter-spacing: .08em; background: var(--ink); color: var(--paper); border: 0; padding: 4px 9px; cursor: pointer; }
+  .hits { font-size: 11px; font-style: italic; text-align: right; padding: 3px 0; min-height: 20px; color: var(--spot); }
+
+  /* The columns */
+  .cols { column-count: 5; column-gap: 22px; column-rule: 1px solid var(--ink); margin-top: 4px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  .cat { break-inside: avoid; font-variant: small-caps; text-align: center; font-size: 16px; font-weight: bold; letter-spacing: .12em; margin: 10px 0 5px; padding: 3px 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); }
+  .cat:first-child { margin-top: 0; }
+  .cat small { display: block; font-size: 10.5px; font-weight: normal; letter-spacing: .04em; font-style: italic; font-variant: normal; }
+  .ad { margin: 0 0 6px; text-indent: -.9em; padding-left: .9em; }
+  .ad b { font-variant: small-caps; letter-spacing: .03em; }
+  .ad .ph { white-space: nowrap; }
+  .ad.hidden { display: none; }
+  mark { background: #f3d34a; color: inherit; padding: 0 1px; }
+  .rule { border: 0; border-top: 1px solid var(--ink); width: 40%; margin: 8px auto; }
+
+  .box {
+    break-inside: avoid; border: 3px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 2px;
+    margin: 10px 3px 12px; padding: 9px 8px; text-align: center; text-indent: 0;
+  }
+  .box h3 { font-family: var(--cond); text-transform: uppercase; font-size: 24px; line-height: .95; margin: 2px 0 6px; letter-spacing: .02em; font-weight: 900; }
+  .box p { margin: 4px 0; }
+  .box .price { font-size: 30px; font-weight: 900; font-family: var(--cond); }
+  .box.spot { border-color: var(--spot); outline-color: var(--spot); }
+  .box.spot h3, .box.spot .price { color: var(--spot); }
+  .box.rev { background: var(--ink); color: var(--paper); outline-color: var(--ink); }
+  .box.rev h3 { font-size: 21px; }
+  .box svg { display: block; margin: 4px auto; }
+
+  /* Place an ad coupon */
+  .place { margin-top: 26px; border-top: 4px solid var(--ink); padding-top: 10px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; }
+  .place h2 { font-family: var(--cond); font-size: 40px; margin: 0 0 4px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+  .place h2 span { color: var(--spot); }
+  .place ol { margin: 6px 0; padding-left: 22px; font-size: 14.5px; line-height: 1.45; }
+  .place ol li::marker { font-weight: bold; }
+  .rates { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+  .rates td, .rates th { border-bottom: 1px dotted var(--ink); padding: 3px 4px; text-align: left; }
+  .rates th { font-variant: small-caps; letter-spacing: .08em; border-bottom: 1px solid var(--ink); }
+  .rates td:last-child { text-align: right; font-weight: bold; color: var(--spot); }
+  .coupon { position: relative; border: 2px dashed var(--ink); padding: 14px 16px 16px; background: rgba(255,255,255,.25); }
+  .coupon .scissors { position: absolute; top: -13px; left: 18px; background: var(--paper); padding: 0 4px; }
+  .coupon h3 { margin: 0 0 8px; font-variant: small-caps; letter-spacing: .12em; text-align: center; font-size: 17px; }
+  .coupon .row { display: flex; gap: 10px; margin: 7px 0; align-items: baseline; }
+  .coupon label { font-variant: small-caps; letter-spacing: .05em; white-space: nowrap; font-size: 13px; }
+  .coupon input, .coupon select, .coupon textarea {
+    flex: 1; min-width: 0; font: 14px var(--serif); background: transparent; color: var(--ink); border: 0; border-bottom: 1px solid var(--ink); padding: 2px; border-radius: 0;
+  }
+  .coupon textarea { border: 1px solid var(--ink); height: 58px; resize: vertical; width: 100%; background-image: repeating-linear-gradient(transparent 0 18px, rgba(0,0,0,.18) 18px 19px); line-height: 19px; }
+  .coupon .count { font-size: 11px; font-style: italic; text-align: right; }
+  .coupon button {
+    display: block; width: 100%; margin-top: 10px; background: var(--spot); color: var(--paper); border: 0; padding: 9px;
+    font: bold 17px var(--cond); text-transform: uppercase; letter-spacing: .14em; cursor: pointer;
+  }
+  .coupon button:hover { background: var(--ink); }
+  .coupon .ok { display: none; text-align: center; font-style: italic; margin-top: 8px; color: var(--spot); }
+
+  footer { margin-top: 28px; border-top: 1px solid var(--ink); padding-top: 6px; display: flex; justify-content: space-between; font-size: 11.5px; font-style: italic; }
+
+  @media (max-width: 1000px) {
+    .cols { column-count: 3; }
+    .masthead { grid-template-columns: 1fr; }
+    .ear { display: none; }
+    .strip, .place { grid-template-columns: 1fr; }
+    .index { border-right: 0; border-bottom: 1px dotted var(--ink); }
+    .search { padding-left: 0; }
+  }
+  @media (max-width: 640px) {
+    body { padding: 12px 14px 30px; }
+    .cols { column-count: 1; }
+    .nameplate h1 { font-size: 50px; }
+    .banner h2 { font-size: 30px; letter-spacing: .06em; }
+    .dateline { flex-wrap: wrap; gap: 2px 12px; justify-content: center; font-size: 11.5px; }
+    .place h2 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topline">
+  <a class="gallery" href="../">&larr; Gallery</a>
+  <span>Delivered to every stoop from Rogers Park to the South Shore</span>
+  <span>Late City Edition &#9733;&#9733;</span>
+</div>
+
+<header class="masthead">
+  <div class="ear"><b>Weather</b>Fair &amp; crisp, winds off the lake.<br><span class="big">58&deg;</span>Leaves falling on Ellis Ave.</div>
+  <div class="nameplate">
+    <h1>The Stoop Gazette</h1>
+    <div class="motto">&ldquo;Neighbor to Neighbor, No Middleman&rdquo; &mdash; Est. on a front step, Chicago</div>
+  </div>
+  <div class="ear"><b>Our Pledge</b>No fees to post.<br>No fees to read.<br><span class="big">NO</span>algorithm. Ads run in the order received.</div>
+</header>
+
+<div class="dateline">
+  <span>Vol. I &middot; No. 279</span>
+  <span>Chicago, Monday, October 5, 2026</span>
+  <span>77 Neighborhoods &middot; 1,204 Ads Today</span>
+  <span class="spot">Price: Free, Always</span>
+</div>
+
+<section class="banner">
+  <h2>Classified Advertisements</h2>
+  <div class="deck">Things for sale, rooms to let, help wanted, and favors returned &mdash; <em>dealt direct between neighbors</em></div>
+</section>
+
+<div class="strip">
+  <nav class="index">
+    <b>Index to Ads:</b>
+    <a href="#sale">For Sale <span>(412)</span></a> &middot;
+    <a href="#free">Free <span>(96)</span></a> &middot;
+    <a href="#housing">Housing <span>(238)</span></a> &middot;
+    <a href="#jobs">Help Wanted <span>(87)</span></a> &middot;
+    <a href="#gigs">Gigs <span>(64)</span></a> &middot;
+    <a href="#services">Services <span>(151)</span></a> &middot;
+    <a href="#community">Community <span>(119)</span></a> &middot;
+    <a href="#lost">Lost &amp; Found <span>(37)</span></a> &middot;
+    <a href="#place" style="color:var(--spot)">To Place an Ad</a>
+  </nav>
+  <form class="search" onsubmit="return false">
+    <label for="q">Seek in Today&rsquo;s Ads:</label>
+    <input id="q" type="search" placeholder="e.g. bicycle, Pilsen, piano&hellip;" autocomplete="off">
+    <button type="submit">Find</button>
+  </form>
+</div>
+<div class="hits" id="hits"></div>
+
+<main class="cols" id="cols">
+
+  <div class="cat" id="sale">For Sale<small>Merchandise, furniture, &amp; sundries</small></div>
+  <p class="ad"><b>Bicycle,</b> Schwinn 10-spd, 1974, orange, new tires, squeaks only on Tues. $140 firm. Logan Sq. <span class="ph">Ask for Dot.</span></p>
+  <p class="ad"><b>Couch,</b> green velvet, 3-cush., seats 4 friends or 2 dogs. Must go by Sat. $75. Hyde Park, 3rd fl. walk-up, you carry.</p>
+  <p class="ad"><b>Piano,</b> upright, Kimball, plays fine, middle C sticks. Free to whoever can move it; $50 tip if you take the bench too. Bridgeport.</p>
+  <p class="ad"><b>Records,</b> 300 LPs, mostly Chess &amp; Motown, some Polka. Lot $400 or by the crate. Ukrainian Village. Bring your own milk crates.</p>
+  <p class="ad"><b>Air conditioner,</b> window unit, 8,000 BTU, survived 3 Chicago summers. $90. Uptown, nr. Argyle Red Line.</p>
+  <p class="ad"><b>Kitchen table</b> &amp; 4 chairs, oak, one chair wobbles (charmingly). $120. Andersonville.</p>
+
+  <div class="box spot">
+    <h3>Estate Sale<br>This Sat. &amp; Sun.</h3>
+    <p>Entire contents of a 1920s Beverly bungalow. Lamps, tools, Pyrex, a canoe.</p>
+    <div class="price">9 AM &ndash; 4 PM</div>
+    <p><i>10400 blk. S. Longwood Dr. Early birds pay double.</i></p>
+  </div>
+
+  <p class="ad"><b>Winter coat,</b> men&rsquo;s L, wool, Marshall Field&rsquo;s label, warm as a radiator. $45. Lincoln Sq.</p>
+  <p class="ad"><b>Typewriter,</b> Smith-Corona, works, missing the letter Q (who needs it). $60. Rogers Park.</p>
+  <p class="ad"><b>Sewing machine,</b> Singer, w/ cabinet, belonged to my nana. $85 to a good home only. Pilsen.</p>
+
+  <div class="cat" id="free">Free &mdash; Curb Alerts<small>Come &amp; get it, first come first served</small></div>
+  <p class="ad"><b>Moving boxes,</b> 30+, flattened, some say &ldquo;FRAGILE&rdquo; in two languages. On porch, Albany Park.</p>
+  <p class="ad"><b>Tomatoes,</b> too many. Green &amp; red. Bring a bag. Garden gate, Bronzeville, 45th &amp; Calumet.</p>
+  <p class="ad"><b>Cat tree,</b> 5 ft., cat refused it. Avondale, by the alley.</p>
+  <p class="ad"><b>Encyclopedias,</b> Britannica 1988, A&ndash;Z less &ldquo;M.&rdquo; Free. Edgewater.</p>
+  <p class="ad"><b>Firewood,</b> split oak from fallen limb. Take all. West Ridge.</p>
+
+  <div class="box rev">
+    <h3>No Fees.<br>No Algorithm.<br>No Kidding.</h3>
+    <svg width="60" height="34" viewBox="0 0 60 34" aria-hidden="true"><path d="M2 32h56M8 32V20h44v12M14 20V12h32v8M20 12V4h20v8" fill="none" stroke="#f2ecdc" stroke-width="2"/></svg>
+    <p>Every ad in the order it came in. Nobody pays to get on top.</p>
+  </div>
+
+  <div class="cat" id="housing">Housing<small>Apts. to let, rooms, sublets, swaps</small></div>
+  <p class="ad"><b>2BR,</b> nr. Humboldt Park, $1,450, heat incl., hdwd. flrs., 2nd fl. of 2-flat. Landlord lives downstairs, bakes on Sundays.</p>
+  <p class="ad"><b>Studio,</b> Hyde Park, $985, lake view if you lean. Laundry in bsmt. Avail. Nov. 1.</p>
+  <p class="ad"><b>Room</b> in 3BR, Logan Sq., $760 + util. Quiet household, 1 cat, 1 sourdough starter named Gus.</p>
+  <p class="ad"><b>Garden apt.,</b> 1BR, Lincoln Sq., $1,200, use of yard, no dogs over 40 lb. Nr. Western Brown Line.</p>
+  <p class="ad"><b>Sublet,</b> Dec.&ndash;Feb., Wicker Park, $1,100 furn., plants must be watered (non-negotiable).</p>
+  <p class="ad"><b>Parking space,</b> garage, Lakeview, $150/mo. Snow-season dibs chair included.</p>
+
+  <div class="box">
+    <h3>Greystone 3-Flat<br>Top Floor</h3>
+    <p>3BR, 1&frac12; ba., bay windows, built-in china cab., back porch.</p>
+    <div class="price">$2,100</div>
+    <p><i>Heat incl. Kenwood, nr. 47th St. Shown evenings.</i></p>
+  </div>
+
+  <div class="cat" id="jobs">Help Wanted<small>Positions, full &amp; part time</small></div>
+  <p class="ad"><b>Counter help,</b> bakery, early shift 5&ndash;11 AM, $18/hr + all the day-olds you can carry. Pilsen, 18th St.</p>
+  <p class="ad"><b>Bookkeeper,</b> p/t, family hardware store since 1952. Must know ledgers <i>and</i> spreadsheets. Portage Park.</p>
+  <p class="ad"><b>Line cook,</b> diner, nights, $20/hr, free pie. Ask for Gus (not the starter). Bridgeport.</p>
+  <p class="ad"><b>Dog walker,</b> M&ndash;F noon, 3 beagles, $25/walk. Must tolerate howling. Ravenswood.</p>
+
+  <div class="cat" id="gigs">Gigs &amp; Odd Jobs<small>One-time work, cash or swap</small></div>
+  <p class="ad"><b>Need 2 strong backs</b> to move a fridge down 3 flights. $60 ea. + pizza. Sat. AM, Uptown.</p>
+  <p class="ad"><b>Accordion player</b> wanted for one (1) wedding, polkas pref. $200. Archer Heights.</p>
+  <p class="ad"><b>Leaf raking,</b> big yard, many oaks. $40 &amp; cider. Beverly.</p>
+  <p class="ad"><b>Extras</b> for student film, Sun., wear 1970s clothes. Pay: lunch &amp; credit. Hyde Park.</p>
+
+  <div class="cat" id="services">Services Offered<small>Skilled hands &amp; honest rates</small></div>
+  <p class="ad"><b>Bike repair,</b> tune-up $35, flats $8, done on my stoop. Humboldt Park, eves.</p>
+  <p class="ad"><b>Tailoring</b> &amp; alterations, hems $12, zippers $15. 40 yrs. exp. Chinatown, Wentworth Ave.</p>
+  <p class="ad"><b>Piano lessons,</b> all ages, patient teacher, $30/half hr. Beginners and returners welcome. Oak Park line.</p>
+  <p class="ad"><b>Handyman,</b> no job too small, some jobs too big. Drywall, faucets, shelves. Albany Park.</p>
+
+  <div class="box spot">
+    <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" fill="none" stroke="#b2261c" stroke-width="2"/><path d="M14 22l6 6 11-13" fill="none" stroke="#b2261c" stroke-width="3"/></svg>
+    <h3>Snow Shoveling<br>Book Now</h3>
+    <p>Walks &amp; stoops cleared by 7 AM, all winter long. Two brothers, one plow.</p>
+    <div class="price">$25/storm</div>
+    <p><i>McKinley Park &amp; Brighton Park only.</i></p>
+  </div>
+
+  <div class="cat" id="community">Community Notices<small>Meetings, swaps, &amp; good deeds</small></div>
+  <p class="ad"><b>Block party,</b> 2900 W. Palmer, Sat. 2 PM. Bring a dish; we have the grill &amp; a DJ who only plays Earth, Wind &amp; Fire.</p>
+  <p class="ad"><b>Seed swap,</b> Garfield Park Conservatory steps, Sun. 10 AM. Heirloom beans esp. wanted.</p>
+  <p class="ad"><b>Chess</b> in the park, every Tues. 6 PM, Washington Park fieldhouse. All levels; the old man in the hat will win.</p>
+  <p class="ad"><b>Tool library</b> now open, Avondale. Borrow a drill, return a drill.</p>
+
+  <div class="cat" id="lost">Lost &amp; Found<small>Reunions arranged free of charge</small></div>
+  <p class="ad"><b>LOST:</b> gray tabby, answers to &ldquo;Mister,&rdquo; does not answer to anything, really. Reward. Edgewater.</p>
+  <p class="ad"><b>FOUND:</b> one leather glove, left, brown, on #6 Jeffery bus. Describe the other one.</p>
+  <p class="ad"><b>LOST:</b> wedding ring, Montrose Beach, nr. the dog beach. Sentimental value immense. Reward $200.</p>
+  <hr class="rule">
+  <p class="ad" style="text-align:center;text-indent:0;padding:0"><i>Continued on Page B-7, col. 2.</i></p>
+</main>
+
+<section class="place" id="place">
+  <div>
+    <h2>To Place an Ad <span>&mdash; Free</span></h2>
+    <p style="font-size:15px;margin:0">Takes less than one minute. No account, no fee, no salesman will call.</p>
+    <ol>
+      <li><b>Choose a heading</b> &mdash; For Sale, Free, Housing, Help Wanted, Gigs, Services, Community, or Lost &amp; Found.</li>
+      <li><b>Write it plain.</b> What it is, what it costs, which neighborhood. Abbreviate if you like; we all do.</li>
+      <li><b>Leave a way to reach you.</b> Replies come straight to you, never through us.</li>
+      <li><b>That&rsquo;s it.</b> It runs in tomorrow&rsquo;s board, in the order received. Renews free every 14 days.</li>
+    </ol>
+    <table class="rates">
+      <tr><th>Schedule of Rates</th><th></th></tr>
+      <tr><td>Private party, up to 40 words</td><td>Free</td></tr>
+      <tr><td>Each additional word</td><td>Free</td></tr>
+      <tr><td>Boxed display ad, heavy type</td><td>Free</td></tr>
+      <tr><td>&ldquo;Boost&rdquo; to top of column</td><td>Not for sale</td></tr>
+    </table>
+  </div>
+  <form class="coupon" id="coupon" onsubmit="return false">
+    <svg class="scissors" width="34" height="22" viewBox="0 0 34 22" aria-hidden="true"><circle cx="6" cy="5" r="4" fill="none" stroke="#1b1813" stroke-width="2"/><circle cx="6" cy="17" r="4" fill="none" stroke="#1b1813" stroke-width="2"/><path d="M9 7l23 10M9 15l23-10" stroke="#1b1813" stroke-width="2"/></svg>
+    <h3>&mdash; Clip &amp; Post Coupon &mdash;</h3>
+    <div class="row"><label for="h">Heading</label>
+      <select id="h"><option>For Sale</option><option>Free</option><option>Housing</option><option>Help Wanted</option><option>Gigs</option><option>Services</option><option>Community</option><option>Lost &amp; Found</option></select></div>
+    <div class="row"><label for="hood">Neighborhood</label><input id="hood" placeholder="Pilsen, Hyde Park, Uptown&hellip;"></div>
+    <div class="row"><label for="price">Price</label><input id="price" placeholder="$ or &ldquo;free&rdquo; or &ldquo;swap&rdquo;"></div>
+    <textarea id="copy" placeholder="Bicycle, Schwinn, blue, good brakes, $90&hellip;" aria-label="Ad copy"></textarea>
+    <div class="count" id="count">40 words remaining</div>
+    <div class="row"><label for="reach">Reach me at</label><input id="reach" placeholder="phone or e-mail"></div>
+    <button type="submit">Post My Ad &rarr;</button>
+    <div class="ok" id="ok">Received! Your ad runs in the order it came in. Good luck, neighbor.</div>
+  </form>
+</section>
+
+<footer>
+  <a class="gallery" href="../">&larr; Gallery</a>
+  <span>The Stoop Gazette is printed by nobody and owned by everybody. All replies go directly between neighbors.</span>
+  <span>B-6</span>
+</footer>
+
+<script>
+  const q = document.getElementById('q'), hits = document.getElementById('hits');
+  const ads = [...document.querySelectorAll('.ad, .box')];
+  ads.forEach(a => a.dataset.orig = a.innerHTML);
+  function seek() {
+    const term = q.value.trim().toLowerCase();
+    let n = 0;
+    ads.forEach(a => {
+      a.innerHTML = a.dataset.orig;
+      if (!term) { a.classList.remove('hidden'); a.style.display = ''; return; }
+      const match = a.textContent.toLowerCase().includes(term);
+      a.style.display = match ? '' : 'none';
+      if (match) {
+        n++;
+        const re = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+        const tst = new RegExp(re.source, 'i');
+        [a, ...a.querySelectorAll('*')].forEach(el => {
+          [...el.childNodes].forEach(t => {
+            if (t.nodeType === 3 && tst.test(t.nodeValue)) {
+              const s = document.createElement('span');
+              s.innerHTML = t.nodeValue.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(re, '<mark>$1</mark>');
+              t.replaceWith(s);
+            }
+          });
+        });
+      }
+    });
+    hits.textContent = term ? (n ? n + ' notice' + (n > 1 ? 's' : '') + ' found for “' + q.value.trim() + '”' : 'No notices found. Try placing one yourself.') : '';
+  }
+  q.addEventListener('input', seek);
+  const copy = document.getElementById('copy'), count = document.getElementById('count');
+  copy.addEventListener('input', () => {
+    const w = copy.value.trim() ? copy.value.trim().split(/\s+/).length : 0;
+    count.textContent = w <= 40 ? (40 - w) + ' words remaining' : (w - 40) + ' extra words (still free)';
+  });
+  document.getElementById('coupon').addEventListener('submit', () => { document.getElementById('ok').style.display = 'block'; });
+</script>
+</body>
+</html>
