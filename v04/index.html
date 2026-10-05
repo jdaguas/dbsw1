@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop · The laundromat corkboard</title>
+<style>
+  :root {
+    --marker: "Marker Felt", "Chalkboard SE", "Comic Sans MS", cursive;
+    --brad: "Bradley Hand", "Segoe Print", "Noteworthy", cursive;
+    --chalk: "Chalkboard SE", "Chalkboard", "Comic Sans MS", cursive;
+    --comic: "Comic Sans MS", "Chalkboard SE", cursive;
+    --type: "Courier New", Courier, monospace;
+    --note: "Noteworthy", "Bradley Hand", "Segoe Print", cursive;
+    --stencil: "Impact", "Haettenschweiler", "Arial Narrow Bold", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background: #5a3a22;
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 3px, transparent 3px 11px),
+      linear-gradient(180deg, #6b4428, #4e321c);
+    padding: 22px;
+    font-family: var(--comic);
+    color: #222;
+  }
+  /* the wooden frame + cork */
+  .board {
+    position: relative;
+    max-width: 1240px; margin: 0 auto;
+    border-radius: 6px;
+    padding: 34px 40px 70px;
+    box-shadow: inset 0 0 0 14px #8a5a32, inset 0 0 0 16px #5d3a1e, inset 0 0 40px 18px rgba(60,30,10,.55), 0 20px 50px rgba(0,0,0,.5);
+    background-color: #c08a55;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(90,50,20,.35) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 70% 80%, rgba(90,50,20,.3) 0 1.2px, transparent 2px),
+      radial-gradient(circle at 40% 60%, rgba(255,220,170,.35) 0 .8px, transparent 1.4px),
+      radial-gradient(circle at 85% 15%, rgba(70,35,10,.35) 0 1.5px, transparent 2.2px),
+      radial-gradient(circle at 10% 90%, rgba(255,230,190,.25) 0 1px, transparent 1.8px),
+      radial-gradient(circle at 55% 45%, rgba(60,30,10,.25) 0 2px, transparent 3px),
+      radial-gradient(ellipse at 30% 20%, rgba(255,210,150,.25), transparent 40%),
+      radial-gradient(ellipse at 80% 70%, rgba(110,60,20,.3), transparent 45%),
+      radial-gradient(ellipse at 10% 75%, rgba(120,70,30,.2), transparent 35%);
+    background-size: 7px 7px, 11px 11px, 5px 5px, 13px 13px, 9px 9px, 23px 23px, 100% 100%, 100% 100%, 100% 100%;
+    overflow: hidden;
+  }
+  .board > svg.grain { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .35; mix-blend-mode: multiply; }
+  .board > *:not(.grain) { position: relative; }
+
+  /* shared paper bits */
+  .paper { position: relative; box-shadow: 0 2px 3px rgba(0,0,0,.25), 0 10px 18px -8px rgba(0,0,0,.45); transform: rotate(var(--r, 0deg)); transition: transform .25s; }
+  .paper:hover { transform: rotate(0deg) scale(1.03); z-index: 3; }
+  .pin::before {
+    content: ""; position: absolute; top: -9px; left: 50%; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff8 0 2px, transparent 3px), radial-gradient(circle at 50% 50%, var(--pin, #d12b2b) 55%, rgba(0,0,0,.35) 100%);
+    box-shadow: 2px 4px 4px rgba(0,0,0,.4); z-index: 2;
+  }
+  .tape::before {
+    content: ""; position: absolute; top: -12px; left: 50%; width: 96px; height: 26px; margin-left: -48px;
+    background: rgba(240,232,200,.62); transform: rotate(var(--tr, -3deg));
+    box-shadow: 0 1px 2px rgba(0,0,0,.15);
+    clip-path: polygon(3% 0, 97% 4%, 100% 50%, 96% 100%, 2% 96%, 0 50%);
+  }
+  .tape2::after {
+    content: ""; position: absolute; bottom: -10px; right: -18px; width: 70px; height: 22px;
+    background: rgba(240,232,200,.6); transform: rotate(-38deg); box-shadow: 0 1px 2px rgba(0,0,0,.15);
+  }
+
+  /* gallery scrap */
+  .gallery {
+    display: inline-block; text-decoration: none; color: #222; font-family: var(--marker);
+    font-size: 18px; background: #f3f0e6; padding: 8px 16px 6px; --r: -4deg; --pin: #2a6fd1;
+  }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-top: 8px; }
+
+  /* masthead flyer */
+  .masthead {
+    background: #fbf6e4; padding: 26px 34px 22px; max-width: 640px; margin: 18px auto 0; text-align: center; --r: -1.2deg;
+  }
+  .masthead h1 { margin: 0; font-family: var(--stencil); font-size: 92px; line-height: .9; letter-spacing: 6px; color: #c0322a; text-transform: uppercase; }
+  .masthead .sub { font-family: var(--type); font-size: 15px; letter-spacing: 1px; margin-top: 10px; text-transform: uppercase; }
+  .masthead .hand { font-family: var(--brad); font-size: 22px; color: #1d3c8f; margin-top: 10px; transform: rotate(-1.5deg); }
+  .masthead .hand u { text-decoration-color: #c0322a; text-decoration-thickness: 2px; }
+
+  /* categories as taped labels */
+  .cats { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 18px; margin: 40px 0 10px; padding: 0; list-style: none; }
+  .cats button {
+    font-family: var(--marker); font-size: 19px; color: #1c1c1c; cursor: pointer; border: 0;
+    padding: 7px 18px 5px; transform: rotate(var(--r)); transition: transform .2s, background .2s;
+    background: linear-gradient(180deg, rgba(255,255,255,.25), transparent 40%), #e9dcae;
+    clip-path: polygon(2% 6%, 98% 0, 100% 46%, 97% 100%, 1% 94%, 0 50%);
+    box-shadow: 0 2px 2px rgba(0,0,0,.2);
+  }
+  .cats button:hover { transform: rotate(0) translateY(-2px); }
+  .cats button.on { background: #ffe14d; }
+
+  /* tools row: search + post */
+  .tools { display: flex; justify-content: center; align-items: flex-start; gap: 46px; margin: 34px 0 30px; flex-wrap: wrap; }
+  .search {
+    width: 300px; background: #fff27a; padding: 22px 20px 18px; --r: 2.2deg; --pin: #1aa04a;
+    background-image: linear-gradient(180deg, rgba(0,0,0,.04), transparent 20%);
+  }
+  .search label { font-family: var(--note); font-size: 20px; display: block; }
+  .search input {
+    width: 100%; margin-top: 6px; border: 0; border-bottom: 2px solid #333; background: transparent; outline: none;
+    font-family: var(--marker); font-size: 22px; padding: 4px 0;
+  }
+  .search small { display: block; font-family: var(--type); font-size: 12px; margin-top: 8px; }
+  .post {
+    font: inherit; cursor: pointer; border: 0; text-align: left;
+    width: 320px; background: #fff; padding: 20px 22px 18px; --r: -2.5deg;
+    background-image: linear-gradient(180deg, transparent 38px, #e6a1a1 38px 40px, transparent 40px), repeating-linear-gradient(transparent 0 25px, #b9d0ea 25px 26px);
+  }
+  .post .big { font-family: var(--marker); font-size: 30px; color: #c0322a; display: block; }
+  .post .small { font-family: var(--brad); font-size: 17px; margin-top: 14px; display: block; line-height: 26px; }
+  .post:hover { transform: rotate(0) scale(1.04); }
+
+  /* the board grid */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 46px 34px; align-items: start; margin-top: 20px; }
+  .grid > * { margin-top: var(--mt, 0); }
+  .hidden { display: none !important; }
+
+  .index { background: #fff; padding: 30px 18px 18px; font-family: var(--type); font-size: 14px; line-height: 22px;
+    background-image: linear-gradient(180deg, transparent 22px, #e59a9a 22px 24px, transparent 24px), repeating-linear-gradient(transparent 0 21px, #bcd2ec 21px 22px);
+    background-position: 0 2px; }
+  .index h3 { margin: 0 0 4px; font-size: 16px; text-transform: uppercase; }
+  .sticky { padding: 22px 16px 18px; font-family: var(--note); font-size: 17px; line-height: 1.35;
+    background-image: linear-gradient(160deg, rgba(255,255,255,.3), transparent 50%); }
+  .sticky h3 { margin: 0 0 6px; font-family: var(--marker); font-size: 22px; }
+  .flyer { padding: 20px 18px 0; text-align: center; }
+  .flyer h3 { margin: 0; font-family: var(--stencil); font-size: 30px; text-transform: uppercase; line-height: 1; letter-spacing: 1px; }
+  .flyer p { margin: 10px 0; }
+  .price { display: inline-block; font-family: var(--marker); font-size: 22px; color: #c0322a; }
+  .hood { display: block; font-family: var(--type); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: .75; margin-top: 6px; }
+  .flyer .hood { margin-bottom: 12px; }
+
+  /* tear-off tabs */
+  .tabs { display: flex; border-top: 2px dashed rgba(0,0,0,.35); margin: 0 -18px; }
+  .tab {
+    flex: 1; writing-mode: vertical-rl; font-family: var(--type); font-size: 11px; padding: 8px 0 10px;
+    height: 104px; text-align: left; cursor: pointer; border-right: 1px dashed rgba(0,0,0,.3);
+    background: inherit; display: flex; align-items: center; user-select: none; transition: background .15s;
+  }
+  .tab:last-child { border-right: 0; }
+  .tab:hover { background: rgba(255,255,255,.35); }
+  .tab.torn { visibility: hidden; }
+  .falling { position: fixed; z-index: 50; pointer-events: none; writing-mode: vertical-rl; font-family: var(--type); font-size: 11px;
+    padding: 8px 4px; box-shadow: 0 4px 8px rgba(0,0,0,.35); animation: fall 1.1s ease-in forwards; }
+  @keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 20% { transform: translateY(-14px) rotate(-10deg); } 100% { transform: translateY(380px) rotate(48deg); opacity: 0; } }
+  .taken { font-family: var(--brad); font-size: 14px; color: #1d3c8f; display: block; min-height: 18px; margin: 4px 0 6px; }
+
+  .polaroid { background: #fafafa; padding: 12px 12px 14px; font-family: var(--brad); font-size: 17px; text-align: center; }
+  .polaroid svg { display: block; width: 100%; height: auto; background: #d9e4e6; }
+
+  .receipt { background: #fffdf6; padding: 16px 16px 22px; font-family: var(--type); font-size: 13px; line-height: 1.5;
+    clip-path: polygon(0 0, 100% 0, 100% 96%, 92% 100%, 84% 96%, 76% 100%, 68% 96%, 60% 100%, 52% 96%, 44% 100%, 36% 96%, 28% 100%, 20% 96%, 12% 100%, 4% 96%, 0 100%);
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.35)); box-shadow: none; }
+
+  .rules { background: #f4f1ea; padding: 22px 22px 16px; font-family: var(--type); font-size: 13px; }
+  .rules h3 { font-family: var(--stencil); font-size: 22px; margin: 0 0 8px; letter-spacing: 1px; }
+  .rules ol { margin: 0; padding-left: 20px; line-height: 1.6; }
+
+  .empty { text-align: center; font-family: var(--marker); font-size: 24px; color: #fff8e0; text-shadow: 0 2px 3px rgba(0,0,0,.5); margin: 40px 0; }
+
+  /* pin-your-own form */
+  .overlay { position: fixed; inset: 0; background: rgba(30,15,5,.55); display: none; align-items: center; justify-content: center; z-index: 40; padding: 20px; }
+  .overlay.open { display: flex; }
+  .newcard { width: 420px; max-width: 100%; background: #fff; padding: 46px 26px 22px; --r: -1deg; --pin: #d12b2b; font-family: var(--brad);
+    background-image: linear-gradient(180deg, transparent 34px, #e59a9a 34px 36px, transparent 36px), repeating-linear-gradient(transparent 0 31px, #bcd2ec 31px 32px); }
+  .newcard:hover { transform: rotate(var(--r)); }
+  .newcard h2 { margin: -26px 0 14px; font-family: var(--marker); font-size: 26px; color: #c0322a; }
+  .newcard input, .newcard select, .newcard textarea { width: 100%; border: 0; background: transparent; outline: none; font-family: var(--marker); font-size: 19px; line-height: 32px; padding: 0; }
+  .newcard textarea { resize: none; height: 96px; }
+  .newcard .row { display: flex; gap: 12px; }
+  .newcard .actions { display: flex; justify-content: space-between; margin-top: 10px; }
+  .newcard button { font-family: var(--marker); font-size: 19px; border: 2px solid #222; background: #ffe14d; padding: 4px 14px; cursor: pointer; transform: rotate(-1deg); }
+  .newcard button.cancel { background: transparent; border-color: transparent; text-decoration: underline; }
+
+  .foot { text-align: center; margin-top: 56px; }
+  .foot span { display: inline-block; background: #f3f0e6; font-family: var(--type); font-size: 13px; padding: 10px 18px; --r: .8deg; }
+
+  @media (max-width: 1020px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 760px) {
+    body { padding: 10px; }
+    .board { padding: 26px 22px 50px; }
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 34px 20px; }
+    .grid > * { margin-top: 0; }
+    .masthead h1 { font-size: 60px; letter-spacing: 3px; }
+  }
+  @media (max-width: 500px) { .grid { grid-template-columns: 1fr; } .masthead h1 { font-size: 48px; } .search, .post { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="board">
+  <svg class="grain" aria-hidden="true">
+    <filter id="cork"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .17  0 0 0 0 .05  0 0 0 1.4 -.4"/></filter>
+    <rect width="100%" height="100%" filter="url(#cork)"/>
+  </svg>
+
+  <div class="topbar">
+    <a class="gallery paper pin" href="../">← Gallery</a>
+    <div class="paper tape" style="--r:3deg;background:#cfe8f5;padding:10px 16px;font-family:var(--type);font-size:12px;max-width:250px">
+      WASH &amp; FOLD · 2241 N MILWAUKEE<br>this board is for neighbors. free to pin. always.
+    </div>
+  </div>
+
+  <header class="masthead paper tape">
+    <h1>Stoop</h1>
+    <div class="sub">The neighborhood board · no fees · no algorithm</div>
+    <div class="hand">Buy it, sell it, give it away. <u>Deal direct</u> with the folks down the block.</div>
+  </header>
+
+  <ul class="cats" id="cats">
+    <li><button class="on" data-cat="all" style="--r:-2deg">everything</button></li>
+    <li><button data-cat="sale" style="--r:1.5deg">for sale</button></li>
+    <li><button data-cat="free" style="--r:-1deg">FREE stuff</button></li>
+    <li><button data-cat="housing" style="--r:2.5deg">housing</button></li>
+    <li><button data-cat="jobs" style="--r:-3deg">jobs</button></li>
+    <li><button data-cat="gigs" style="--r:1deg">gigs</button></li>
+    <li><button data-cat="services" style="--r:-1.5deg">services</button></li>
+    <li><button data-cat="community" style="--r:2deg">community</button></li>
+  </ul>
+
+  <div class="tools">
+    <div class="search paper pin">
+      <label for="q">Lookin' for...</label>
+      <input id="q" type="search" placeholder="couch? room? drummer?" autocomplete="off">
+      <small id="count">28 things pinned this week</small>
+    </div>
+    <button class="post paper pin" id="postBtn" style="--pin:#e0a21b">
+      <span class="big">+ Pin your own card</span>
+      <span class="small">Takes a minute. Costs nothing.<br>Thumbtacks are on the dryer.</span>
+    </button>
+  </div>
+
+  <main class="grid" id="grid">
+    <article class="flyer paper pin item" data-cat="services" style="--r:-2deg;background:#ffd9e6;--mt:10px">
+      <h3>Guitar Lessons</h3>
+      <p style="font-family:var(--brad);font-size:18px">Beginners welcome! I'm patient &amp; I won't make you learn "Wonderwall" (unless you want to)</p>
+      <span class="price">$25 / half hr</span>
+      <span class="hood">Logan Square</span>
+      <span class="taken"></span>
+      <div class="tabs"><div class="tab">Marco 773-555-0142</div><div class="tab">Marco 773-555-0142</div><div class="tab">Marco 773-555-0142</div><div class="tab">Marco 773-555-0142</div><div class="tab">Marco 773-555-0142</div><div class="tab">Marco 773-555-0142</div></div>
+    </article>
+
+    <article class="index paper pin item" data-cat="sale" style="--r:2.5deg;--mt:40px;--pin:#2a6fd1">
+      <h3>Futon, very comfy</h3>
+      Full size, navy cover, frame folds flat. Slept on by 3 roommates &amp; 1 visiting mom. No stains I know of.<br>
+      <span class="price">$80 obo</span>
+      <span class="hood">Avondale · 3rd floor walkup (sorry)</span>
+    </article>
+
+    <article class="sticky paper tape item" data-cat="free" style="--r:-4deg;background:#fff27a;--mt:0">
+      <h3>FREE!!</h3>
+      Bag of baby clothes 0-6mo. Mostly onesies. One says "Lil Cubs Fan." In the lobby by the mailboxes.
+      <span class="hood">Irving Park</span>
+    </article>
+
+    <article class="polaroid paper pin item" data-cat="sale" style="--r:3deg;--mt:24px;--pin:#1aa04a">
+      <svg viewBox="0 0 120 90" aria-hidden="true"><rect width="120" height="90" fill="#cfdcdf"/><rect x="0" y="62" width="120" height="28" fill="#b49b7a"/><rect x="30" y="34" width="62" height="30" rx="6" fill="#d36b3c"/><rect x="26" y="40" width="12" height="26" rx="5" fill="#b9552c"/><rect x="84" y="40" width="12" height="26" rx="5" fill="#b9552c"/><rect x="34" y="64" width="3" height="8" fill="#5a3a22"/><rect x="85" y="64" width="3" height="8" fill="#5a3a22"/></svg>
+      orange velvet loveseat ~ 1970s<br><span class="price">$120</span><span class="hood">Ukrainian Village</span>
+    </article>
+
+    <article class="flyer paper tape item" data-cat="housing" style="--r:1.5deg;background:#d6f0c8;--mt:-10px">
+      <h3>Room for Rent</h3>
+      <p style="font-family:var(--chalk);font-size:15px">Big sunny room in 3BR. Two quiet grad students + 1 cat named Pierogi. Near the Blue Line. Nov 1.</p>
+      <span class="price">$790/mo + util</span>
+      <span class="hood">Wicker Park</span>
+      <span class="taken"></span>
+      <div class="tabs"><div class="tab">Anya 312-555-0188</div><div class="tab">Anya 312-555-0188</div><div class="tab">Anya 312-555-0188</div><div class="tab">Anya 312-555-0188</div><div class="tab">Anya 312-555-0188</div></div>
+    </article>
+
+    <article class="sticky paper pin item" data-cat="gigs" style="--r:3.5deg;background:#ffb3c7;--mt:30px;--pin:#7a3ad1">
+      <h3>Need movers Sat</h3>
+      2 strong people, 3 hrs, a piano is involved (an upright, I'm not a monster). Pizza after.
+      <span class="price">$40/hr each</span>
+      <span class="hood">Lincoln Square</span>
+    </article>
+
+    <article class="receipt paper item" data-cat="community" style="--r:-1.5deg;--mt:6px">
+      <b>LOST CAT</b> ***************<br>
+      NAME .......... BEANS<br>
+      COLOR ......... GREY, 1 WHITE SOCK<br>
+      LAST SEEN ..... BEHIND THE TAQUERIA<br>
+      PERSONALITY ... WILL YELL AT YOU<br>
+      REWARD ........ $50 + ETERNAL THANKS<br>
+      ******************************<br>
+      <span class="hood">Pilsen · call Dee 872-555-0119</span>
+    </article>
+
+    <article class="index paper pin item" data-cat="jobs" style="--r:-2.5deg;--mt:20px;--pin:#e0a21b">
+      <h3>Help wanted: bakery</h3>
+      Early shift 5-11am, Thurs-Sun. Must love flour &amp; be OK with the radio on oldies. Will train.<br>
+      <span class="price">$18/hr + bread</span>
+      <span class="hood">Andersonville · ask for Lina</span>
+    </article>
+
+    <article class="flyer paper pin item" data-cat="services" style="--r:2deg;background:#fff3c4;--mt:0;--pin:#2a6fd1">
+      <h3>Dog Walking</h3>
+      <p style="font-family:var(--comic);font-size:15px">Responsible 16 y/o, CPR certified, home by 3:30 every day. Big dogs OK. Little dogs extra OK.</p>
+      <span class="price">$15 / walk</span>
+      <span class="hood">Ravenswood</span>
+      <span class="taken"></span>
+      <div class="tabs"><div class="tab">Jaylen 773-555-0167</div><div class="tab">Jaylen 773-555-0167</div><div class="tab">Jaylen 773-555-0167</div><div class="tab">Jaylen 773-555-0167</div><div class="tab">Jaylen 773-555-0167</div><div class="tab">Jaylen 773-555-0167</div><div class="tab">Jaylen 773-555-0167</div></div>
+    </article>
+
+    <article class="sticky paper tape item" data-cat="free" style="--r:-3deg;background:#a8e6ef;--mt:44px;--tr:4deg">
+      <h3>curb alert</h3>
+      Working microwave + a lamp shaped like a duck. Out front of 2918 W Belmont till they're gone.
+      <span class="price">FREE</span>
+      <span class="hood">Avondale</span>
+    </article>
+
+    <article class="rules paper pin item" data-cat="community" style="--r:1deg;--mt:-6px;--pin:#222">
+      <h3>BOARD RULES</h3>
+      <ol>
+        <li>No fees. Ever.</li>
+        <li>Newest on top. No "boosting."</li>
+        <li>Meet in public. Bring a friend.</li>
+        <li>Take a tab, leave a tab.</li>
+        <li>Be nice to Gloria (she runs the place).</li>
+      </ol>
+    </article>
+
+    <article class="index paper tape tape2 item" data-cat="sale" style="--r:3deg;--mt:16px">
+      <h3>KitchenAid mixer</h3>
+      Red. Works great, I just never bake. Comes w/ dough hook &amp; whisk. Bowl has 1 tiny dent.<br>
+      <span class="price">$150 firm</span>
+      <span class="hood">Bridgeport</span>
+    </article>
+
+    <article class="flyer paper tape item" data-cat="gigs" style="--r:-1deg;background:#e3d4f7;--mt:-20px">
+      <h3>Drummer Wanted</h3>
+      <p style="font-family:var(--marker);font-size:17px">for sad indie band. we practice in a garage. must own drums or know someone.</p>
+      <span class="price">$0 (glory)</span>
+      <span class="hood">Humboldt Park</span>
+      <span class="taken"></span>
+      <div class="tabs"><div class="tab">THE GUTTERS 773-555-0103</div><div class="tab">THE GUTTERS 773-555-0103</div><div class="tab">THE GUTTERS 773-555-0103</div><div class="tab">THE GUTTERS 773-555-0103</div><div class="tab">THE GUTTERS 773-555-0103</div></div>
+    </article>
+
+    <article class="sticky paper pin item" data-cat="housing" style="--r:2.5deg;background:#ffc97a;--mt:30px;--pin:#1aa04a">
+      <h3>Sublet Dec-Feb</h3>
+      My studio while I'm in Manila. Radiator heat, cute window seat. Water the fern pls.
+      <span class="price">$950/mo</span>
+      <span class="hood">Edgewater</span>
+    </article>
+
+    <article class="index paper pin item" data-cat="services" style="--r:-2deg;--mt:0;--pin:#d12b2b">
+      <h3>Alterations &amp; Hems</h3>
+      Rosa fixes zippers, hems, patches. Same-week. Drop off at the counter here, Tues &amp; Fri.<br>
+      <span class="price">$8 - $25</span>
+      <span class="hood">Pilsen · inside Wash &amp; Fold</span>
+    </article>
+
+    <article class="flyer paper pin item" data-cat="community" style="--r:1.8deg;background:#fbf6e4;--mt:-14px;--pin:#e0a21b">
+      <h3 style="color:#c0322a">Block Sale!</h3>
+      <p style="font-family:var(--brad);font-size:18px">Sat Oct 11 · 8am - ?<br>Wolcott btwn Leland &amp; Wilson. Bring a table!</p>
+      <span class="hood">Lincoln Square</span>
+    </article>
+  </main>
+
+  <p class="empty hidden" id="empty">Nothin' pinned like that yet. Be the first: pin your own card!</p>
+
+  <div class="foot"><span class="paper">Stoop · one city's corkboard, online · cards come down after 30 days · last checked by Gloria, Sunday</span></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <form class="newcard paper pin" id="newcard">
+    <h2>Pin your own card</h2>
+    <input id="nt" required placeholder="What is it? (e.g. Bike for sale)" maxlength="40">
+    <div class="row">
+      <input id="np" placeholder="Price / FREE" maxlength="16">
+      <select id="nc"><option value="sale">for sale</option><option value="free">free</option><option value="housing">housing</option><option value="jobs">jobs</option><option value="gigs">gigs</option><option value="services">services</option><option value="community">community</option></select>
+    </div>
+    <input id="nh" placeholder="Neighborhood" maxlength="30">
+    <textarea id="nd" placeholder="Tell 'em about it..." maxlength="160"></textarea>
+    <div class="actions"><button type="button" class="cancel" id="cancel">never mind</button><button type="submit">Pin it up!</button></div>
+  </form>
+</div>
+
+<script>
+(function () {
+  var grid = document.getElementById('grid');
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var empty = document.getElementById('empty');
+  var cat = 'all';
+
+  function filter() {
+    var term = q.value.trim().toLowerCase(), n = 0;
+    grid.querySelectorAll('.item').forEach(function (el) {
+      var ok = (cat === 'all' || el.dataset.cat === cat) && (!term || el.textContent.toLowerCase().indexOf(term) > -1);
+      el.classList.toggle('hidden', !ok);
+      if (ok) n++;
+    });
+    count.textContent = (term || cat !== 'all') ? n + (n === 1 ? ' card matches' : ' cards match') : n + ' things pinned this week';
+    empty.classList.toggle('hidden', n > 0);
+  }
+  q.addEventListener('input', filter);
+  document.querySelectorAll('#cats button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      cat = b.dataset.cat;
+      document.querySelectorAll('#cats button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      filter();
+    });
+  });
+
+  // tear-off tabs
+  grid.addEventListener('click', function (e) {
+    var tab = e.target.closest('.tab');
+    if (!tab || tab.classList.contains('torn')) return;
+    var r = tab.getBoundingClientRect();
+    var flyer = tab.closest('.flyer');
+    var f = document.createElement('div');
+    f.className = 'falling';
+    f.textContent = tab.textContent;
+    f.style.left = r.left + 'px'; f.style.top = r.top + 'px';
+    f.style.width = r.width + 'px'; f.style.height = r.height + 'px';
+    f.style.background = getComputedStyle(flyer).backgroundColor;
+    document.body.appendChild(f);
+    setTimeout(function () { f.remove(); }, 1150);
+    tab.classList.add('torn');
+    var left = flyer.querySelectorAll('.tab:not(.torn)').length;
+    flyer.querySelector('.taken').textContent = left ? 'you took one! ' + left + ' left' : 'all gone, call quick!';
+  });
+
+  // pin your own card
+  var overlay = document.getElementById('overlay');
+  document.getElementById('postBtn').addEventListener('click', function () { overlay.classList.add('open'); document.getElementById('nt').focus(); });
+  document.getElementById('cancel').addEventListener('click', function () { overlay.classList.remove('open'); });
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.classList.remove('open'); });
+  document.getElementById('newcard').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var colors = ['#fff27a', '#ffb3c7', '#a8e6ef', '#ffc97a', '#c9f2b0'];
+    var pins = ['#d12b2b', '#2a6fd1', '#1aa04a', '#e0a21b'];
+    var el = document.createElement('article');
+    el.className = 'sticky paper pin item';
+    el.dataset.cat = document.getElementById('nc').value;
+    el.style.cssText = '--r:' + (Math.random() * 8 - 4).toFixed(1) + 'deg;background:' + colors[Math.floor(Math.random() * colors.length)] + ';--pin:' + pins[Math.floor(Math.random() * pins.length)];
+    var h = document.createElement('h3'); h.textContent = document.getElementById('nt').value;
+    var d = document.createElement('div'); d.textContent = document.getElementById('nd').value;
+    var p = document.createElement('span'); p.className = 'price'; p.textContent = document.getElementById('np').value;
+    var n = document.createElement('span'); n.className = 'hood'; n.textContent = (document.getElementById('nh').value || 'Somewhere nearby') + ' · just now';
+    el.append(h, d, p, n);
+    grid.prepend(el);
+    overlay.classList.remove('open');
+    e.target.reset();
+    filter();
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+  filter();
+})();
+</script>
+</body>
+</html>
