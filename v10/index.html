@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STOOP TERMINAL: Local Trading Floor</title>
+<style>
+  :root {
+    --bg: #07090c; --panel: #0e1217; --panel2: #121820; --line: #1f2731;
+    --ink: #d4dae1; --mute: #7a8592; --amber: #ffb000; --up: #2fd36f; --dn: #ff5555; --blue: #5fb4ff;
+    --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.4 var(--mono); }
+  a { color: inherit; }
+  .up { color: var(--up); } .dn { color: var(--dn); } .am { color: var(--amber); } .mu { color: var(--mute); }
+
+  /* top bar */
+  .top { display: flex; align-items: center; gap: 18px; padding: 8px 14px; background: #000; border-bottom: 1px solid var(--line); }
+  .gallery { text-decoration: none; color: #000; background: var(--amber); padding: 3px 10px; font-weight: bold; }
+  .gallery:hover { background: #fff; }
+  .logo { font-weight: 800; letter-spacing: 3px; color: var(--amber); font-size: 15px; }
+  .logo small { color: var(--mute); letter-spacing: 1px; font-weight: normal; margin-left: 8px; }
+  .status { margin-left: auto; display: flex; gap: 18px; color: var(--mute); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--up); margin-right: 6px; animation: blink 1.4s infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+
+  /* ticker */
+  .tape { overflow: hidden; background: #000; border-bottom: 2px solid var(--amber); white-space: nowrap; }
+  .tape-inner { display: inline-block; padding: 7px 0; animation: scroll 60s linear infinite; }
+  .tape:hover .tape-inner { animation-play-state: paused; }
+  .tape span { margin-right: 34px; font-weight: bold; }
+  .tape b { color: #fff; }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* command line */
+  .cmd { display: flex; align-items: center; gap: 0; margin: 10px 12px; border: 1px solid var(--amber); background: #000; }
+  .cmd label { padding: 10px 12px; color: #000; background: var(--amber); font-weight: bold; }
+  .cmd input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: var(--amber); font: 16px var(--mono); padding: 10px 12px; caret-color: var(--amber); text-transform: uppercase; }
+  .cmd input::placeholder { color: #6b5a2a; }
+  .cmd .go { background: #1a1a1a; color: var(--amber); border: none; border-left: 1px solid var(--amber); font: bold 13px var(--mono); padding: 0 16px; cursor: pointer; align-self: stretch; }
+  .list-btn { background: var(--up); color: #000; border: none; font: 800 15px var(--mono); padding: 0 22px; cursor: pointer; letter-spacing: 1px; align-self: stretch; }
+  .list-btn:hover, .cmd .go:hover { filter: brightness(1.25); }
+  .hints { margin: -4px 12px 10px; color: var(--mute); font-size: 11px; }
+  .hints kbd { color: var(--amber); font: inherit; border: 1px solid #3a3320; padding: 0 4px; margin: 0 2px; cursor: pointer; }
+
+  /* grid */
+  .grid { display: grid; grid-template-columns: 300px 1fr 300px; gap: 10px; padding: 0 12px 12px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); min-width: 0; }
+  .panel h2 { margin: 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 6px 10px; background: var(--panel2); color: var(--amber); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+  .panel h2 span { color: var(--mute); letter-spacing: 0; }
+  .stack { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+  /* indices */
+  .idx { display: grid; grid-template-columns: 1fr 74px; gap: 2px 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .idx:hover, .idx.on { background: #18202a; }
+  .idx.on { box-shadow: inset 3px 0 0 var(--amber); }
+  .idx .nm { font-weight: bold; color: #fff; }
+  .idx .val { font-size: 15px; }
+  .idx svg { grid-row: span 2; align-self: center; }
+  .idx .ch { font-size: 12px; }
+
+  /* composite chart */
+  .hero { display: grid; grid-template-columns: 220px 1fr; gap: 0; }
+  .hero .big { padding: 14px; border-right: 1px solid var(--line); }
+  .hero .big .n { font-size: 34px; color: #fff; font-weight: bold; }
+  .hero .big p { margin: 6px 0; color: var(--mute); }
+  .chart { position: relative; padding: 8px 10px 4px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .tip { position: absolute; pointer-events: none; background: #000; border: 1px solid var(--amber); padding: 4px 8px; font-size: 12px; display: none; white-space: nowrap; }
+
+  /* order book */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: normal; color: var(--mute); font-size: 11px; padding: 6px 8px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
+  td { padding: 6px 8px; border-bottom: 1px solid #161c24; vertical-align: top; }
+  tbody tr:hover { background: #18202a; }
+  tbody tr.flash { animation: flash 1.2s; }
+  @keyframes flash { from { background: #3a3000; } }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tk { color: var(--blue); font-weight: bold; }
+  .asset { color: #fff; }
+  .asset small { display: block; color: var(--mute); }
+  .book { max-height: 470px; overflow: auto; }
+  .bidbtn { background: none; border: 1px solid var(--up); color: var(--up); font: 11px var(--mono); padding: 2px 6px; cursor: pointer; }
+  .bidbtn:hover { background: var(--up); color: #000; }
+  .empty { padding: 20px; color: var(--mute); display: none; }
+
+  /* right column */
+  .movers div { display: flex; justify-content: space-between; padding: 5px 10px; border-bottom: 1px solid #161c24; }
+  .heat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 8px; }
+  .heat div { padding: 8px 6px; font-size: 11px; color: #fff; }
+  .heat b { display: block; font-size: 13px; }
+  .wire { padding: 4px 0; }
+  .wire p { margin: 0; padding: 6px 10px; border-bottom: 1px solid #161c24; }
+  .wire time { color: var(--amber); margin-right: 6px; }
+
+  /* order ticket */
+  .ticket { margin: 0 12px 12px; display: grid; grid-template-columns: 1fr 340px; gap: 10px; }
+  .ticket form { padding: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 12px; }
+  .ticket label { display: block; color: var(--mute); font-size: 11px; margin-bottom: 3px; text-transform: uppercase; }
+  .ticket input, .ticket select { width: 100%; background: #000; border: 1px solid var(--line); color: var(--ink); font: 13px var(--mono); padding: 7px; outline: none; }
+  .ticket input:focus, .ticket select:focus { border-color: var(--amber); }
+  .ticket .wide { grid-column: span 3; }
+  .ticket .submit { grid-column: span 4; display: flex; gap: 12px; align-items: center; }
+  .ticket .submit button { background: var(--up); border: none; color: #000; font: 800 15px var(--mono); padding: 10px 26px; cursor: pointer; letter-spacing: 1px; }
+  .fees { padding: 12px; }
+  .fees div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+  .fees .tot { color: var(--up); font-weight: bold; font-size: 15px; border: none; padding-top: 8px; }
+  .fine { color: var(--mute); font-size: 11px; margin: 10px 0 0; }
+
+  footer { padding: 10px 14px 20px; color: var(--mute); font-size: 11px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+  @media (max-width: 1000px) {
+    .grid { grid-template-columns: 1fr; }
+    .ticket { grid-template-columns: 1fr; }
+    .hero { grid-template-columns: 1fr; } .hero .big { border-right: none; border-bottom: 1px solid var(--line); }
+  }
+  @media (max-width: 640px) {
+    .status { display: none; }
+    .cmd { flex-wrap: wrap; } .cmd input { width: 100%; flex-basis: 60%; }
+    .list-btn { padding: 10px; width: 100%; }
+    .ticket form { grid-template-columns: 1fr 1fr; } .ticket .wide, .ticket .submit { grid-column: span 2; }
+    .hide-sm { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tape-inner, .dot { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <a class="gallery" href="../">&larr; Gallery</a>
+  <div class="logo">STOOP<small>LOCAL TRADING FLOOR &middot; v.NEIGHBOR</small></div>
+  <div class="status">
+    <span><i class="dot"></i>MKT OPEN</span>
+    <span>FEES <b class="up">0.00%</b></span>
+    <span>ALGO <b class="am">OFF</b></span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="tape" aria-label="Live price ticker"><div class="tape-inner" id="tape"></div></div>
+
+<form class="cmd" id="cmd" role="search">
+  <label for="q">STOOP&gt;</label>
+  <input id="q" placeholder="TYPE A TICKER OR SEARCH: BIKE &lt;GO&gt;, COUCH, ROOM PILSEN..." autocomplete="off" spellcheck="false">
+  <button class="go" type="submit">&lt;GO&gt;</button>
+  <button class="list-btn" type="button" id="listTop">+ LIST ASSET</button>
+</form>
+<div class="hints">QUICK: <kbd>BIKE</kbd><kbd>SOFA</kbd><kbd>FREE</kbd><kbd>ROOM</kbd><kbd>GIG</kbd><kbd>LOGAN SQ</kbd><kbd>CLR</kbd> &middot; press <kbd>/</kbd> to focus &middot; no fees, no algorithm, no market makers: just neighbors</div>
+
+<div class="grid">
+  <!-- LEFT: category indices -->
+  <aside class="panel">
+    <h2>Category Indices <span>7D</span></h2>
+    <div id="indices"></div>
+  </aside>
+
+  <!-- CENTER -->
+  <div class="stack">
+    <section class="panel hero">
+      <div class="big">
+        <div class="mu">STOOP COMPOSITE (SPX: Stoop Price indeX)</div>
+        <div class="n" id="compVal">1,047.2</div>
+        <div class="up" style="font-size:15px">&#9650; +12.6 (+1.22%)</div>
+        <p>Median ask across 2,318 live listings in 24 neighborhoods. Moved mostly by a man in Bridgeport selling 40 lawn chairs.</p>
+        <p><span class="am">VOL</span> 186 trades today &middot; <span class="am">HI</span> 1,051.0 &middot; <span class="am">LO</span> 1,031.8</p>
+      </div>
+      <div class="chart" id="chartBox">
+        <svg id="chart" viewBox="0 0 600 170" aria-label="Stoop composite index, last 30 days"></svg>
+        <div class="tip" id="tip"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Order Book: Newest Listings <span id="count">&nbsp;</span></h2>
+      <div class="book">
+        <table>
+          <thead><tr><th>TIME</th><th>TKR</th><th>ASSET / NBHD</th><th class="num">ASK</th><th class="num hide-sm">BEST BID</th><th class="num hide-sm">&Delta; vs IDX</th><th></th></tr></thead>
+          <tbody id="book"></tbody>
+        </table>
+        <div class="empty" id="empty">NO MATCHING ASSETS. Market is thin here. Be the first: <a href="#ticket" class="am">LIST ASSET</a>.</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- RIGHT -->
+  <aside class="stack">
+    <section class="panel movers">
+      <h2>Top Movers <span>24H</span></h2>
+      <div><span>AIR CONDITIONERS</span><span class="dn">&#9660; 31.0%</span></div>
+      <div><span>PUMPKINS</span><span class="up">&#9650; 212.4%</span></div>
+      <div><span>SPACE HEATERS</span><span class="up">&#9650; 18.7%</span></div>
+      <div><span>MOVING BOXES</span><span class="up">&#9650; 9.2%</span></div>
+      <div><span>PATIO FURNITURE</span><span class="dn">&#9660; 14.3%</span></div>
+      <div><span>HALLOWEEN COSTUMES</span><span class="up">&#9650; 44.0%</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>Neighborhood Heatmap <span>&Delta; ASK 7D</span></h2>
+      <div class="heat" id="heat"></div>
+    </section>
+
+    <section class="panel wire">
+      <h2>Stoop Wire <span>LIVE</span></h2>
+      <p><time>14:02</time>FED (Fern Exchange of Dana) holds rates; Gary the fern still available to a good home.</p>
+      <p><time>13:41</time>Analysts downgrade futon sector to "SLEEP ON IT."</p>
+      <p><time>13:15</time>Logan Sq. tool library posts record quarter; 0 drills unreturned.</p>
+      <p><time>12:50</time>Sourdough starter "Doris" spins off three subsidiaries.</p>
+      <p><time>11:30</time>Insider tip: the free piano on Kedzie is, in fact, free. Bring 4 friends.</p>
+    </section>
+  </aside>
+</div>
+
+<section class="ticket" id="ticket">
+  <div class="panel">
+    <h2>Order Ticket: List Asset <span>SETTLES ON THE SIDEWALK</span></h2>
+    <form id="order">
+      <div class="wide"><label for="oa">Asset</label><input id="oa" required placeholder="MID-CENTURY DRESSER, ONE STICKY DRAWER"></div>
+      <div><label for="oc">Sector</label>
+        <select id="oc"><option>FOR SALE</option><option>FREE</option><option>HOUSING</option><option>JOBS</option><option>GIGS</option><option>SERVICES</option><option>COMMUNITY</option></select></div>
+      <div><label for="op">Ask ($)</label><input id="op" inputmode="decimal" placeholder="0 = FREE"></div>
+      <div><label for="on">Neighborhood</label><input id="on" placeholder="PILSEN"></div>
+      <div><label for="or">Contact</label><input id="or" placeholder="PHONE / EMAIL"></div>
+      <div><label for="ot">Order Type</label>
+        <select id="ot"><option>LIMIT (FIRM)</option><option>OBO (OR BEST OFFER)</option><option>SWAP ONLY</option><option>JUST TAKE IT</option></select></div>
+      <div class="submit">
+        <button type="submit">LIST ASSET &#9654;</button>
+        <span class="mu" id="orderMsg">Executes in under 60 seconds. No account. No KYC beyond "hey, I'm Sam from 3B."</span>
+      </div>
+    </form>
+  </div>
+  <div class="panel fees">
+    <h2 style="margin:-12px -12px 10px">Fee Schedule</h2>
+    <div><span>Listing fee</span><span>$0.00</span></div>
+    <div><span>Commission</span><span>$0.00</span></div>
+    <div><span>Promoted placement</span><span class="mu">N/A: does not exist</span></div>
+    <div><span>Algorithmic ranking</span><span class="mu">N/A: sorted by time</span></div>
+    <div class="tot"><span>YOU KEEP</span><span>100.00%</span></div>
+    <p class="fine">BID/ASK is a joke, deals aren't. Every trade is you and a neighbor, in person. Meet in daylight, bring exact change, and inspect the asset (especially the futon).</p>
+  </div>
+</section>
+
+<footer>
+  <span>STOOP TERMINAL &middot; a free local classifieds board &middot; not a real exchange, not financial advice, not even furniture advice</span>
+  <span>DATA DELAYED BY HOWEVER LONG IT TAKES YOUR NEIGHBOR TO TEXT BACK</span>
+</footer>
+
+<script>
+const IDX = [
+  {k:'FURN', n:'SOFA INDEX', cat:'for sale', v:418.6, c:+2.1, s:[400,404,398,407,411,409,415,412,418.6]},
+  {k:'BIKE', n:'BIKE INDEX', cat:'for sale', v:312.4, c:-1.2, s:[322,320,318,321,315,317,314,316,312.4]},
+  {k:'FREE', n:'CURB INDEX (FREE)', cat:'free', v:0.0, c:+38.0, s:[9,12,11,15,14,19,22,21,27], vol:'27 ITEMS'},
+  {k:'ROOM', n:'ROOM INDEX ($/MO)', cat:'housing', v:842.0, c:+0.6, s:[828,830,833,831,836,838,837,840,842]},
+  {k:'JOBS', n:'JOBS INDEX ($/HR)', cat:'jobs', v:19.35, c:+0.3, s:[19.1,19.2,19.1,19.2,19.3,19.2,19.3,19.3,19.35]},
+  {k:'GIG', n:'GIG INDEX', cat:'gigs', v:64.1, c:-3.4, s:[70,69,71,68,67,66,67,65,64.1]},
+  {k:'SVC', n:'SERVICES INDEX', cat:'services', v:47.8, c:+1.0, s:[46,46.5,47,46.8,47.1,47.5,47.2,47.6,47.8]},
+  {k:'CMTY', n:'GOODWILL INDEX', cat:'community', v:999.9, c:+0.0, s:[999.9,999.9,999.9,999.9,999.9,999.9,999.9,999.9,999.9], note:'(LIMIT UP)'}
+];
+const BOOK = [
+  {t:'14:06',k:'FURN',a:'Green velvet couch, seats 3',n:'Logan Square',ask:120,bid:95,d:+4,x:'cat-approved, 2 flights down'},
+  {t:'14:01',k:'BIKE',a:"Schwinn 3-speed, '79",n:'Bridgeport',ask:95,bid:80,d:-8,x:'rust is "patina"'},
+  {t:'13:58',k:'FREE',a:'Box of 200 records',n:'Pilsen',ask:0,bid:0,d:0,x:'mostly polka, one Sabbath'},
+  {t:'13:52',k:'ROOM',a:'Room in 3BR, Nov 1',n:'Ukrainian Village',ask:780,bid:760,d:-7,x:'fern named Gary conveys'},
+  {t:'13:44',k:'GIG',a:'Piano move, 2 arms needed Sat',n:'Avondale',ask:60,bid:60,d:-6,x:'pizza + beer as dividend'},
+  {t:'13:37',k:'SVC',a:'Lamp rewiring while you wait',n:'Rogers Park',ask:15,bid:15,d:-69,x:'retired electrician, coffee incl.'},
+  {t:'13:30',k:'FURN',a:'Mid-century dresser',n:'Andersonville',ask:240,bid:180,d:+12,x:'one drawer sticks, bullish'},
+  {t:'13:22',k:'JOBS',a:'Bakery opener, 5am, PT',n:'Andersonville',ask:19,bid:19,d:-2,x:'free day-olds, forever'},
+  {t:'13:15',k:'FREE',a:'Sourdough starter "Doris"',n:'Albany Park',ask:0,bid:0,d:0,x:'11 yrs old, aggressive growth'},
+  {t:'13:09',k:'BIKE',a:'Kids balance bike, red',n:'Lincoln Square',ask:35,bid:30,d:-89,x:'outgrown, not outclassed'},
+  {t:'12:58',k:'ROOM',a:'Garden-level studio, Dec 1',n:'Humboldt Park',ask:950,bid:925,d:+13,x:'landlord makes tamales'},
+  {t:'12:47',k:'FURN',a:'IKEA Poang, slight lean',n:'Wicker Park',ask:40,bid:25,d:-90,x:'leans left, like the block'},
+  {t:'12:40',k:'CMTY',a:'Lost cat "Toast", orange',n:'Hyde Park',ask:50,bid:50,d:0,x:'reward; answers to can opener'},
+  {t:'12:31',k:'SVC',a:'Snow shoveling contract, winter',n:'Bridgeport',ask:200,bid:150,d:+18,x:'two teens, very reliable'},
+  {t:'12:20',k:'GIG',a:'Dog walker, M/W/F noon',n:'Lakeview',ask:20,bid:20,d:-69,x:'dog is named Senator'}
+];
+const CAT = Object.fromEntries(IDX.map(i => [i.k, i]));
+const $ = id => document.getElementById(id);
+const money = n => n === 0 ? 'FREE' : '$' + n.toLocaleString();
+const pct = n => (n > 0 ? '▲ +' : n < 0 ? '▼ ' : '▬ ') + n.toFixed(1) + '%';
+const cls = n => n > 0 ? 'up' : n < 0 ? 'dn' : 'mu';
+
+function spark(s, w, h, color) {
+  const mn = Math.min(...s), mx = Math.max(...s), r = (mx - mn) || 1;
+  const pts = s.map((v, i) => [(i / (s.length - 1)) * (w - 4) + 2, h - 3 - ((v - mn) / r) * (h - 6)]);
+  const last = pts[pts.length - 1];
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.5" fill="${color}"/></svg>`;
+}
+const col = c => c > 0 ? 'var(--up)' : c < 0 ? 'var(--dn)' : 'var(--mute)';
+
+// ticker tape (duplicated for seamless loop)
+const tapeItems = [
+  ['COUCH',120,+4],['BIKE',95,-8],['ROOM',780,-1.3],['FUTON',60,-12],['DRESSER',240,+12],['RECORDS',0,0],
+  ['AC UNIT',45,-31],['PUMPKIN',6,+212],['KAYAK',300,+2.2],['CRIB',80,-5],['TV 42"',110,-3.1],['DOG WALK',20,+1],
+  ['PIANO',0,0],['MOVING BOX',1,+9.2],['SNOW SHOVEL',18,+22],['TYPEWRITER',65,+7.5]
+].map(([k,p,c]) => `<span><b>${k}</b> <span class="${cls(c)}" style="margin:0">${c>0?'▲':c<0?'▼':'▬'} ${money(p)} ${c>0?'+':''}${c}%</span></span>`).join('');
+$('tape').innerHTML = tapeItems + tapeItems;
+
+// indices
+let active = null;
+$('indices').innerHTML = IDX.map(i => `
+  <div class="idx" data-k="${i.k}" title="${i.n}: click to filter the order book">
+    <div><div class="nm">${i.n}</div><div class="val ${cls(i.c)}">${i.vol || i.v.toFixed(i.v < 100 ? 2 : 1)} <span class="ch">${pct(i.c)} ${i.note || ''}</span></div></div>
+    ${spark(i.s, 74, 32, col(i.c))}
+  </div>`).join('');
+document.querySelectorAll('.idx').forEach(el => el.onclick = () => {
+  active = active === el.dataset.k ? null : el.dataset.k;
+  $('q').value = active || ''; render();
+});
+
+// composite chart with crosshair
+const comp = [1003,1008,1001,1012,1018,1015,1009,1020,1026,1022,1019,1028,1031,1027,1034,1030,1025,1032,1038,1041,1036,1033,1039,1044,1040,1035,1042,1046,1034,1047.2];
+(function chart() {
+  const W = 600, H = 170, mn = 995, mx = 1052;
+  const x = i => 30 + i * (W - 40) / (comp.length - 1), y = v => H - 18 - (v - mn) / (mx - mn) * (H - 30);
+  let g = '';
+  [1000, 1020, 1040].forEach(v => g += `<line x1="30" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="#1f2731" stroke-width="1"/><text x="0" y="${y(v)+4}" fill="#7a8592" font-size="10" font-family="monospace">${v}</text>`);
+  const d = comp.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  g += `<path d="${d} L${x(comp.length-1)},${H-18} L30,${H-18}Z" fill="rgba(47,211,111,.08)"/>`;
+  g += `<path d="${d}" fill="none" stroke="var(--up)" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  g += `<text x="30" y="${H-4}" fill="#7a8592" font-size="10" font-family="monospace">SEP 06</text><text x="${W-52}" y="${H-4}" fill="#7a8592" font-size="10" font-family="monospace">OCT 05</text>`;
+  g += `<line id="xh" y1="8" y2="${H-18}" stroke="#ffb000" stroke-width="1" stroke-dasharray="3 3" visibility="hidden" vector-effect="non-scaling-stroke"/>`;
+  $('chart').innerHTML = g;
+  const box = $('chartBox'), tip = $('tip'), xh = $('xh');
+  box.addEventListener('mousemove', e => {
+    const r = $('chart').getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width * W;
+    const i = Math.max(0, Math.min(comp.length - 1, Math.round((px - 30) / ((W - 40) / (comp.length - 1)))));
+    xh.setAttribute('x1', x(i)); xh.setAttribute('x2', x(i)); xh.setAttribute('visibility', 'visible');
+    const day = new Date(2026, 8, 6 + i).toLocaleDateString('en-US', {month:'short', day:'2-digit'}).toUpperCase();
+    tip.innerHTML = `<span class="am">${day}</span> &nbsp;<b>${comp[i].toFixed(1)}</b>`;
+    tip.style.display = 'block';
+    const lx = x(i) / W * r.width + 10;
+    tip.style.left = Math.min(lx, r.width - 110) + 'px'; tip.style.top = '14px';
+  });
+  box.addEventListener('mouseleave', () => { tip.style.display = 'none'; xh.setAttribute('visibility', 'hidden'); });
+})();
+
+// heatmap
+const HEAT = [['LOGAN SQ',+3.2],['PILSEN',+1.1],['BRIDGEPORT',-2.4],['WICKER PK',+5.8],['HYDE PK',-0.6],['ROGERS PK',-3.9],['ANDERSONVL',+2.0],['AVONDALE',+0.4],['HUMBOLDT',-1.5]];
+$('heat').innerHTML = HEAT.map(([n, c]) => {
+  const a = Math.min(1, Math.abs(c) / 6) * .75 + .15;
+  const bg = c >= 0 ? `rgba(47,211,111,${a})` : `rgba(255,85,85,${a})`;
+  return `<div style="background:${bg}" title="${n}: ${pct(c)}">${n}<b>${pct(c)}</b></div>`;
+}).join('');
+
+// order book
+function render() {
+  const raw = $('q').value.trim().toUpperCase();
+  const words = raw.split(/\s+/).filter(w => w && w !== 'GO' && w !== '<GO>');
+  const alias = {SOFA:'FURN', COUCH:'FURN', BIKES:'BIKE', ROOMS:'ROOM', GIGS:'GIG', JOB:'JOBS'};
+  const rows = BOOK.filter(r => {
+    if (active && r.k !== active) return false;
+    return words.every(w => {
+      const k = alias[w] || w;
+      if (CAT[k]) return r.k === k;
+      return (r.a + ' ' + r.n + ' ' + r.x).toUpperCase().includes(w.replace('SQ', 'SQUARE').replace('SQUAREUARE', 'SQUARE'));
+    });
+  });
+  document.querySelectorAll('.idx').forEach(el => el.classList.toggle('on', el.dataset.k === active));
+  $('book').innerHTML = rows.map(r => `
+    <tr>
+      <td class="mu">${r.t}</td>
+      <td class="tk">${r.k}</td>
+      <td class="asset">${r.a}<small>${r.n.toUpperCase()} &middot; ${r.x}</small></td>
+      <td class="num ${r.ask ? 'dn' : 'up'}">${money(r.ask)}</td>
+      <td class="num up hide-sm">${r.ask ? money(r.bid) : '-'}</td>
+      <td class="num hide-sm ${cls(r.d)}">${r.ask ? pct(r.d) : 'N/A'}</td>
+      <td><button class="bidbtn" type="button" title="Contact the seller directly">${r.ask ? 'BID' : 'CLAIM'}</button></td>
+    </tr>`).join('');
+  $('count').textContent = rows.length + ' OF ' + BOOK.length + ' SHOWN · SORTED BY TIME, NOT ALGO';
+  $('empty').style.display = rows.length ? 'none' : 'block';
+  document.querySelectorAll('.bidbtn').forEach(b => b.onclick = () => { b.textContent = 'SENT'; b.disabled = true; });
+}
+render();
+
+$('cmd').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('q').value.trim().toUpperCase();
+  if (v === 'CLR') { $('q').value = ''; active = null; }
+  else if (v.startsWith('LIST')) { $('q').value = ''; return openTicket(); }
+  else active = null;
+  render();
+});
+$('q').addEventListener('input', () => { active = null; render(); });
+document.querySelectorAll('.hints kbd').forEach(k => k.onclick = () => {
+  if (k.textContent === '/') return $('q').focus();
+  $('q').value = k.textContent === 'CLR' ? '' : k.textContent; active = null; render();
+});
+document.addEventListener('keydown', e => { if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); $('q').focus(); } });
+
+function openTicket() { $('ticket').scrollIntoView({behavior: 'smooth'}); setTimeout(() => $('oa').focus(), 400); }
+$('listTop').onclick = openTicket;
+
+$('order').addEventListener('submit', e => {
+  e.preventDefault();
+  const sec = $('oc').value, k = {'FOR SALE':'FURN', FREE:'FREE', HOUSING:'ROOM', JOBS:'JOBS', GIGS:'GIG', SERVICES:'SVC', COMMUNITY:'CMTY'}[sec];
+  const ask = parseFloat($('op').value) || 0;
+  const now = new Date();
+  BOOK.unshift({t: now.toTimeString().slice(0,5), k, a: $('oa').value, n: $('on').value || 'Your Block', ask, bid: ask, d: 0, x: $('ot').value.toLowerCase() + ' · just listed'});
+  $('q').value = ''; active = null; render();
+  $('book').firstElementChild.classList.add('flash');
+  $('orderMsg').innerHTML = '<span class="up">FILLED.</span> Your asset is live at the top of the order book. (Demo only: nothing left this page.)';
+  e.target.reset();
+});
+
+setInterval(() => { $('clock').textContent = new Date().toTimeString().slice(0, 8) + ' CT'; }, 1000);
+</script>
+</body>
+</html>
