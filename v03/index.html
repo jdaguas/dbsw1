@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop · A quiet letter from the neighborhood</title>
+<style>
+  :root {
+    --paper: #f5eedf;
+    --paper-deep: #ece2cd;
+    --ink: #3b3226;
+    --ink-soft: #6f6353;
+    --ink-faint: #a3967f;
+    --rust: #9a5a3c;
+    --sage: #6d7b5c;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --hand: "Bradley Hand", "Segoe Print", "Noteworthy", "Comic Sans MS", cursive;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper-deep); }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.75;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,250,238,.9), transparent 60%),
+      radial-gradient(ellipse at 0% 100%, rgba(180,150,110,.18), transparent 50%),
+      radial-gradient(ellipse at 100% 60%, rgba(180,150,110,.12), transparent 45%),
+      repeating-linear-gradient(93deg, rgba(120,90,50,.018) 0 2px, transparent 2px 5px),
+      repeating-linear-gradient(2deg, rgba(120,90,50,.02) 0 1px, transparent 1px 4px),
+      var(--paper);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  ::selection { background: #e6d3a8; }
+
+  .gallery {
+    position: fixed; top: 22px; left: 26px;
+    font-family: var(--serif); font-style: italic; font-size: 15px;
+    color: var(--ink-soft); text-decoration: none;
+    border-bottom: 1px solid transparent; transition: border-color .4s, color .4s;
+    z-index: 5;
+  }
+  .gallery:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+  .letter {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 120px 24px 140px;
+  }
+
+  .date {
+    font-family: var(--hand);
+    color: var(--ink-soft);
+    font-size: 17px;
+    margin: 0 0 54px;
+    text-align: right;
+  }
+  .date span { display: block; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--ink-faint); }
+
+  h1 {
+    font-family: var(--hand);
+    font-weight: normal;
+    font-size: 40px;
+    line-height: 1.25;
+    margin: 0 0 30px;
+    letter-spacing: .2px;
+    color: #2f281e;
+  }
+  h1 em { font-style: normal; color: var(--rust); }
+
+  p { margin: 0 0 1.35em; }
+  .lede { color: var(--ink); }
+  .soft { color: var(--ink-soft); }
+
+  .stoop-mark {
+    display: block; margin: 64px auto 60px; width: 64px; height: 34px; opacity: .55;
+  }
+
+  /* gentle search line */
+  .search {
+    margin: 46px 0 14px;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+  .search label { display: block; margin-bottom: 4px; }
+  .search .line {
+    display: flex; align-items: baseline; gap: 10px;
+    border-bottom: 1px solid var(--ink-faint);
+    padding-bottom: 4px;
+    transition: border-color .6s;
+  }
+  .search .line:focus-within { border-color: var(--rust); }
+  .search input {
+    flex: 1; border: 0; background: transparent; outline: none;
+    font-family: var(--hand); font-size: 22px; color: var(--ink);
+    padding: 4px 0; min-width: 0;
+  }
+  .search input::placeholder { color: #bfb29a; }
+  .search .hint { font-size: 14px; color: var(--ink-faint); font-style: italic; margin-top: 8px; }
+
+  .wander { color: var(--ink-soft); }
+  .wander a {
+    text-decoration: none; color: var(--ink);
+    border-bottom: 1px dotted var(--ink-faint);
+    transition: color .4s, border-color .4s;
+    cursor: pointer;
+  }
+  .wander a:hover, .wander a.on { color: var(--rust); border-bottom: 1px solid var(--rust); }
+
+  /* sections & entries */
+  .section { margin-top: 64px; }
+  .section h2 {
+    font-weight: normal; font-variant: small-caps; letter-spacing: 2.5px;
+    font-size: 16px; color: var(--sage); margin: 0 0 22px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .section h2::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(109,123,92,.35), transparent); }
+
+  .entry { margin: 0 0 1.5em; transition: opacity .6s; }
+  .entry .what { font-weight: 600; color: #2f281e; }
+  .entry .price { font-style: italic; color: var(--rust); white-space: nowrap; }
+  .entry .where { font-variant: small-caps; letter-spacing: .8px; color: var(--ink-soft); font-size: 17px; white-space: nowrap; }
+  .entry .who { font-family: var(--hand); color: var(--ink-soft); font-size: 17px; white-space: nowrap; }
+  .entry .reply {
+    font-size: 15px; font-style: italic; color: var(--ink-faint); text-decoration: none;
+    border-bottom: 1px solid transparent; margin-left: 4px; transition: color .4s, border-color .4s;
+  }
+  .entry .reply:hover { color: var(--rust); border-color: var(--rust); }
+  .entry.hidden, .section.hidden { display: none; }
+  .nothing { display: none; font-style: italic; color: var(--ink-soft); margin-top: 50px; }
+  .nothing.show { display: block; }
+
+  .aside {
+    margin: 64px 0; padding-left: 22px;
+    border-left: 2px solid rgba(154,90,60,.25);
+    font-style: italic; color: var(--ink-soft); font-size: 18px;
+  }
+
+  /* leave a note */
+  .note-wrap { margin-top: 80px; text-align: center; }
+  .note-btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--hand); font-size: 22px; color: var(--ink);
+    background: rgba(255,251,240,.7);
+    border: 1px solid rgba(111,99,83,.35);
+    border-radius: 40px; padding: 12px 30px 12px 24px;
+    cursor: pointer; box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 6px 18px -10px rgba(80,60,30,.35);
+    transition: transform .5s, box-shadow .5s, background .5s;
+  }
+  .note-btn:hover { transform: translateY(-1px); background: #fffaf0; box-shadow: 0 10px 26px -12px rgba(80,60,30,.4); }
+  .note-btn svg { width: 26px; height: 20px; }
+  .note-sub { font-size: 15px; font-style: italic; color: var(--ink-faint); margin-top: 12px; }
+
+  .note-form {
+    text-align: left; max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-height 1s ease, opacity .9s ease, margin .9s ease;
+  }
+  .note-form.open { max-height: 760px; opacity: 1; margin-top: 40px; }
+  .card {
+    background: #fffbf2;
+    padding: 30px 32px 26px;
+    box-shadow: 0 1px 2px rgba(80,60,30,.12), 0 18px 40px -24px rgba(80,60,30,.45);
+    transform: rotate(-.6deg);
+    background-image: repeating-linear-gradient(transparent 0 33px, rgba(109,123,92,.18) 33px 34px);
+    background-position: 0 14px;
+  }
+  .card label { display: block; font-style: italic; font-size: 15px; color: var(--ink-soft); margin-top: 10px; }
+  .card input, .card textarea, .card select {
+    width: 100%; border: 0; background: transparent; outline: none;
+    font-family: var(--hand); font-size: 20px; color: var(--ink); padding: 2px 0;
+    border-bottom: 1px dashed rgba(111,99,83,.3);
+  }
+  .card textarea { resize: vertical; min-height: 96px; line-height: 34px; border-bottom: 0; }
+  .card select { appearance: none; -webkit-appearance: none; cursor: pointer; }
+  .card .row { display: flex; gap: 20px; }
+  .card .row > div { flex: 1; }
+  .card .send {
+    margin-top: 20px; font-family: var(--serif); font-style: italic; font-size: 17px;
+    background: none; border: 0; color: var(--rust); cursor: pointer; padding: 0;
+    border-bottom: 1px solid rgba(154,90,60,.4);
+  }
+  .thanks { display: none; font-family: var(--hand); font-size: 21px; color: var(--sage); margin-top: 18px; }
+  .thanks.show { display: block; }
+
+  .signoff { margin-top: 90px; }
+  .signoff .hand { font-family: var(--hand); font-size: 26px; color: #2f281e; display: block; margin-top: 6px; }
+  .ps { margin-top: 50px; font-size: 16px; color: var(--ink-soft); }
+  .ps b { font-weight: normal; font-family: var(--hand); color: var(--ink); }
+
+  footer {
+    margin-top: 100px; text-align: center; font-size: 13px; letter-spacing: 1.5px;
+    font-variant: small-caps; color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    body { font-size: 17.5px; }
+    .letter { padding: 84px 22px 100px; }
+    h1 { font-size: 32px; }
+    .date { margin-bottom: 36px; }
+    .card { padding: 24px 20px; }
+    .card .row { flex-direction: column; gap: 0; }
+    .gallery { position: absolute; top: 18px; left: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<a class="gallery" href="../">← Gallery</a>
+
+<main class="letter">
+
+  <p class="date">Sunday, the 5th of October<span>written on the front steps, coffee going cold</span></p>
+
+  <h1>Hi, neighbor.<br>Here's what's <em>around</em> this week.</h1>
+
+  <p class="lede">This is Stoop. It's just a board for the people who live near you: things to give away, things to sell for a fair price, rooms opening up, small jobs that need doing. No fees, no feed, nothing deciding what you ought to see. Everything here is in the order it was left, newest first.</p>
+
+  <p class="soft">If something catches your eye, write to the person directly. If you have something to pass along, there's room for your note at the bottom. Take your time.</p>
+
+  <div class="search">
+    <label for="q">Looking for something in particular?</label>
+    <div class="line">
+      <input id="q" type="search" placeholder="a bookshelf, a room, someone to walk Biscuit…" autocomplete="off">
+    </div>
+    <div class="hint" id="hint">Just start writing. The letter will quietly fold to fit.</div>
+  </div>
+
+  <p class="wander">Or wander by kind:
+    <a data-cat="all" class="on">everything</a>,
+    <a data-cat="free">free things</a>,
+    <a data-cat="sale">for sale</a>,
+    <a data-cat="housing">rooms &amp; apartments</a>,
+    <a data-cat="jobs">jobs &amp; gigs</a>,
+    <a data-cat="services">help offered</a>, and
+    <a data-cat="community">goings-on</a>.
+  </p>
+
+  <svg class="stoop-mark" viewBox="0 0 64 34" fill="none" stroke="#6f6353" stroke-width="1.2" stroke-linecap="round" aria-hidden="true">
+    <path d="M4 30h56M10 30v-6h44v6M16 24v-6h32v6M22 18v-6h20v6"/>
+    <path d="M30 12c0-3 4-3 4 0" />
+  </svg>
+
+  <section class="section" data-cat="free">
+    <h2>Free, for whoever needs it</h2>
+    <p class="entry">A <span class="what">box of mason jars</span>, maybe thirty of them, some with lids, sitting on the bench outside 412 Fern. <span class="price">Free.</span> My canning era is over. <span class="where">Logan Square</span> <span class="who">— Ruth</span> <a class="reply" href="#">write to Ruth</a></p>
+    <p class="entry">Our son outgrew his <span class="what">wooden balance bike</span>. One small scuff, otherwise loved gently. <span class="price">Free</span> to a family who'll use it before the snow. <span class="where">Ravenswood</span> <span class="who">— the Okafors</span> <a class="reply" href="#">write to them</a></p>
+    <p class="entry">A <span class="what">pothos cutting</span> in a yogurt cup, already rooted. I have eleven. Please, take one. <span class="price">Free.</span> <span class="where">Pilsen</span> <span class="who">— Marisol</span> <a class="reply" href="#">write to Marisol</a></p>
+  </section>
+
+  <section class="section" data-cat="sale">
+    <h2>For sale, at a fair price</h2>
+    <p class="entry">A <span class="what">solid oak bookshelf</span>, five shelves, six feet tall. Heavy enough that you'll want a friend. It held my grandmother's encyclopedias for forty years. <span class="price">$60.</span> <span class="where">Andersonville</span> <span class="who">— Theo</span> <a class="reply" href="#">write to Theo</a></p>
+    <p class="entry">A <span class="what">Schwinn three-speed</span>, mint green, new tubes and a basket that squeaks only on left turns. <span class="price">$145,</span> or a fair trade for a good stand mixer. <span class="where">Humboldt Park</span> <span class="who">— Dev</span> <a class="reply" href="#">write to Dev</a></p>
+    <p class="entry">An <span class="what">Olympia typewriter</span> that still clacks, with a fresh ribbon and the original case. It wrote at least one bad novel. <span class="price">$90.</span> <span class="where">Hyde Park</span> <span class="who">— June</span> <a class="reply" href="#">write to June</a></p>
+    <p class="entry">Two <span class="what">cast-iron skillets</span>, 8 and 12 inch, well seasoned. Moving somewhere with a tiny kitchen. <span class="price">$25 for both.</span> <span class="where">Bridgeport</span> <span class="who">— Sal</span> <a class="reply" href="#">write to Sal</a></p>
+  </section>
+
+  <p class="aside">A small thing: meet in daylight, somewhere with other people around. The library steps on Lincoln are good. So is the coffee place with the dog that sleeps in the window.</p>
+
+  <section class="section" data-cat="housing">
+    <h2>Rooms opening up</h2>
+    <p class="entry">A <span class="what">sunny room in a two-flat</span>, with a bay window and a radiator that sings in the morning. Shared with one quiet nurse and one loud cat. Available November 1st. <span class="price">$825 a month,</span> heat included. <span class="where">Ukrainian Village</span> <span class="who">— Priya</span> <a class="reply" href="#">write to Priya</a></p>
+    <p class="entry">A <span class="what">garden-level one-bedroom</span> with its own door and a little patch of tomatoes you're welcome to keep going. Laundry in the basement, quarters not required. <span class="price">$1,150.</span> <span class="where">Albany Park</span> <span class="who">— Mr. Kowalski, landlord, 2nd floor</span> <a class="reply" href="#">write to him</a></p>
+  </section>
+
+  <section class="section" data-cat="jobs">
+    <h2>Work, small and otherwise</h2>
+    <p class="entry">The <span class="what">bakery on Clark needs early hands</span>, 5 to 9 a.m., Thursday through Sunday. No experience needed, only punctuality and a tolerance for flour. <span class="price">$18 an hour, plus bread.</span> <span class="where">Edgewater</span> <span class="who">— Lina at Rise</span> <a class="reply" href="#">write to Lina</a></p>
+    <p class="entry">Looking for <span class="what">someone to walk Biscuit</span>, an elderly beagle who mostly wants to sniff one particular fence, weekday afternoons. <span class="price">$15 a walk.</span> <span class="where">Lincoln Square</span> <span class="who">— Harold</span> <a class="reply" href="#">write to Harold</a></p>
+  </section>
+
+  <section class="section" data-cat="services">
+    <h2>Help, offered</h2>
+    <p class="entry">Retired <span class="what">piano teacher</span> with an open Tuesday. Patient with beginners of any age, including the ones who say they're too old. <span class="price">$30 a lesson.</span> <span class="where">Rogers Park</span> <span class="who">— Mrs. Abernathy</span> <a class="reply" href="#">write to her</a></p>
+    <p class="entry">I'll <span class="what">hem your pants or fix a zipper</span> while you wait on my porch. Lemonade until it gets cold, then tea. <span class="price">$8 to $20.</span> <span class="where">Pilsen</span> <span class="who">— Rosa</span> <a class="reply" href="#">write to Rosa</a></p>
+  </section>
+
+  <section class="section" data-cat="community">
+    <h2>What's going on</h2>
+    <p class="entry">A <span class="what">block-wide stoop sale</span> on Saturday the 11th, 8 a.m. until we get bored. Bring a table, bring a neighbor. <span class="price">Free to join.</span> <span class="where">Wolcott, between Leland &amp; Wilson</span> <a class="reply" href="#">say you're in</a></p>
+    <p class="entry">Did anyone <span class="what">lose a grey knit hat</span> with a little felt fox on it? It's on the fence post by the Laundromat, waiting. <span class="where">Avondale</span> <span class="who">— a passerby</span></p>
+  </section>
+
+  <p class="nothing" id="nothing">Nothing like that this week, I'm afraid. Things come and go, so check back on Thursday, or leave a note saying what you're hoping to find. Someone might have it in their basement.</p>
+
+  <div class="note-wrap">
+    <button class="note-btn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteForm">
+      <svg viewBox="0 0 26 20" fill="none" stroke="#9a5a3c" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="1" width="24" height="18" rx="1.5"/><path d="M1.5 2l11.5 9 11.5-9"/></svg>
+      Leave a note on the stoop
+    </button>
+    <div class="note-sub">It takes about a minute. Nobody will charge you for it.</div>
+
+    <div class="note-form" id="noteForm">
+      <form class="card" id="card">
+        <label for="t">What are you leaving?</label>
+        <input id="t" required placeholder="a lamp, a room, an offer of help…">
+        <div class="row">
+          <div>
+            <label for="k">What kind of thing is it?</label>
+            <select id="k">
+              <option>Free, for whoever</option><option>For sale</option><option>A room</option>
+              <option>A job or gig</option><option>Help offered</option><option>Something going on</option>
+            </select>
+          </div>
+          <div>
+            <label for="n">Which part of town?</label>
+            <input id="n" placeholder="Logan Square">
+          </div>
+        </div>
+        <label for="d">Say a little about it, the way you'd tell a friend.</label>
+        <textarea id="d" placeholder="It wobbles a bit but holds a lot of books…"></textarea>
+        <label for="s">How should folks reach you? (only shown to people who write)</label>
+        <input id="s" placeholder="email or phone">
+        <button class="send" type="submit">Leave it on the stoop →</button>
+        <div class="thanks" id="thanks">Thank you. Your note is on the stoop now.</div>
+      </form>
+    </div>
+  </div>
+
+  <div class="signoff">
+    <p class="soft">That's all for now. Be good to each other, and if you borrow a ladder, bring it back.</p>
+    <p>Warmly,<span class="hand">your neighbors at Stoop</span></p>
+  </div>
+
+  <p class="ps"><b>P.S.</b> We'll never sell your name, and there's no feed here to keep you scrolling. When you've read to the bottom, you've read everything. Go outside.</p>
+
+  <footer>Stoop · one city, many front steps · no fees · no algorithm</footer>
+</main>
+
+<script>
+  (function () {
+    var q = document.getElementById('q');
+    var sections = [].slice.call(document.querySelectorAll('.section'));
+    var links = [].slice.call(document.querySelectorAll('.wander a'));
+    var nothing = document.getElementById('nothing');
+    var hint = document.getElementById('hint');
+    var cat = 'all';
+
+    function apply() {
+      var term = q.value.trim().toLowerCase();
+      var shown = 0;
+      sections.forEach(function (s) {
+        var inCat = cat === 'all' || s.dataset.cat === cat;
+        var any = 0;
+        s.querySelectorAll('.entry').forEach(function (e) {
+          var ok = inCat && (!term || e.textContent.toLowerCase().indexOf(term) !== -1);
+          e.classList.toggle('hidden', !ok);
+          if (ok) any++;
+        });
+        s.classList.toggle('hidden', !any);
+        shown += any;
+      });
+      nothing.classList.toggle('show', shown === 0);
+      hint.textContent = term
+        ? (shown ? shown + (shown === 1 ? ' note mentions' : ' notes mention') + ' “' + q.value.trim() + '”.' : 'Nothing yet.')
+        : 'Just start writing. The letter will quietly fold to fit.';
+    }
+
+    q.addEventListener('input', apply);
+    links.forEach(function (a) {
+      a.addEventListener('click', function () {
+        cat = a.dataset.cat;
+        links.forEach(function (l) { l.classList.toggle('on', l === a); });
+        apply();
+      });
+    });
+
+    var btn = document.getElementById('noteBtn');
+    var form = document.getElementById('noteForm');
+    btn.addEventListener('click', function () {
+      var open = form.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+      if (open) setTimeout(function () { document.getElementById('t').focus(); }, 500);
+    });
+    document.getElementById('card').addEventListener('submit', function (e) {
+      e.preventDefault();
+      document.getElementById('thanks').classList.add('show');
+    });
+    document.querySelectorAll('.reply').forEach(function (r) {
+      r.addEventListener('click', function (e) { e.preventDefault(); r.textContent = 'a note is on its way'; });
+    });
+  })();
+</script>
+</body>
+</html>
