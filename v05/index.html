@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STOOP BBS :: Node 2 :: 14400 baud</title>
+<style>
+  :root {
+    --fg: #39ff7a;
+    --dim: #1f9e4c;
+    --faint: #0f4d26;
+    --hi: #b6ffcf;
+    --bg: #020a04;
+    --glow: rgba(57, 255, 122, .55);
+  }
+  body.amber {
+    --fg: #ffb33a;
+    --dim: #b0731a;
+    --faint: #4f330b;
+    --hi: #ffe2a8;
+    --bg: #0a0602;
+    --glow: rgba(255, 179, 58, .5);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #000; }
+  body {
+    color: var(--fg);
+    font: 16px/1.35 ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", "Courier New", monospace;
+    text-shadow: 0 0 2px var(--glow), 0 0 9px var(--glow);
+    min-height: 100vh;
+    padding: 28px;
+  }
+  ::selection { background: var(--fg); color: var(--bg); text-shadow: none; }
+  a { color: inherit; }
+
+  /* ---- the tube ---- */
+  .crt {
+    position: relative;
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 30px 38px 22px;
+    background: radial-gradient(ellipse at center, color-mix(in srgb, var(--bg) 70%, var(--faint)) 0%, var(--bg) 62%, #000 100%);
+    border-radius: 28px / 22px;
+    box-shadow: inset 0 0 90px rgba(0,0,0,.95), inset 0 0 18px rgba(0,0,0,.9), 0 0 0 14px #141414, 0 0 0 16px #2a2a2a, 0 0 60px 18px rgba(0,0,0,.9);
+    overflow: hidden;
+    animation: flicker 6s infinite steps(1);
+  }
+  .crt::before { /* scanlines */
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+    background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.38) 3px, rgba(0,0,0,0) 4px);
+  }
+  .crt::after { /* rolling refresh band */
+    content: ""; position: absolute; left: 0; right: 0; height: 120px; top: -120px; pointer-events: none; z-index: 6;
+    background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--fg) 6%, transparent), transparent);
+    animation: roll 7s linear infinite;
+  }
+  @keyframes roll { to { top: 110%; } }
+  @keyframes flicker { 0%{opacity:1} 47%{opacity:.96} 48%{opacity:1} 81%{opacity:.98} 82%{opacity:1} }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  pre { margin: 0; font: inherit; white-space: pre; }
+  .dim { color: var(--dim); }
+  .hi { color: var(--hi); }
+  .inv { background: var(--fg); color: var(--bg); text-shadow: none; padding: 0 .4ch; }
+
+  /* ---- top line ---- */
+  .topline { display: flex; justify-content: space-between; gap: 2ch; flex-wrap: wrap; margin-bottom: 14px; }
+  .gallery { text-decoration: none; border: 1px solid var(--dim); padding: 1px 1ch; }
+  .gallery:hover, .gallery:focus { background: var(--fg); color: var(--bg); text-shadow: none; outline: none; }
+  .modem div { opacity: 0; }
+  .modem div.on { opacity: 1; }
+
+  .logo-wrap { display: flex; align-items: flex-end; gap: 4ch; margin: 10px 0 6px; flex-wrap: wrap; }
+  .logo { color: var(--hi); font-size: 15px; line-height: 1.05; }
+  .tag { padding-bottom: 6px; }
+  .tag b { font-weight: normal; color: var(--hi); }
+
+  /* ---- double-line frames ---- */
+  .frame { position: relative; border: 4px double var(--dim); padding: 16px 2ch 12px; margin-top: 18px; }
+  .frame > .ttl { position: absolute; top: -.8em; left: 2ch; background: var(--bg); padding: 0 1ch; color: var(--hi); }
+  .frame > .ttl.r { left: auto; right: 2ch; }
+
+  /* ---- menu ---- */
+  .menu { display: flex; flex-wrap: wrap; gap: 4px 3ch; list-style: none; margin: 0; padding: 0; }
+  .menu button {
+    all: unset; cursor: pointer; padding: 0 .6ch; white-space: nowrap;
+  }
+  .menu button .k { color: var(--hi); }
+  .menu button:hover, .menu button:focus-visible { background: var(--faint); }
+  .menu button.cur { background: var(--fg); color: var(--bg); text-shadow: none; }
+  .menu button.cur .k { color: var(--bg); }
+  .menu .post { margin-left: auto; }
+  .menu .post button { border: 1px dashed var(--fg); padding: 0 1ch; }
+
+  /* ---- main layout ---- */
+  .cols { display: grid; grid-template-columns: 1fr 300px; gap: 0 3ch; align-items: start; }
+  .screen { min-height: 420px; }
+  .screen h2 { font: inherit; margin: 0 0 4px; color: var(--hi); }
+  .rowhead, .row { display: grid; grid-template-columns: 6ch 7ch 1fr 10ch 17ch; gap: 0 1.5ch; padding: 1px .5ch; }
+  .rowhead { color: var(--dim); border-bottom: 1px dashed var(--faint); margin-bottom: 4px; }
+  .row { cursor: pointer; }
+  .row:hover, .row.sel { background: var(--faint); }
+  .row .t { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .row .p { text-align: right; color: var(--hi); }
+  .row .n { color: var(--dim); }
+  .detail { margin: 2px 0 8px 14.5ch; padding: 4px 1.5ch; border-left: 2px solid var(--dim); color: var(--hi); white-space: normal; }
+  .detail .dim { display: block; margin-top: 3px; }
+  .note { margin-top: 12px; color: var(--dim); }
+  .empty { padding: 20px 0; }
+
+  .side .frame { margin-top: 18px; }
+  .side ul { list-style: none; margin: 0; padding: 0; }
+  .side li { display: flex; justify-content: space-between; gap: 1ch; }
+  .stat { font-variant-numeric: tabular-nums; }
+
+  /* ---- post form ---- */
+  .form label { display: grid; grid-template-columns: 16ch 1fr; margin: 6px 0; align-items: baseline; }
+  .form input, .form select, .form textarea {
+    font: inherit; color: var(--hi); background: transparent; border: 0; border-bottom: 1px dashed var(--dim);
+    text-shadow: inherit; padding: 2px 4px; outline: none; caret-color: var(--fg); width: 100%;
+  }
+  .form select option { background: #000; }
+  .form textarea { resize: vertical; height: 4.2em; border: 1px dashed var(--dim); }
+  .form input:focus, .form textarea:focus, .form select:focus { background: var(--faint); }
+  .form .btns { margin-top: 12px; display: flex; gap: 3ch; }
+  .btn { all: unset; cursor: pointer; border: 1px solid var(--fg); padding: 1px 1.5ch; }
+  .btn:hover, .btn:focus-visible { background: var(--fg); color: var(--bg); text-shadow: none; }
+
+  /* ---- prompt ---- */
+  .prompt { display: flex; align-items: baseline; flex-wrap: wrap; margin-top: 18px; cursor: text; }
+  .prompt .ps { color: var(--hi); white-space: pre; }
+  .prompt input {
+    font: inherit; color: var(--hi); background: transparent; border: 0; outline: none; padding: 0;
+    text-shadow: inherit; caret-color: transparent; width: 1ch; min-width: 1ch; max-width: 70ch;
+  }
+  .cursor { display: inline-block; width: 1ch; height: 1.1em; background: var(--fg); box-shadow: 0 0 8px var(--glow); animation: blink 1s steps(1) infinite; transform: translateY(.18em); }
+  .hint { color: var(--dim); margin-top: 4px; }
+  .out { color: var(--hi); min-height: 1.35em; }
+
+  .status { margin-top: 18px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 2ch; background: var(--fg); color: var(--bg); text-shadow: none; padding: 1px 1ch; }
+
+  @media (max-width: 860px) {
+    body { padding: 8px; font-size: 14px; }
+    .crt { padding: 18px 14px; border-radius: 12px; }
+    .cols { grid-template-columns: 1fr; }
+    .logo { font-size: 9px; }
+    .rowhead { display: none; }
+    .row { grid-template-columns: 1fr auto; }
+    .row .id, .row .d { display: none; }
+    .row .n { grid-column: 1 / -1; }
+    .detail { margin-left: 0; }
+    .menu .post { margin-left: 0; }
+    .form label { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .crt, .crt::after, .cursor { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="crt" id="crt">
+
+  <div class="topline">
+    <a class="gallery" href="../">[ESC] ← Gallery</a>
+    <span class="dim">STOOP.EXE v2.3 ── (c) 1994 Neighbors of the Fourth Ward ── no fees, no algorithm</span>
+  </div>
+
+  <div class="modem" id="modem">
+    <div class="dim">ATZ</div>
+    <div class="dim">OK</div>
+    <div class="dim">ATDT 555-0142 &nbsp;<span class="dim">... ringing ... ringing ... *skreeee-kshhh*</span></div>
+    <div class="hi">CONNECT 14400/ARQ/V.32bis/LAPM</div>
+  </div>
+
+  <div class="logo-wrap">
+<pre class="logo" aria-label="STOOP">
+ ███████╗████████╗ ██████╗  ██████╗ ██████╗
+ ██╔════╝╚══██╔══╝██╔═══██╗██╔═══██╗██╔══██╗
+ ███████╗   ██║   ██║   ██║██║   ██║██████╔╝
+ ╚════██║   ██║   ██║   ██║██║   ██║██╔═══╝
+ ███████║   ██║   ╚██████╔╝╚██████╔╝██║
+ ╚══════╝   ╚═╝    ╚═════╝  ╚═════╝ ╚═╝    </pre>
+    <div class="tag">
+      <div><b>THE NEIGHBORHOOD BOARD</b> ░▒▓ <span class="dim">est. on a front step</span></div>
+      <div class="dim">Buy, sell, swap, give it away. Deal direct with the folks on your block.</div>
+      <div class="dim">No fees. No ads. No algorithm. Newest posts on top, that's it.</div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <span class="ttl">═[ MAIN MENU ]═</span>
+    <span class="ttl r dim">press a key</span>
+    <ul class="menu" id="menu"></ul>
+  </div>
+
+  <div class="cols">
+    <div class="frame screen">
+      <span class="ttl" id="scrTitle">═[ 1 · FOR SALE ]═</span>
+      <span class="ttl r dim" id="scrCount"></span>
+      <div id="screen"></div>
+    </div>
+
+    <aside class="side">
+      <div class="frame">
+        <span class="ttl">═[ SYSOP SEZ ]═</span>
+        <div>Welcome back, caller <span class="hi">#20,418</span>.</div>
+        <div class="dim" style="margin-top:6px">Meet in daylight. Bring a friend for big stuff. Cash or a handshake, never wire money. ─ Dot, SysOp</div>
+      </div>
+      <div class="frame">
+        <span class="ttl">═[ BOARD STATS ]═</span>
+        <ul class="stat">
+          <li><span>Messages today</span><span class="hi" id="statToday">137</span></li>
+          <li><span>Given away free</span><span class="hi">2,904</span></li>
+          <li><span>Fees charged</span><span class="hi">$0.00</span></li>
+          <li><span>Ads served</span><span class="hi">0</span></li>
+          <li><span>Hoods covered</span><span class="hi">9</span></li>
+        </ul>
+      </div>
+      <div class="frame">
+        <span class="ttl">═[ WHO'S ON ]═</span>
+        <ul>
+          <li><span>Node 1</span><span>RIVERRAT <span class="dim">browsing</span></span></li>
+          <li><span>Node 2</span><span class="hi">YOU</span></li>
+          <li><span>Node 3</span><span>MRS_OKAFOR <span class="dim">posting</span></span></li>
+          <li><span>Node 4</span><span class="dim">waiting for call</span></li>
+        </ul>
+      </div>
+      <div class="frame">
+        <span class="ttl">═[ HOODS ]═</span>
+        <div class="dim">Millbrook · Tanner's Row · Old Ferry · Larkspur Hill · Cinder Flats · Juniper Hts · Canal St · Eastgate · The Bottoms</div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="prompt" id="prompt">
+    <span class="ps">STOOP:\MAIN&gt; </span><input id="cmd" type="text" autocomplete="off" spellcheck="false" aria-label="Command or search"><span class="cursor"></span>
+  </div>
+  <div class="out" id="out"></div>
+  <div class="hint">Hotkeys work at an empty prompt: 1-7 switch boards · P post · A amber/green · ? help. Type anything else + ENTER to search all boards.</div>
+
+  <div class="status">
+    <span>F1=Help</span><span>14400 bps</span><span>Node 2 of 4</span><span id="timeLeft">Time left: 60:00</span><span>ANSI · 80x25</span>
+  </div>
+</div>
+
+<script>
+const CATS = [
+  { k: "1", id: "sale", name: "For Sale" },
+  { k: "2", id: "free", name: "Free" },
+  { k: "3", id: "housing", name: "Housing" },
+  { k: "4", id: "jobs", name: "Jobs" },
+  { k: "5", id: "gigs", name: "Gigs" },
+  { k: "6", id: "services", name: "Services" },
+  { k: "7", id: "community", name: "Community" },
+];
+const L = {
+  sale: [
+    ["10/05", "Schwinn Collegiate 3-spd, mint green, basket incl.", "$140", "Millbrook", "Rode it to the farmers market for 9 yrs. New tubes. Bell goes ding, not dong."],
+    ["10/05", "Cast iron skillet, 12in, seasoned by my grandmother", "$35", "Old Ferry", "Bacon-based seasoning since 1971. Do not put it in the dishwasher. I will know."],
+    ["10/04", "Mid-century credenza, one sticky drawer", "$220", "Larkspur Hill", "Walnut veneer. Sticky drawer holds 40 yrs of takeout menus, can include."],
+    ["10/04", "Box of 60 jazz LPs, mostly Blue Note", "$180", "Tanner's Row", "Some sleeves chewed by a cat named Thelonious. Records fine. Cat not included."],
+    ["10/03", "Window AC unit, 8000 BTU, works great", "$75", "Cinder Flats", "Summer's over and I'm moving to a place with central air. Living the dream."],
+    ["10/03", "Kids' wooden play kitchen + 14 felt eggs", "$45", "Juniper Hts", "My son has moved on to 'real cooking' (toast)."],
+    ["10/02", "Sewing machine, Singer 1950s, cast metal", "$90", "Eastgate", "Weighs as much as a small dog. Sews leather. Pickup only, obviously."],
+  ],
+  free: [
+    ["10/05", "Half a cord of firewood, you haul", "FREE", "The Bottoms", "Oak from the tree that fell on the garage. Tree: 1, garage: 0."],
+    ["10/05", "Sourdough starter named Gerald", "FREE", "Millbrook", "Gerald is 6 yrs old and very active. Bring a jar. He likes Tuesdays."],
+    ["10/04", "Moving boxes, ~30, flattened", "FREE", "Canal St", "Lightly used for one move. On the porch, take what you need."],
+    ["10/04", "Upright piano (yes really)", "FREE", "Larkspur Hill", "Plays, slightly out of tune. You need 4 friends and a truck. Ground floor."],
+    ["10/03", "Zucchini. So much zucchini.", "FREE", "Old Ferry", "Box on the curb at 3rd & Pell. Please. I am begging."],
+    ["10/02", "Toddler clothes, 2T-3T, two trash bags", "FREE", "Juniper Hts", "Clean, folded, sorted by season. Pass it on when you're done."],
+  ],
+  housing: [
+    ["10/05", "Room in 3BR flat, sunny, shared w/ 2 nurses", "$725/mo", "Tanner's Row", "Quiet house, odd hours. Clawfoot tub. Basil on the fire escape. Avail 11/1."],
+    ["10/04", "Garden-level 1BR, own entrance", "$1,150/mo", "Millbrook", "Low ceilings (6'4\"), great light, landlord lives upstairs and bakes."],
+    ["10/04", "Sublet Dec-Feb, studio, cat-sit required", "$800/mo", "Canal St", "Rent's cheap because you're feeding Marmalade twice a day. She's nice."],
+    ["10/03", "Parking spot in alley garage", "$90/mo", "Eastgate", "Fits a sedan. Not a truck. Ask the last guy."],
+    ["10/02", "2BR above the hardware store", "$1,400/mo", "Old Ferry", "Smells faintly of sawdust. Store owner = landlord = handy."],
+  ],
+  jobs: [
+    ["10/05", "Line cook, weekend brunch, Ferry Diner", "$19/hr", "Old Ferry", "Must flip eggs without breaking yolks. We will test you."],
+    ["10/04", "Bookshop clerk, part-time, 20 hrs", "$17/hr", "Larkspur Hill", "Must love books and tolerate the shop cat's opinions."],
+    ["10/04", "After-school pickup + homework help", "$22/hr", "Juniper Hts", "Two kids, 9 and 11, M-Th 3-6pm. Long division patience required."],
+    ["10/03", "Bike mechanic, apprentice ok", "$18/hr", "Cinder Flats", "We'll teach you. Bring your own grease-proof sense of humor."],
+  ],
+  gigs: [
+    ["10/05", "Help me move a couch up 3 floors", "$60", "Canal St", "Saturday 10am. 1 hour max. Pizza after. Couch is heavy but polite."],
+    ["10/04", "Fiddle player for backyard wedding", "$200", "Millbrook", "Oct 19, 2-4pm. Folk tunes. Dogs will be in attendance."],
+    ["10/03", "Rake leaves, corner lot", "$40", "Larkspur Hill", "Two big maples. Rakes and bags provided. Cider too."],
+    ["10/02", "Hand-letter a sign for our bakery", "$150", "Tanner's Row", "Window sign, gold leaf preferred. Paid partly in croissants if you like."],
+  ],
+  services: [
+    ["10/05", "Knife sharpening, I come to your stoop", "$5/knife", "All hoods", "Wednesdays. Look for the blue bike with the whetstone cart."],
+    ["10/04", "Retired electrician, small jobs", "$45/hr", "Eastgate", "Outlets, fixtures, ceiling fans. 41 yrs licensed. No job too dinky."],
+    ["10/03", "Piano lessons, all ages, my parlor", "$30/30min", "Old Ferry", "Patient, a little strict about posture. Cookies after."],
+    ["10/02", "Tailoring & hemming, fast turnaround", "$12+", "Cinder Flats", "Pants hemmed in 2 days. Wedding dresses by appointment."],
+  ],
+  community: [
+    ["10/05", "LOST: grey tabby 'Biscuit', white paws", "REWARD", "Tanner's Row", "Last seen near the laundromat on Ashby. Answers to the sound of a can opener."],
+    ["10/04", "Block party, Pell St, Sat 10/12", "--", "Old Ferry", "Bring a dish. We have a bounce house and Mr. Ruiz's grill."],
+    ["10/04", "Tool library open Sundays", "--", "The Bottoms", "Borrow a drill, ladder, or tile saw. Return it. That's the deal."],
+    ["10/03", "Seed swap + garden chat", "--", "Juniper Hts", "Community garden shed, 10/20, 1pm. Tomato people and pepper people welcome."],
+    ["10/02", "FOUND: house keys w/ tiny rubber duck", "--", "Canal St", "Duck is yellow. Keys are with me. Describe the other keychain."],
+  ],
+};
+let msgNo = 4121;
+const ALL = [];
+for (const c of CATS) L[c.id].forEach(r => ALL.push({ cat: c, id: msgNo--, d: r[0], t: r[1], p: r[2], n: r[3], x: r[4] }));
+msgNo = 4122;
+
+const $ = s => document.querySelector(s);
+const screen = $("#screen"), title = $("#scrTitle"), count = $("#scrCount"), out = $("#out");
+const cmd = $("#cmd");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// menu
+const menu = $("#menu");
+for (const c of CATS) menu.insertAdjacentHTML("beforeend", `<li><button data-k="${c.k}"><span class="k">[${c.k}]</span> ${c.name}</button></li>`);
+menu.insertAdjacentHTML("beforeend", `<li><button data-k="?"><span class="k">[?]</span> Help</button></li><li class="post"><button data-k="P"><span class="k">[P]</span> Post a message</button></li>`);
+menu.addEventListener("click", e => { const b = e.target.closest("button"); if (b) hotkey(b.dataset.k); });
+
+function setCur(k) { menu.querySelectorAll("button").forEach(b => b.classList.toggle("cur", b.dataset.k === k)); }
+
+function rows(list, showCat) {
+  if (!list.length) return `<div class="empty">NO MESSAGES FOUND. <span class="dim">Try fewer words, or be the first: press [P].</span></div>`;
+  return `<div class="rowhead"><span>MSG#</span><span>DATE</span><span>SUBJECT</span><span style="text-align:right">PRICE</span><span>HOOD</span></div>` +
+    list.map(r => `<div class="row" tabindex="0" data-id="${r.id}"><span class="id dim">${r.id}</span><span class="d dim">${r.d}</span><span class="t">${showCat ? `<span class="dim">${r.cat.name.toUpperCase()}:</span> ` : ""}${esc(r.t)}</span><span class="p">${esc(r.p)}</span><span class="n">${esc(r.n)}</span></div>`).join("");
+}
+function bindRows() {
+  screen.querySelectorAll(".row").forEach(el => {
+    const open = () => {
+      const was = el.classList.contains("sel");
+      screen.querySelectorAll(".row.sel").forEach(r => r.classList.remove("sel"));
+      screen.querySelectorAll(".detail").forEach(d => d.remove());
+      if (was) return;
+      const r = ALL.find(a => a.id == el.dataset.id);
+      el.classList.add("sel");
+      el.insertAdjacentHTML("afterend", `<div class="detail">${esc(r.x)}<span class="dim">── Reply by stoop-mail: ${r.n.toUpperCase().replace(/\W+/g, "")}#${r.id}  ·  posted ${r.d}</span></div>`);
+    };
+    el.addEventListener("click", open);
+    el.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); open(); } });
+  });
+}
+
+function showCat(k) {
+  const c = CATS.find(x => x.k === k);
+  const list = ALL.filter(a => a.cat === c);
+  setCur(k);
+  title.textContent = `═[ ${c.k} · ${c.name.toUpperCase()} ]═`;
+  count.textContent = `${list.length} msgs`;
+  screen.innerHTML = rows(list) + `<div class="note">Click a row (or TAB + ENTER) to read. Newest first. Nobody paid to be at the top.</div>`;
+  bindRows();
+  $(".ps").textContent = `STOOP:\\${c.name.toUpperCase().replace(" ", "")}> `;
+}
+
+function search(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const list = ALL.filter(a => words.every(w => (a.t + " " + a.n + " " + a.x + " " + a.cat.name + " " + a.p).toLowerCase().includes(w)));
+  setCur(null);
+  title.textContent = `═[ SEARCH: "${q.toUpperCase().slice(0, 24)}" ]═`;
+  count.textContent = `${list.length} hits`;
+  screen.innerHTML = rows(list, true);
+  bindRows();
+  out.textContent = `> Scanned ${ALL.length} messages on all boards. ${list.length} match.`;
+}
+
+function help() {
+  setCur("?");
+  title.textContent = "═[ ? · HELP ]═";
+  count.textContent = "";
+  screen.innerHTML = `<pre style="white-space:pre-wrap">
+<span class="hi">WHAT IS THIS?</span>
+  Stoop is a bulletin board for one city's neighborhoods. Post what you
+  have, find what you need, meet the person three doors down.
+
+<span class="hi">THE RULES (THERE ARE FOUR)</span>
+  1. It's free. Posting, browsing, replying. Always.
+  2. No algorithm. Newest posts on top. That's the whole ranking.
+  3. Deal direct. We don't take a cut or hold your money.
+  4. Be a good neighbor. Scammers get the boot from Dot.
+
+<span class="hi">KEYS</span>
+  [1]-[7]  Switch boards        [P]  Post a message
+  [A]      Amber / green tube   [?]  This screen
+  Anything else + ENTER  ......  Search every board
+</pre>`;
+}
+
+function post() {
+  setCur("P");
+  title.textContent = "═[ P · POST A MESSAGE ]═";
+  count.textContent = "takes ~45 sec";
+  screen.innerHTML = `<form class="form" id="pf">
+    <div class="dim">Fill in the blanks. No account, no fee. Message goes live on the board right away.</div>
+    <label><span>Board ....... :</span><select name="cat">${CATS.map(c => `<option value="${c.k}">[${c.k}] ${c.name}</option>`).join("")}</select></label>
+    <label><span>Subject ..... :</span><input name="t" maxlength="60" required placeholder="e.g. Oak bookshelf, 5 shelves"></label>
+    <label><span>Price ....... :</span><input name="p" maxlength="12" placeholder="$40, FREE, or best offer"></label>
+    <label><span>Hood ........ :</span><input name="n" maxlength="18" placeholder="Millbrook"></label>
+    <label><span>Message ..... :</span><textarea name="x" placeholder="The details. Quirks welcome."></textarea></label>
+    <div class="btns"><button class="btn" type="submit">[S] Send</button><button class="btn" type="button" id="abort">[Q] Abort</button></div>
+  </form>`;
+  const f = $("#pf");
+  f.t.focus({ preventScroll: true });
+  $("#abort").onclick = () => showCat("1");
+  f.onsubmit = e => {
+    e.preventDefault();
+    const c = CATS.find(x => x.k === f.cat.value);
+    const r = { cat: c, id: msgNo++, d: "10/05", t: f.t.value.trim(), p: f.p.value.trim() || "OBO", n: f.n.value.trim() || "Somewhere", x: f.x.value.trim() || "(no details)" };
+    ALL.unshift(r);
+    $("#statToday").textContent = +$("#statToday").textContent + 1;
+    showCat(c.k);
+    out.textContent = `> MESSAGE #${r.id} SAVED TO ${c.name.toUpperCase()}. Thanks, neighbor.`;
+    screen.querySelector(".row").click();
+  };
+}
+
+function hotkey(k) {
+  k = k.toUpperCase();
+  out.textContent = "";
+  if (CATS.some(c => c.k === k)) showCat(k);
+  else if (k === "P") post();
+  else if (k === "?") help();
+  else if (k === "A") { document.body.classList.toggle("amber"); out.textContent = "> Tube swapped."; }
+  else return false;
+  return true;
+}
+
+// prompt behavior
+const fit = () => { cmd.style.width = Math.max(1, cmd.value.length) + "ch"; };
+cmd.addEventListener("input", fit);
+cmd.addEventListener("keydown", e => {
+  if (!cmd.value && e.key.length === 1 && !e.metaKey && !e.ctrlKey && hotkey(e.key)) { e.preventDefault(); return; }
+  if (e.key === "Enter") {
+    const q = cmd.value.trim();
+    cmd.value = ""; fit();
+    if (!q) return;
+    if (q.length === 1 && hotkey(q)) return;
+    search(q);
+  }
+  if (e.key === "Escape") { cmd.value = ""; fit(); }
+});
+$("#prompt").addEventListener("click", () => cmd.focus({ preventScroll: true }));
+document.addEventListener("keydown", e => {
+  const t = e.target;
+  if (t === cmd || /INPUT|TEXTAREA|SELECT/.test(t.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key.length === 1 && hotkey(e.key)) { e.preventDefault(); return; }
+  if (e.key.length === 1 && e.key !== " ") cmd.focus({ preventScroll: true });
+});
+
+// modem handshake
+[...document.querySelectorAll("#modem div")].forEach((d, i) => setTimeout(() => d.classList.add("on"), 250 + i * 380));
+
+// time left on the line
+let secs = 3600;
+setInterval(() => { secs = Math.max(0, secs - 1); $("#timeLeft").textContent = `Time left: ${String(secs / 60 | 0).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`; }, 1000);
+
+showCat("1");
+</script>
+</body>
+</html>
