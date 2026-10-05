@@ -1,0 +1,25 @@
+# AGENTS.md: Assignment 1, Accelerated Prototyping
+
+## The idea
+**Stoop**: a reimagined craigslist. A local classifieds board with no fees and no algorithm, covering one city's neighborhoods (for sale, free stuff, housing, jobs, gigs, services, community).
+
+- **Who it's for:** people in a city who want to buy, sell, swap, or give things away nearby, or find a room or a gig, without the noise of big platforms. Covers both posters and browsers, at any level of tech comfort.
+- **What a visitor should understand:** this is a plain, trustworthy, local board where you deal directly with your neighbors.
+- **What a visitor should do:** browse a category or search, *or* post a listing in under a minute.
+
+## Assignment goals
+- 25 distinct landing pages (`/v01/` … `/v25/`) plus a gallery at `/index.html` that tells the story of the process and presents the final choice.
+- v01–v10: go wide (radically different layout, era, mood, tone; changing only colors or fonts doesn't count).
+- v11–v19: narrow down by combining what worked. v20–v25: converge and refine. v25 is the final.
+- At least 20 designs must look unlike anyone else's in the class. Avoid generic SaaS/landing-page templates.
+
+## Constraints
+- Plain HTML + CSS, optional vanilla JS. No frameworks, packages, build step, external APIs, or data storage. No CDN fonts or images: use system fonts, inline SVG, and CSS only.
+- Each version is self-contained in `vNN/index.html` and has a visible "← Gallery" link back to `/`.
+- Listings are fake but plausible (realistic prices, neighborhoods, quirky local details).
+- One commit per version so the history shows the iteration.
+- Deploy: GitHub repo + Vercel Hobby (static, no config needed).
+- Gallery notes for each version live in the `VERSIONS` array in `index.html`.
+
+## Process log (update as we go)
+- v01–v10: wide exploration round (see the gallery notes).

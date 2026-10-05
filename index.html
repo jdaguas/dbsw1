@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop: 25 iterations of a neighborhood classifieds board</title>
+<style>
+  :root {
+    --ink: #1b1a17;
+    --paper: #f4f1ea;
+    --muted: #77736a;
+    --line: #d9d3c7;
+    --accent: #c2410c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.5 ui-sans-serif, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 56px 28px 96px; }
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 28px; margin-bottom: 40px; }
+  .eyebrow { font: 600 12px/1 ui-monospace, Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  h1 { font: 700 clamp(40px, 6vw, 76px)/1 Georgia, "Times New Roman", serif; letter-spacing: -.02em; margin: 14px 0 18px; }
+  h1 em { color: var(--accent); font-style: italic; }
+  .lede { max-width: 720px; font-size: 18px; color: #3d3a34; margin: 0; }
+  .brief { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 28px; font-size: 14px; }
+  .brief b { display: block; font: 600 11px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+
+  section.phase { margin-top: 56px; }
+  .phase-head { display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 22px; }
+  .phase-head h2 { font: 700 28px/1.1 Georgia, serif; margin: 0; }
+  .phase-head span { font: 12px ui-monospace, Menlo, monospace; color: var(--muted); }
+  .phase p.story { max-width: 760px; color: #3d3a34; margin: -6px 0 24px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 28px 22px; }
+  .card { text-decoration: none; color: inherit; display: block; }
+  .thumb {
+    position: relative; aspect-ratio: 16 / 10; overflow: hidden;
+    background: #fff; border: 1px solid var(--ink); border-radius: 6px;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover .thumb { transform: translateY(-3px); box-shadow: 4px 4px 0 var(--ink); }
+  .thumb iframe {
+    position: absolute; top: 0; left: 0; border: 0;
+    width: 1280px; height: 800px;
+    transform-origin: 0 0; pointer-events: none;
+  }
+  .thumb.empty { display: grid; place-items: center; border-style: dashed; background: transparent; color: var(--muted); font: 12px ui-monospace, Menlo, monospace; }
+  .meta { display: flex; gap: 10px; align-items: baseline; margin-top: 10px; }
+  .num { font: 700 13px ui-monospace, Menlo, monospace; color: var(--accent); }
+  .title { font-weight: 650; font-size: 15px; }
+  .note { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+  .card.final .thumb { border-width: 3px; border-color: var(--accent); }
+
+  footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  @media (max-width: 720px) { .brief { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Design, Build, Ship · Assignment 1 · Accelerated Prototyping</div>
+    <h1>Stoop: <em>25 tries</em> at a better craigslist.</h1>
+    <p class="lede">The same idea, redesigned twenty-five times: a local classifieds board with no fees and no algorithm, where you deal directly with your neighbors. The first round goes as wide as possible. The later rounds narrow in on what actually serves the people using it.</p>
+    <div class="brief">
+      <div><b>Who it's for</b>City residents buying, selling, giving away, or looking for a room or a gig nearby.</div>
+      <div><b>Should understand</b>This is a plain, trustworthy, local board. No middleman.</div>
+      <div><b>Should do</b>Browse a category or search, or post a listing in under a minute.</div>
+    </div>
+  </header>
+
+  <main id="phases"></main>
+
+  <footer>Plain HTML &amp; CSS, no frameworks. Click any thumbnail to open that version. Every page links back here.</footer>
+</div>
+
+<script>
+  // One entry per version. Add notes here as each version is built.
+  const VERSIONS = [
+    { n: 1,  title: "Broadsheet Classifieds", note: "1950s newspaper classifieds page: dense columns, tiny type, display ads." },
+    { n: 2,  title: "Brutalist Manifesto", note: "Raw HTML, giant type, the board as a protest against platforms." },
+    { n: 3,  title: "A Quiet Letter", note: "Calm single column that reads like a note from a neighbor." },
+    { n: 4,  title: "Laundromat Corkboard", note: "Pinned index cards and flyers with tear-off phone tabs." },
+    { n: 5,  title: "Dial-up BBS", note: "1990s green-screen bulletin board system driven by keyboard menus." },
+    { n: 6,  title: "Neighborhood Map", note: "Map first: an illustrated street grid with listings as pins." },
+    { n: 7,  title: "Swiss Grid Poster", note: "International Typographic Style: strict grid, numbers as structure." },
+    { n: 8,  title: "Mail-Order Catalog", note: "1970s department-store catalog with item numbers and line drawings." },
+    { n: 9,  title: "Photocopied Zine", note: "Cut-and-paste punk zine: tape, ransom letters, xerox grain." },
+    { n: 10, title: "Local Trading Floor", note: "Stock-ticker dashboard showing live prices for neighborhood goods." },
+  ];
+  const PHASES = [
+    { from: 1,  to: 10, name: "Round 1: Go wide",  story: "Ten radically different directions across era, medium, and tone, to find out what a neighborhood board could feel like before deciding what it should be." },
+    { from: 11, to: 19, name: "Round 2: Narrow down", story: "Coming next: combining the directions that worked for real people." },
+    { from: 20, to: 25, name: "Round 3: Converge", story: "Coming next: refining toward the final version, v25." },
+  ];
+
+  const pad = n => String(n).padStart(2, "0");
+  const main = document.getElementById("phases");
+
+  for (const p of PHASES) {
+    const sec = document.createElement("section");
+    sec.className = "phase";
+    sec.innerHTML = `<div class="phase-head"><h2>${p.name}</h2><span>v${pad(p.from)}–v${pad(p.to)}</span></div><p class="story">${p.story}</p>`;
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    for (let n = p.from; n <= p.to; n++) {
+      const v = VERSIONS.find(x => x.n === n);
+      if (v) {
+        grid.insertAdjacentHTML("beforeend", `
+          <a class="card${n === 25 ? " final" : ""}" href="v${pad(n)}/">
+            <div class="thumb"><iframe src="v${pad(n)}/" loading="lazy" tabindex="-1" aria-hidden="true" title="v${pad(n)} preview"></iframe></div>
+            <div class="meta"><span class="num">v${pad(n)}</span><span class="title">${v.title}</span></div>
+            <p class="note">${v.note}</p>
+          </a>`);
+      } else {
+        grid.insertAdjacentHTML("beforeend", `
+          <div class="card"><div class="thumb empty">v${pad(n)} · not yet built</div></div>`);
+      }
+    }
+    sec.appendChild(grid);
+    main.appendChild(sec);
+  }
+
+  // Scale each 1280px-wide iframe down to its thumbnail width.
+  const fit = () => document.querySelectorAll(".thumb iframe").forEach(f => {
+    f.style.transform = `scale(${f.parentElement.clientWidth / 1280})`;
+  });
+  addEventListener("resize", fit);
+  fit();
+</script>
+</body>
+</html>
