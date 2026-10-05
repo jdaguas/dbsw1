@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STOOP #47: the free classifieds zine</title>
+<style>
+  :root {
+    --ink: #111;
+    --paper: #f1efe8;
+    --gray: #cfcdc6;
+    --tw: "American Typewriter", "Courier New", Courier, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { background: #2a2a2a; }
+  body {
+    margin: 0 auto;
+    max-width: 1280px;
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.5 var(--tw);
+    position: relative;
+    overflow-x: hidden;
+    filter: contrast(1.08) grayscale(1);
+  }
+  /* xerox grain + toner speckle overlay */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: .5;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.15'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  /* streaky copier edge shadow */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 49;
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.35), transparent 3%, transparent 97%, rgba(0,0,0,.4)),
+      repeating-linear-gradient(0deg, transparent 0 140px, rgba(0,0,0,.04) 140px 142px);
+  }
+  a { color: inherit; }
+
+  .gallery {
+    position: absolute; top: 18px; left: 22px; z-index: 20;
+    font: bold 15px var(--tw);
+    background: #fff; padding: 6px 14px; text-decoration: none;
+    border: 2px solid var(--ink);
+    transform: rotate(-4deg);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .gallery:hover { background: var(--ink); color: #fff; }
+
+  /* masking tape */
+  .tape {
+    position: absolute; width: 110px; height: 30px;
+    background: rgba(215,212,200,.82);
+    border-left: 2px dashed rgba(0,0,0,.12); border-right: 2px dashed rgba(0,0,0,.12);
+    box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    z-index: 5;
+  }
+  /* staple */
+  .staple {
+    position: absolute; width: 44px; height: 7px;
+    border: 2px solid #555; border-bottom: none;
+    background: linear-gradient(#ddd, #888);
+    border-radius: 2px 2px 0 0;
+    z-index: 6;
+  }
+
+  header { position: relative; padding: 70px 60px 30px; }
+  .issue {
+    position: absolute; top: 22px; right: 60px; text-align: right;
+    font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .issue b { display: block; font: 900 44px/1 Impact, "Arial Black", sans-serif; letter-spacing: 0; }
+  .ransom { margin: 20px 0 0; line-height: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .ransom span {
+    display: inline-block; padding: 4px 10px;
+    box-shadow: 2px 3px 0 rgba(0,0,0,.25);
+  }
+  .r1 { font: 900 150px Impact, sans-serif; background: var(--ink); color: #fff; transform: rotate(-6deg); }
+  .r2 { font: italic 120px Georgia, serif; background: #fff; border: 2px solid; transform: rotate(4deg) translateY(10px); }
+  .r3 { font: bold 135px "Courier New", monospace; background: var(--gray); transform: rotate(-2deg); text-decoration: underline wavy; }
+  .r4 { font: 900 110px "Arial Black", sans-serif; background: #fff; transform: rotate(7deg) translateY(-12px); border-radius: 50%; padding: 4px 22px !important; border: 4px double var(--ink); }
+  .r5 { font: 140px "Times New Roman", serif; background: var(--ink); color: var(--paper); transform: rotate(-3deg) translateY(8px); }
+  .r6 { font: bold 60px Verdana, sans-serif; background: #fff; transform: rotate(12deg); align-self: flex-start; border: 2px dashed; }
+  .sub {
+    display: flex; gap: 40px; align-items: flex-start; margin-top: 30px;
+  }
+  .manifesto {
+    background: #fff; padding: 18px 22px; max-width: 520px;
+    transform: rotate(-1.2deg); border: 1px solid #999; position: relative;
+    font-size: 17px;
+  }
+  .manifesto strong { background: var(--ink); color: #fff; padding: 0 4px; }
+  .manifesto s { opacity: .7; }
+  .stamp {
+    font: 900 26px/1.05 Impact, sans-serif; text-transform: uppercase;
+    border: 5px solid var(--ink); padding: 10px 16px; transform: rotate(8deg);
+    text-align: center; letter-spacing: 1px; margin-top: 10px;
+  }
+  .scribble { position: absolute; pointer-events: none; }
+
+  /* search */
+  .search {
+    margin: 30px 60px 10px; position: relative;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .search label { font: 900 34px Impact, sans-serif; text-transform: uppercase; transform: rotate(-2deg); background: var(--ink); color:#fff; padding: 2px 12px; }
+  .search input {
+    flex: 1; min-width: 220px; font: 22px var(--tw); padding: 8px 4px;
+    background: transparent; border: none; border-bottom: 3px solid var(--ink);
+    outline: none; color: var(--ink);
+  }
+  .search input:focus { background: rgba(255,255,255,.6); }
+  .search button {
+    font: bold 18px var(--tw); background: #fff; border: 3px solid var(--ink);
+    padding: 8px 18px; cursor: pointer; transform: rotate(2deg); box-shadow: 4px 4px 0 var(--ink);
+  }
+  .search button:active { transform: translate(3px,3px) rotate(2deg); box-shadow: 1px 1px 0 var(--ink); }
+
+  /* categories */
+  .cats { margin: 26px 60px 10px; display: flex; flex-wrap: wrap; gap: 14px; }
+  .cats button {
+    font: bold 15px var(--tw); text-transform: uppercase; cursor: pointer;
+    border: 2px solid var(--ink); padding: 7px 14px; background: #fff; color: var(--ink);
+  }
+  .cats button:nth-child(odd) { transform: rotate(-2.5deg); }
+  .cats button:nth-child(3n) { transform: rotate(3deg); font-family: Georgia, serif; font-style: italic; }
+  .cats button:nth-child(4n) { font-family: Impact, sans-serif; font-weight: normal; letter-spacing: 1px; }
+  .cats button.on, .cats button:hover { background: var(--ink); color: #fff; }
+  .cats .count { font-size: 11px; vertical-align: super; }
+
+  /* listings */
+  .board-head { margin: 40px 60px 0; display: flex; align-items: baseline; gap: 20px; }
+  .board-head h2 { font: 900 56px/1 Impact, sans-serif; margin: 0; text-transform: uppercase; letter-spacing: -1px; }
+  .board-head p { margin: 0; font-size: 14px; }
+  .board {
+    margin: 30px 50px 40px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 46px 34px; align-items: start;
+  }
+  .clip {
+    position: relative; background: #fff; padding: 20px 18px 16px;
+    box-shadow: 3px 4px 0 rgba(0,0,0,.18);
+    clip-path: polygon(0 2%, 4% 0, 30% 1.5%, 58% 0, 100% 1%, 99% 30%, 100% 62%, 98.5% 100%, 70% 98.5%, 40% 100%, 2% 99%, 0 70%, 1% 35%);
+  }
+  .clip:nth-child(3n+1) { transform: rotate(-2deg); }
+  .clip:nth-child(3n+2) { transform: rotate(1.6deg); margin-top: 18px; }
+  .clip:nth-child(5n) { transform: rotate(-3.5deg); background: var(--gray); }
+  .clip:nth-child(4n+3) { transform: rotate(2.6deg); }
+  .clip:hover { transform: rotate(0) scale(1.03); z-index: 10; }
+  .clip.dark { background: var(--ink); color: #fff; }
+  .clip .cat { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px dashed; display: inline-block; }
+  .clip h3 { margin: 6px 0 6px; font: 900 25px/1.05 Impact, "Arial Black", sans-serif; text-transform: uppercase; }
+  .clip:nth-child(even) h3 { font: bold italic 25px/1.1 Georgia, serif; text-transform: none; }
+  .clip p { margin: 0 0 10px; font-size: 14px; }
+  .clip .meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+  .price {
+    font: 900 22px Impact, sans-serif; background: var(--ink); color: #fff; padding: 0 8px;
+    transform: rotate(-4deg); display: inline-block;
+  }
+  .dark .price { background: #fff; color: var(--ink); }
+  .free { border-radius: 50%; padding: 6px 10px; }
+  .clip .tape { top: -14px; left: 50%; margin-left: -55px; transform: rotate(-5deg); }
+  .clip:nth-child(even) .tape { left: auto; right: -30px; top: 6px; transform: rotate(38deg); width: 90px; }
+  .hidden { display: none; }
+  .none { margin: 0 60px; font-size: 20px; display: none; }
+
+  /* send us your stuff */
+  .send {
+    margin: 30px 60px 50px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 50px; align-items: start;
+  }
+  .send-title {
+    font: 900 92px/.9 Impact, sans-serif; text-transform: uppercase; margin: 0;
+    letter-spacing: -2px; position: relative;
+  }
+  .send-title em { font: italic 92px/.9 Georgia, serif; background: var(--ink); color: #fff; padding: 0 10px; letter-spacing: 0; }
+  .send-steps { font-size: 16px; padding-left: 0; list-style: none; counter-reset: s; }
+  .send-steps li { counter-increment: s; margin: 10px 0; }
+  .send-steps li::before { content: counter(s) "."; font: 900 28px Impact, sans-serif; margin-right: 10px; }
+  form.mailin {
+    background: #fff; padding: 28px 26px 22px; position: relative; transform: rotate(1.5deg);
+    border: 2px solid var(--ink); box-shadow: 8px 8px 0 var(--ink);
+    background-image: repeating-linear-gradient(transparent 0 31px, #bbb 31px 32px);
+  }
+  form.mailin label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-top: 12px; }
+  form.mailin input, form.mailin select, form.mailin textarea {
+    width: 100%; font: 17px var(--tw); border: none; border-bottom: 2px solid var(--ink);
+    background: transparent; padding: 4px 2px; color: var(--ink); outline: none; border-radius: 0;
+  }
+  form.mailin textarea { resize: vertical; min-height: 60px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .big-btn {
+    margin-top: 20px; width: 100%; cursor: pointer;
+    font: 900 34px Impact, sans-serif; text-transform: uppercase; letter-spacing: 1px;
+    background: var(--ink); color: #fff; border: none; padding: 12px; transform: rotate(-1deg);
+  }
+  .big-btn:hover { background: #fff; color: var(--ink); outline: 4px solid var(--ink); }
+  .sent { display: none; font: bold 18px var(--tw); margin-top: 14px; border: 3px dashed var(--ink); padding: 10px; }
+
+  footer {
+    border-top: 6px solid var(--ink); margin: 0 40px; padding: 24px 20px 60px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; font-size: 13px;
+  }
+  footer .copy { max-width: 520px; }
+
+  @media (max-width: 760px) {
+    header { padding: 70px 18px 20px; }
+    .issue { position: static; text-align: left; margin-bottom: 10px; }
+    .r1, .r3, .r5 { font-size: 72px; } .r2 { font-size: 60px; } .r4 { font-size: 54px; } .r6 { font-size: 32px; }
+    .sub { flex-direction: column; gap: 20px; }
+    .search, .cats, .board-head, .send, .none { margin-left: 18px; margin-right: 18px; }
+    .board { margin: 30px 18px; }
+    .board-head { flex-direction: column; } .board-head h2 { font-size: 40px; }
+    .send { grid-template-columns: 1fr; }
+    .send-title, .send-title em { font-size: 56px; }
+    .scribble { display: none; }
+    footer { margin: 0 10px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="gallery" href="../">&larr; Gallery</a>
+
+<header>
+  <div class="issue">issue <b>#47</b>fall 2026 &middot; free, always &middot; take one</div>
+
+  <h1 class="ransom" aria-label="STOOP!">
+    <span class="r1">S</span><span class="r2">t</span><span class="r3">O</span><span class="r4">o</span><span class="r5">P</span><span class="r6">!</span>
+  </h1>
+
+  <svg class="scribble" style="left:830px;top:120px" width="330" height="190" viewBox="0 0 330 190" aria-hidden="true">
+    <path d="M10 150 C 60 170, 140 180, 200 120 S 270 40, 300 30" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/>
+    <path d="M276 22 L302 28 L292 54" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="20" y="130" font-family="Comic Sans MS, Marker Felt, cursive" font-size="22" transform="rotate(-8 20 130)">no fees. no algorithm.</text>
+    <text x="70" y="160" font-family="Comic Sans MS, Marker Felt, cursive" font-size="18" transform="rotate(-6 70 160)">just yr neighbors</text>
+  </svg>
+
+  <div class="sub">
+    <div class="manifesto">
+      <div class="staple" style="top:-3px;left:-10px;transform:rotate(-40deg)"></div>
+      The <strong>free classifieds</strong> for the whole city, photocopied at the library and left on your stoop. Buy, sell, swap, give it away, find a room, find a gig. <s>No fees.</s> <s>No feed.</s> <s>No "promoted."</s> No middleman. You call the number. You meet on the corner. That's it.
+    </div>
+    <div class="stamp">100% neighbor<br>0% algorithm</div>
+    <svg width="160" height="110" viewBox="0 0 160 110" aria-hidden="true" style="margin-top:6px">
+      <path d="M20 60 q 20 -50 50 -10 t 50 0 q 15 20 -10 30 q -30 10 -60 -5" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+      <path d="M8 98 l 30 -6 m 10 4 l 40 -8 m 10 6 l 50 -10" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+  </div>
+</header>
+
+<section class="search" aria-label="Search listings">
+  <label for="q">Looking for</label>
+  <input id="q" type="search" placeholder="a bike, a room, someone to fix my sink..." autocomplete="off">
+  <button type="button" id="go">FIND IT &rarr;</button>
+  <svg class="scribble" style="right:-10px;top:-46px" width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+    <path d="M10 10 C 40 0, 70 50, 105 40" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 0"/>
+    <path d="M92 30 L106 41 L90 50" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+</section>
+
+<nav class="cats" aria-label="Categories">
+  <button class="on" data-cat="all">Everything</button>
+  <button data-cat="for sale">For Sale</button>
+  <button data-cat="free">Free Stuff</button>
+  <button data-cat="housing">Housing</button>
+  <button data-cat="jobs">Jobs</button>
+  <button data-cat="gigs">Gigs</button>
+  <button data-cat="services">Services</button>
+  <button data-cat="community">Community</button>
+</nav>
+
+<div class="board-head">
+  <h2>Clippings this week</h2>
+  <p>cut out, taped up, called in. <b id="shown">12</b> posted &middot; newest first-ish</p>
+</div>
+
+<main class="board" id="board">
+  <article class="clip" data-cat="for sale">
+    <div class="tape"></div>
+    <span class="cat">for sale &middot; Logan Square</span>
+    <h3>Green velvet couch</h3>
+    <p>Seats 3 or 1 very tired person. Cat-approved (no cat included). Must carry down 2 flights, I'll hold the door.</p>
+    <div class="meta"><span class="price">$120</span><span>(773) 555-0142</span></div>
+  </article>
+
+  <article class="clip dark" data-cat="free">
+    <div class="tape"></div>
+    <span class="cat">free &middot; Pilsen</span>
+    <h3>Box of 200 records</h3>
+    <p>Mostly polka and one Sabbath. On the stoop of 18th &amp; Loomis till Sunday. Take the whole box, please.</p>
+    <div class="meta"><span class="price free">FREE</span><span>just show up</span></div>
+  </article>
+
+  <article class="clip" data-cat="housing">
+    <div class="tape"></div>
+    <span class="cat">housing &middot; Ukrainian Village</span>
+    <h3>Room in a 3BR, Nov 1</h3>
+    <p>Sunny back room, radiator heat that works TOO well. Housemates: a nurse, a drummer (quiet hours 10pm), a fern named Gary.</p>
+    <div class="meta"><span class="price">$780/mo</span><span>txt Dana</span></div>
+  </article>
+
+  <article class="clip" data-cat="for sale">
+    <div class="tape"></div>
+    <span class="cat">for sale &middot; Bridgeport</span>
+    <h3>Schwinn 3-speed, '79</h3>
+    <p>Rust is "patina." New tubes, original bell. Rode it to every Sox home game in 2024.</p>
+    <div class="meta"><span class="price">$95</span><span>obo / trades</span></div>
+  </article>
+
+  <article class="clip" data-cat="gigs">
+    <div class="tape"></div>
+    <span class="cat">gigs &middot; Avondale</span>
+    <h3>Need 2 arms Saturday</h3>
+    <p>Moving a piano from a basement. Pizza, beer, and $60 cash each. Bring gloves and a sense of humor.</p>
+    <div class="meta"><span class="price">$60</span><span>(312) 555-0187</span></div>
+  </article>
+
+  <article class="clip" data-cat="services">
+    <div class="tape"></div>
+    <span class="cat">services &middot; Rogers Park</span>
+    <h3>I fix lamps.</h3>
+    <p>Retired electrician. Bring me your grandma's lamp, I'll rewire it while you wait. Coffee's on.</p>
+    <div class="meta"><span class="price">$15+</span><span>Sat 9-1, Glenwood Ave</span></div>
+  </article>
+
+  <article class="clip dark" data-cat="community">
+    <div class="tape"></div>
+    <span class="cat">community &middot; Hyde Park</span>
+    <h3>Lost: orange cat, "Toast"</h3>
+    <p>Answers to the sound of a can opener. Last seen near 55th St. Very friendly, slightly stupid. Reward: my eternal thanks + $50.</p>
+    <div class="meta"><span class="price">$50</span><span>call anytime</span></div>
+  </article>
+
+  <article class="clip" data-cat="jobs">
+    <div class="tape"></div>
+    <span class="cat">jobs &middot; Andersonville</span>
+    <h3>Bakery opener, 5am</h3>
+    <p>Part-time, 4 days. You must like mornings or at least lie about it. Free day-olds forever.</p>
+    <div class="meta"><span class="price">$19/hr</span><span>apply in person</span></div>
+  </article>
+
+  <article class="clip" data-cat="free">
+    <div class="tape"></div>
+    <span class="cat">free &middot; Albany Park</span>
+    <h3>Sourdough starter</h3>
+    <p>Her name is Doris. She is 11 years old. She needs a new home before she takes over my fridge.</p>
+    <div class="meta"><span class="price free">FREE</span><span>bring a jar</span></div>
+  </article>
+
+  <article class="clip" data-cat="for sale">
+    <div class="tape"></div>
+    <span class="cat">for sale &middot; Wicker Park</span>
+    <h3>Smith-Corona typewriter</h3>
+    <p>The one this zine was typed on. The "e" sticks. Comes with case and half a ribbon.</p>
+    <div class="meta"><span class="price">$65</span><span>ask for Lou</span></div>
+  </article>
+
+  <article class="clip" data-cat="housing">
+    <div class="tape"></div>
+    <span class="cat">housing &middot; Humboldt Park</span>
+    <h3>Garden-level studio</h3>
+    <p>Low ceilings, big windows, landlord lives upstairs and makes tamales at Christmas. Heat incl.</p>
+    <div class="meta"><span class="price">$950/mo</span><span>Dec 1</span></div>
+  </article>
+
+  <article class="clip" data-cat="community">
+    <div class="tape"></div>
+    <span class="cat">community &middot; Logan Square</span>
+    <h3>Tool library is open</h3>
+    <p>Borrow a drill, a ladder, a tile saw. Thursdays 6-8 in the church basement on Kedzie. Return it clean.</p>
+    <div class="meta"><span class="price free">FREE</span><span>bring ID</span></div>
+  </article>
+</main>
+<p class="none" id="none">Nothing cut out for that yet. Try another word, or <a href="#send">send us yours</a>.</p>
+
+<section class="send" id="send">
+  <div style="position:relative">
+    <h2 class="send-title">Send us<br>your <em>stuff.</em></h2>
+    <svg class="scribble" style="right:0;top:150px" width="200" height="120" viewBox="0 0 200 120" aria-hidden="true">
+      <path d="M10 20 C 60 10, 120 30, 140 70 S 160 110, 190 100" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/>
+      <path d="M170 86 L192 100 L172 114" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <ol class="send-steps">
+      <li>Write what it is, where it is, what it costs.</li>
+      <li>Leave a way to reach you. A number, an email, a corner.</li>
+      <li>We paste it in. It's up in under a minute. Free. Forever.</li>
+    </ol>
+    <p style="font-size:14px;max-width:420px">No accounts. No boosting. No "featured." Every clipping gets the same size and the same tape. Posts come down after 30 days, or when you tell us it's gone.</p>
+  </div>
+
+  <form class="mailin" id="mailin">
+    <div class="tape" style="top:-16px;left:-30px;transform:rotate(-30deg)"></div>
+    <div class="tape" style="top:-12px;right:-26px;transform:rotate(25deg)"></div>
+    <label for="t">What is it?</label>
+    <input id="t" required placeholder="e.g. Toaster, works, slightly haunted">
+    <div class="row2">
+      <div>
+        <label for="c">Section</label>
+        <select id="c">
+          <option>For Sale</option><option>Free Stuff</option><option>Housing</option>
+          <option>Jobs</option><option>Gigs</option><option>Services</option><option>Community</option>
+        </select>
+      </div>
+      <div>
+        <label for="p">Price</label>
+        <input id="p" placeholder="$ or FREE">
+      </div>
+    </div>
+    <div class="row2">
+      <div><label for="n">Neighborhood</label><input id="n" placeholder="Pilsen"></div>
+      <div><label for="r">Reach me at</label><input id="r" placeholder="phone / email"></div>
+    </div>
+    <label for="d">The details (be weird, it helps)</label>
+    <textarea id="d" placeholder="Why you're selling it, what's wrong with it, what it's seen..."></textarea>
+    <button class="big-btn" type="submit">Send us your stuff &rarr;</button>
+    <div class="sent" id="sent">GOT IT. Your clipping is taped up on the board. (This is a demo, so nothing was actually sent.)</div>
+  </form>
+</section>
+
+<footer>
+  <div class="copy"><b>STOOP</b> is made by neighbors, for neighbors. Photocopied, stapled, and passed around. Deal directly. Meet in daylight. Be cool to each other.</div>
+  <div>no fees &middot; no ads &middot; no algorithm &middot; no kidding</div>
+  <div>xeroxed w/ love &middot; issue #47</div>
+</footer>
+
+<script>
+  const clips = [...document.querySelectorAll('.clip')];
+  const q = document.getElementById('q');
+  let cat = 'all';
+  function filter() {
+    const term = q.value.trim().toLowerCase();
+    let n = 0;
+    clips.forEach(c => {
+      const ok = (cat === 'all' || c.dataset.cat === cat) && (!term || c.textContent.toLowerCase().includes(term));
+      c.classList.toggle('hidden', !ok);
+      if (ok) n++;
+    });
+    document.getElementById('shown').textContent = n;
+    document.getElementById('none').style.display = n ? 'none' : 'block';
+  }
+  document.querySelectorAll('.cats button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.cats button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); cat = b.dataset.cat; filter();
+  }));
+  q.addEventListener('input', filter);
+  document.getElementById('go').addEventListener('click', filter);
+  document.getElementById('mailin').addEventListener('submit', e => {
+    e.preventDefault(); document.getElementById('sent').style.display = 'block';
+  });
+</script>
+</body>
+</html>
