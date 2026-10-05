@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop: Chicago Classifieds. No fees. No algorithm.</title>
+<style>
+  :root {
+    --red: #e3001b;
+    --black: #111;
+    --white: #fff;
+    --grey: #8a8a8a;
+    --line: rgba(227, 0, 27, .14);
+    --gap: 20px;
+    --pad: 40px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--black);
+    background: var(--white);
+    font-size: 15px;
+    line-height: 1.35;
+    text-align: left;
+  }
+  a { color: inherit; }
+  .page { position: relative; max-width: 1280px; margin: 0 auto; padding: 0 var(--pad); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gap);
+    position: relative;
+  }
+  /* visible modular grid */
+  .overlay {
+    position: absolute; inset: 0 var(--pad); pointer-events: none; z-index: 0;
+  }
+  .overlay span { border-left: 1px solid var(--line); border-right: 1px solid var(--line); height: 100%; }
+  body.nogrid .overlay { display: none; }
+  section, header, footer { position: relative; z-index: 1; }
+
+  /* header row */
+  .top { padding: 20px 0 18px; border-bottom: 2px solid var(--black); align-items: baseline; font-size: 13px; }
+  .back { grid-column: 1 / span 2; font-weight: 700; text-decoration: none; }
+  .back:hover { color: var(--red); }
+  .brand { grid-column: 3 / span 3; font-weight: 700; font-size: 13px; letter-spacing: .02em; }
+  .meta { grid-column: 6 / span 4; color: var(--grey); }
+  .toggle { grid-column: 10 / span 3; justify-self: start; background: none; border: 0; font: inherit; font-weight: 700; cursor: pointer; padding: 0; }
+  .toggle i { display: inline-block; width: 10px; height: 10px; background: var(--red); margin-right: 8px; font-style: normal; }
+
+  /* hero */
+  .hero { padding: 0 0 40px; min-height: 620px; }
+  .zero {
+    grid-column: 1 / span 7; grid-row: 1 / span 3;
+    font-size: 640px; font-weight: 700; line-height: .78; letter-spacing: -.07em;
+    color: var(--red); margin-top: 26px; margin-left: -.06em;
+    user-select: none;
+  }
+  .hero-kicker { grid-column: 8 / span 5; grid-row: 1; padding-top: 34px; font-size: 13px; font-weight: 700; text-transform: none; }
+  .hero-kicker b { color: var(--red); }
+  .hero h1 {
+    grid-column: 8 / span 5; grid-row: 2;
+    font-size: 64px; line-height: .95; letter-spacing: -.035em; font-weight: 700;
+    margin-top: 18px;
+  }
+  .hero-body { grid-column: 8 / span 5; grid-row: 3; align-self: end; }
+  .hero-body p { font-size: 19px; line-height: 1.3; max-width: 30em; margin-bottom: 28px; }
+  .search { display: grid; grid-template-columns: 1fr auto; border-top: 2px solid var(--black); border-bottom: 2px solid var(--black); }
+  .search label { position: absolute; left: -9999px; }
+  .search input {
+    border: 0; font: inherit; font-size: 22px; font-weight: 700; padding: 16px 0; outline: none; background: transparent; min-width: 0;
+  }
+  .search input::placeholder { color: #bbb; }
+  .search button { border: 0; background: var(--black); color: var(--white); font: inherit; font-weight: 700; padding: 0 22px; cursor: pointer; }
+  .search button:hover { background: var(--red); }
+  .post-cta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 14px; padding: 18px 20px; background: var(--red); color: var(--white);
+    font-weight: 700; font-size: 22px; text-decoration: none; letter-spacing: -.01em;
+  }
+  .post-cta span { font-size: 30px; line-height: 1; }
+  .post-cta:hover { background: var(--black); }
+
+  /* section labels */
+  .label-row { border-top: 2px solid var(--black); padding-top: 10px; }
+  .sec-no { grid-column: 1 / span 1; font-weight: 700; font-size: 13px; }
+  .sec-title { grid-column: 2 / span 4; font-weight: 700; font-size: 13px; }
+  .sec-note { grid-column: 8 / span 5; font-size: 13px; color: var(--grey); }
+
+  /* categories */
+  .cats { padding: 0 0 80px; row-gap: 0; }
+  .cat {
+    grid-column: span 3; padding: 26px 0 22px; border-bottom: 1px solid var(--black);
+    text-decoration: none; display: block; cursor: pointer; background: none; border-left: 0; border-right: 0; border-top: 0; font: inherit; text-align: left; color: inherit;
+  }
+  .cat .n { display: block; font-size: 112px; font-weight: 700; line-height: .82; letter-spacing: -.055em; }
+  .cat .t { display: block; font-size: 22px; font-weight: 700; margin-top: 12px; letter-spacing: -.01em; }
+  .cat .d { display: block; font-size: 13px; color: var(--grey); margin-top: 4px; }
+  .cat:hover .n, .cat.on .n { color: var(--red); }
+  .cat.on .t::after { content: " \2014  showing"; color: var(--red); font-size: 13px; }
+  .cats .lead { grid-column: 1 / span 6; padding-top: 30px; }
+  .cats .lead .n { font-size: 236px; color: var(--red); }
+
+  /* listings table */
+  .listings { padding-bottom: 90px; }
+  .tbl { grid-column: 1 / -1; margin-top: 30px; }
+  .row {
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gap);
+    padding: 11px 0 10px; border-bottom: 1px solid #cfcfcf; align-items: baseline;
+  }
+  .row.head { border-bottom: 2px solid var(--black); font-size: 11px; font-weight: 700; padding-bottom: 8px; }
+  .row .no { grid-column: 1; font-variant-numeric: tabular-nums; color: var(--grey); font-size: 13px; }
+  .row .ti { grid-column: 2 / span 5; font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
+  .row .ti small { display: block; font-weight: 400; font-size: 13px; color: #555; margin-top: 2px; letter-spacing: 0; }
+  .row .ca { grid-column: 7 / span 2; font-size: 13px; }
+  .row .nb { grid-column: 9 / span 2; font-size: 13px; }
+  .row .ag { grid-column: 11; font-size: 13px; color: var(--grey); font-variant-numeric: tabular-nums; }
+  .row .pr { grid-column: 12; font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
+  .row .pr.free { color: var(--red); }
+  .row:not(.head):hover { background: #f4f4f4; }
+  .row:not(.head):hover .ti { color: var(--red); }
+  .empty { display: none; padding: 30px 0; font-size: 22px; font-weight: 700; }
+  .tbl-foot { grid-column: 1 / -1; padding-top: 14px; font-size: 13px; display: flex; gap: 40px; }
+  .tbl-foot b { color: var(--red); }
+
+  /* post */
+  .post { background: var(--black); color: var(--white); margin: 0 calc(var(--pad) * -1); padding: 0 var(--pad) 70px; }
+  .post .label-row { border-top-color: var(--red); border-top-width: 8px; padding-top: 14px; }
+  .post .sec-note { color: #9a9a9a; }
+  .post h2 { grid-column: 1 / span 7; font-size: 96px; line-height: .9; letter-spacing: -.045em; margin-top: 50px; }
+  .post h2 em { font-style: normal; color: var(--red); }
+  .post-side { grid-column: 9 / span 4; margin-top: 60px; font-size: 17px; }
+  .steps { grid-column: 1 / -1; margin-top: 60px; }
+  .step { grid-column: span 3; border-top: 1px solid #555; padding-top: 14px; }
+  .step .sn { font-size: 120px; font-weight: 700; line-height: .8; letter-spacing: -.06em; color: var(--red); }
+  .step h3 { font-size: 20px; margin-top: 16px; }
+  .step p { font-size: 14px; color: #bdbdbd; margin-top: 6px; max-width: 22em; }
+  .post .post-cta { grid-column: 1 / span 6; margin-top: 50px; }
+  .post .post-cta:hover { background: var(--white); color: var(--black); }
+
+  /* principles + footer */
+  .rules { padding: 0 0 70px; }
+  .rule { grid-column: span 4; margin-top: 34px; }
+  .rule .rn { font-size: 13px; font-weight: 700; color: var(--red); }
+  .rule h4 { font-size: 28px; letter-spacing: -.025em; line-height: 1; margin-top: 8px; }
+  .rule p { margin-top: 10px; font-size: 14px; max-width: 24em; }
+  .foot { border-top: 2px solid var(--black); padding: 14px 0 40px; font-size: 12px; }
+  .foot div:nth-child(1) { grid-column: 1 / span 3; font-weight: 700; }
+  .foot div:nth-child(2) { grid-column: 4 / span 5; color: var(--grey); }
+  .foot div:nth-child(3) { grid-column: 10 / span 3; }
+
+  /* mobile */
+  @media (max-width: 860px) {
+    :root { --pad: 18px; --gap: 12px; }
+    .grid, .row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .overlay span:nth-child(n+5) { display: none; }
+    .back { grid-column: 1 / span 2; }
+    .brand { grid-column: 3 / span 2; }
+    .meta, .toggle { display: none; }
+    .hero { min-height: 0; }
+    .zero { grid-column: 1 / -1; grid-row: auto; font-size: 62vw; margin-top: 10px; }
+    .hero-kicker, .hero h1, .hero-body { grid-column: 1 / -1; grid-row: auto; padding-top: 0; }
+    .hero h1 { font-size: 40px; }
+    .hero-body { margin-top: 20px; }
+    .sec-no { grid-column: 1; }
+    .sec-title { grid-column: 2 / span 3; }
+    .sec-note { grid-column: 1 / -1; margin-top: 6px; }
+    .cat { grid-column: span 2; }
+    .cat .n { font-size: 64px; }
+    .cats .lead { grid-column: 1 / -1; }
+    .cats .lead .n { font-size: 130px; }
+    .row .no, .row .ag { display: none; }
+    .row .ti { grid-column: 1 / span 3; }
+    .row .pr { grid-column: 4; grid-row: 1; }
+    .row .ca { grid-column: 1 / span 2; }
+    .row .nb { grid-column: 3 / span 2; }
+    .post h2 { grid-column: 1 / -1; font-size: 52px; }
+    .post-side, .post .post-cta { grid-column: 1 / -1; }
+    .step { grid-column: span 2; margin-bottom: 20px; }
+    .step .sn { font-size: 72px; }
+    .rule { grid-column: 1 / -1; }
+    .foot div:nth-child(n) { grid-column: 1 / -1; margin-bottom: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="overlay grid" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <header class="top grid">
+    <a class="back" href="../">&larr; Gallery</a>
+    <div class="brand">Stoop / Chicago</div>
+    <div class="meta">Classifieds for 77 neighborhoods &middot; Edition 41 &middot; Mon 5 Oct</div>
+    <button class="toggle" id="toggle" type="button"><i></i>Grid: on</button>
+  </header>
+
+  <section class="hero grid">
+    <div class="zero" aria-hidden="true">0</div>
+    <div class="hero-kicker"><b>Stoop.</b> A local classifieds board.</div>
+    <h1>0 fees.<br>0 algorithm.<br>0 strangers in another city.</h1>
+    <div class="hero-body">
+      <p>Buy, sell, swap or give away with the people on your block. Listings appear in the order they were posted. Nothing is boosted, nothing is sponsored, nothing is ranked.</p>
+      <form class="search" id="search" onsubmit="return false">
+        <label for="q">Search listings</label>
+        <input id="q" type="search" placeholder="Search: bike, sublet, ladder" autocomplete="off">
+        <button type="submit">Search</button>
+      </form>
+      <a class="post-cta" href="#post">Post a listing in under a minute <span>&rarr;</span></a>
+    </div>
+  </section>
+
+  <section class="cats grid" id="cats">
+    <div class="label-row grid" style="grid-column:1/-1">
+      <div class="sec-no">01</div>
+      <div class="sec-title">Categories</div>
+      <div class="sec-note">Live counts, this week. Select one to filter the table below.</div>
+    </div>
+    <button class="cat lead" data-cat="all" type="button"><span class="n">1,284</span><span class="t">Listings this week</span><span class="d">Across every category. Show all.</span></button>
+    <div style="grid-column: 7 / span 6; align-self: end; padding-bottom: 24px; font-size: 19px; max-width: 26em;">Seven categories. No subcategories, no filters within filters. A board you can read top to bottom on a Sunday morning.</div>
+    <button class="cat" data-cat="For Sale" type="button"><span class="n">214</span><span class="t">For Sale</span><span class="d">Furniture, bikes, records, tools</span></button>
+    <button class="cat" data-cat="Free" type="button"><span class="n">96</span><span class="t">Free</span><span class="d">Curb alerts and give-aways</span></button>
+    <button class="cat" data-cat="Housing" type="button"><span class="n">178</span><span class="t">Housing</span><span class="d">Rooms, sublets, 2-flats</span></button>
+    <button class="cat" data-cat="Jobs" type="button"><span class="n">63</span><span class="t">Jobs</span><span class="d">Local shops, part-time, seasonal</span></button>
+    <button class="cat" data-cat="Gigs" type="button"><span class="n">121</span><span class="t">Gigs</span><span class="d">One-off help, by the hour</span></button>
+    <button class="cat" data-cat="Services" type="button"><span class="n">88</span><span class="t">Services</span><span class="d">Tutors, tailors, handypeople</span></button>
+    <button class="cat" data-cat="Community" type="button"><span class="n">524</span><span class="t">Community</span><span class="d">Lost cats, block parties, swaps</span></button>
+    <div class="cat" style="cursor:default"><span class="n" style="color:var(--red)">$0</span><span class="t">To post anything</span><span class="d">Forever. That is the whole model.</span></div>
+  </section>
+
+  <section class="listings grid" id="listings">
+    <div class="label-row grid" style="grid-column:1/-1">
+      <div class="sec-no">02</div>
+      <div class="sec-title">Latest listings</div>
+      <div class="sec-note">Sorted by time posted. Newest first. That is the only sort.</div>
+    </div>
+    <div class="tbl" id="tbl">
+      <div class="row head"><div class="no">No.</div><div class="ti">Item</div><div class="ca">Category</div><div class="nb">Neighborhood</div><div class="ag">Posted</div><div class="pr">Price</div></div>
+    </div>
+    <div class="empty" id="empty">Nothing matches. Try a shorter word, or post it yourself.</div>
+    <div class="tbl-foot"><span>Showing <b id="count">0</b> of 1,284</span><span>Reply directly to the poster. Stoop never handles money.</span></div>
+  </section>
+
+  <section class="post" id="post">
+    <div class="grid">
+      <div class="label-row grid" style="grid-column:1/-1">
+        <div class="sec-no">03</div>
+        <div class="sec-title">Post a listing</div>
+        <div class="sec-note">No account required for Free and Community posts.</div>
+      </div>
+      <h2>Three fields.<br>One minute.<br><em>Zero dollars.</em></h2>
+      <div class="post-side">Write what it is, what it costs, and where it is. Your listing goes to the top of the board the moment you post it, and slides down as your neighbors post theirs. That is it.</div>
+      <div class="steps grid">
+        <div class="step"><div class="sn">1</div><h3>What is it</h3><p>"Oak dresser, 4 drawers, one sticks." Plain words beat adjectives.</p></div>
+        <div class="step"><div class="sn">2</div><h3>Price</h3><p>A number, or Free. Make an offer is allowed but frowned upon.</p></div>
+        <div class="step"><div class="sn">3</div><h3>Where</h3><p>Pick your neighborhood. We never show your exact address.</p></div>
+        <div class="step"><div class="sn">&rarr;</div><h3>Post</h3><p>Replies arrive by relay email. Mark it gone when it's gone.</p></div>
+      </div>
+      <a class="post-cta" href="#post">Post a listing now <span>&rarr;</span></a>
+    </div>
+  </section>
+
+  <section class="rules grid">
+    <div class="label-row grid" style="grid-column:1/-1;margin-top:60px">
+      <div class="sec-no">04</div>
+      <div class="sec-title">House rules</div>
+      <div class="sec-note">Printed here so nobody has to look for them.</div>
+    </div>
+    <div class="rule"><div class="rn">4.1</div><h4>Chronological, always.</h4><p>No feed, no ranking, no "recommended for you". The newest thing is on top. Everybody gets the same board.</p></div>
+    <div class="rule"><div class="rn">4.2</div><h4>Local only.</h4><p>Listings are tied to one of Chicago's 77 community areas. If you can't walk, bike, or take the Blue Line to it, it's not here.</p></div>
+    <div class="rule"><div class="rn">4.3</div><h4>Direct dealing.</h4><p>You talk to your neighbor. Meet on the stoop, in daylight, with cash or a handshake. Stoop takes nothing.</p></div>
+  </section>
+
+  <footer class="foot grid">
+    <div>Stoop &copy; 2026</div>
+    <div>A community board for Chicago. Funded by donations. No ads, no tracking.</div>
+    <div><a href="../">&larr; Back to the Gallery</a></div>
+  </footer>
+</div>
+
+<script>
+  var L = [
+    ["Walnut mid-century credenza, one veneer chip on the left door", "For Sale", "Hyde Park", 340, "6 min", "Came out of my grandma's apartment on 55th. Needs two people and patience on the stairs."],
+    ["Moving boxes, about 40, flattened", "Free", "Logan Square", 0, "11 min", "Some say KITCHEN in sharpie. Stacked by the gangway, take as many as you want."],
+    ["Room in 3BR 2-flat, $825/mo, Nov 1", "Housing", "Pilsen", 825, "18 min", "Two artists and a very calm dog. Radiator heat, back porch, 6 min to the 18th St Pink Line."],
+    ["Trek FX 2 hybrid, 54cm, new tires", "For Sale", "Andersonville", 260, "24 min", "Tuned in August. Comes with a Kryptonite lock but not the key, sorry."],
+    ["Help moving a piano down one flight", "Gigs", "Bridgeport", 120, "31 min", "Upright, roughly 400 lb. Need 3 strong people Saturday 10am. Pizza after."],
+    ["Barista, part-time, early mornings", "Jobs", "Ukrainian Village", 19, "47 min", "Corner cafe on Chicago Ave. $19/hr plus tips. Must be okay with regulars who talk a lot."],
+    ["Lost: grey tabby, answers to \"Pierogi\"", "Community", "Avondale", null, "1 hr", "Last seen near Kedzie and Belmont. Very food motivated. Rattle a bag of treats."],
+    ["Hemming and alterations, same week", "Services", "Albany Park", 15, "1 hr", "From $15. 22 years on Lawrence Ave. Bring it pinned, I'll do the rest."],
+    ["Air conditioner, 8,000 BTU, works", "For Sale", "Rogers Park", 75, "2 hr", "Window unit. Loud, but it got us through July. Brackets included."],
+    ["Snow shoveling, whole winter, 2 walks", "Gigs", "Lincoln Square", 300, "2 hr", "Looking for one reliable person for the season. Corner lot, plus the neighbor's walk."],
+    ["Tomato cages and 6 bags of potting soil", "Free", "Bronzeville", 0, "3 hr", "Garden is done for the year. On the front steps, first come."],
+    ["Block party: Wolcott between Cortland and Wabansia", "Community", "Bucktown", null, "3 hr", "Sat Oct 17. Bring a chair and a dish. Street closed noon to 8."],
+    ["Studio sublet, Dec to May, furnished", "Housing", "Wicker Park", 1150, "4 hr", "Going abroad. Includes a very good couch and a mediocre plant. Laundry in building."],
+    ["Algebra and SAT math tutor", "Services", "Hyde Park", 40, "5 hr", "Grad student at the university. $40/hr, at the Harper library or your kitchen table."],
+    ["Record collection, 120 LPs, mostly soul and house", "For Sale", "South Shore", 480, "6 hr", "Selling as a lot only. Frankie Knuckles in there. Come listen first."]
+  ];
+  var tbl = document.getElementById('tbl'), q = document.getElementById('q'), cur = 'all';
+  function price(p, c) {
+    if (p === 0) return '<div class="pr free">Free</div>';
+    if (p === null) return '<div class="pr">&ndash;</div>';
+    if (c === 'Jobs') return '<div class="pr">$' + p + '/h</div>';
+    return '<div class="pr">$' + p.toLocaleString() + '</div>';
+  }
+  L.forEach(function (l, i) {
+    var r = document.createElement('div');
+    r.className = 'row';
+    r.dataset.cat = l[1];
+    r.dataset.text = (l.join(' ')).toLowerCase();
+    r.innerHTML = '<div class="no">' + String(4821 - i).padStart(5, '0') + '</div>' +
+      '<div class="ti">' + l[0] + '<small>' + l[5] + '</small></div>' +
+      '<div class="ca">' + l[1] + '</div><div class="nb">' + l[2] + '</div>' +
+      '<div class="ag">' + l[4] + '</div>' + price(l[3], l[1]);
+    tbl.appendChild(r);
+  });
+  function apply() {
+    var t = q.value.trim().toLowerCase(), n = 0;
+    tbl.querySelectorAll('.row:not(.head)').forEach(function (r) {
+      var ok = (cur === 'all' || r.dataset.cat === cur) && (!t || r.dataset.text.indexOf(t) > -1);
+      r.style.display = ok ? '' : 'none';
+      if (ok) n++;
+    });
+    document.getElementById('count').textContent = n;
+    document.getElementById('empty').style.display = n ? 'none' : 'block';
+  }
+  q.addEventListener('input', apply);
+  document.getElementById('search').addEventListener('submit', function () {
+    apply(); document.getElementById('listings').scrollIntoView({ behavior: 'smooth' });
+  });
+  document.querySelectorAll('.cat[data-cat]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      cur = b.dataset.cat;
+      document.querySelectorAll('.cat').forEach(function (x) { x.classList.toggle('on', x === b && cur !== 'all'); });
+      apply();
+      document.getElementById('listings').scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+  var tg = document.getElementById('toggle');
+  tg.addEventListener('click', function () {
+    var off = document.body.classList.toggle('nogrid');
+    tg.lastChild.textContent = off ? 'Grid: off' : 'Grid: on';
+  });
+  apply();
+</script>
+</body>
+</html>
