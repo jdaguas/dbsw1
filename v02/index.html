@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STOOP. NO FEES. NO ALGORITHM.</title>
+<style>
+  :root { --k: #000; --w: #fff; --hot: #ff2d00; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--w); color: var(--k); }
+  body { font-family: "Times New Roman", Times, serif; font-size: 18px; }
+  a { color: var(--k); }
+  ::selection { background: var(--hot); color: var(--w); }
+
+  .bar { display: flex; border-bottom: 4px solid var(--k); font: bold 16px "Courier New", Courier, monospace; }
+  .bar > * { padding: 10px 14px; border-right: 4px solid var(--k); }
+  .bar .gallery { background: var(--k); color: var(--w); text-decoration: none; text-transform: uppercase; }
+  .bar .gallery:hover { background: var(--hot); color: var(--k); }
+  .bar .grow { flex: 1; }
+  .bar span:last-child { border-right: 0; }
+
+  .hero { border-bottom: 4px solid var(--k); padding: 0 14px; position: relative; overflow: hidden; }
+  .hero h1 {
+    font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; font-weight: 900;
+    font-size: clamp(110px, 25.5vw, 330px); line-height: .78; letter-spacing: -.06em; margin: 22px 0 0 -10px; text-transform: uppercase;
+  }
+  .hero .sub { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; padding: 12px 0 16px; }
+  .hero .sub p { margin: 0; font-size: 34px; line-height: 1; max-width: 760px; }
+  .hero .stamp {
+    font: bold 22px "Courier New", monospace; border: 6px solid var(--hot); color: var(--hot); padding: 8px 14px;
+    transform: rotate(-6deg); text-transform: uppercase; white-space: nowrap; text-align: center; line-height: 1.1;
+  }
+
+  .tape { background: var(--hot); border-bottom: 4px solid var(--k); overflow: hidden; white-space: nowrap; font: 900 26px Arial, sans-serif; padding: 6px 0; }
+  .tape div { display: inline-block; animation: run 28s linear infinite; }
+  @keyframes run { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .tape div { animation: none; } }
+
+  ol.manifesto { list-style: none; margin: 0; padding: 0; counter-reset: m; }
+  ol.manifesto li {
+    counter-increment: m; display: grid; grid-template-columns: 170px 1fr; border-bottom: 4px solid var(--k);
+    font-family: Arial, Helvetica, sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(30px, 5.4vw, 72px); line-height: .92; letter-spacing: -.02em;
+  }
+  ol.manifesto li::before {
+    content: counter(m) "."; font: 400 clamp(40px, 7vw, 96px) "Courier New", monospace; border-right: 4px solid var(--k);
+    padding: 12px 10px; text-align: right;
+  }
+  ol.manifesto li span { padding: 14px 16px 16px; }
+  ol.manifesto li:nth-child(3) { background: var(--k); color: var(--w); }
+  ol.manifesto li:nth-child(3)::before { border-color: var(--w); color: var(--hot); }
+  ol.manifesto li small { display: block; font: italic 400 20px "Times New Roman", serif; text-transform: none; letter-spacing: 0; margin-top: 8px; line-height: 1.2; }
+  .hot { color: var(--hot); }
+  s { text-decoration-thickness: 6px; text-decoration-color: var(--hot); }
+
+  h2.sect {
+    margin: 0; border-bottom: 4px solid var(--k); padding: 10px 14px; font: 400 18px "Courier New", monospace; text-transform: uppercase;
+    display: flex; justify-content: space-between;
+  }
+  .find { display: flex; border-bottom: 4px solid var(--k); }
+  .find label { font: 900 44px Arial, sans-serif; padding: 12px 16px; border-right: 4px solid var(--k); white-space: nowrap; }
+  .find input { flex: 1; min-width: 0; border: 0; font: 44px "Times New Roman", serif; padding: 10px 16px; outline: none; background: var(--w); }
+  .find input:focus { background: #ffff00; }
+  .find button { border: 0; border-left: 4px solid var(--k); background: var(--k); color: var(--w); font: 900 28px Arial, sans-serif; padding: 0 26px; cursor: pointer; }
+  .find button:hover { background: var(--hot); color: var(--k); }
+
+  .cats { display: grid; grid-template-columns: repeat(8, 1fr); border-bottom: 4px solid var(--k); }
+  .cats button {
+    background: var(--w); border: 0; border-right: 4px solid var(--k); padding: 14px 10px 12px; cursor: pointer; text-align: left;
+    font: 900 21px Arial, sans-serif; text-transform: uppercase; color: var(--k);
+  }
+  .cats button:last-child { border-right: 0; }
+  .cats button b { display: block; font: 400 14px "Courier New", monospace; margin-top: 6px; }
+  .cats button:hover { background: #ffff00; }
+  .cats button[aria-pressed="true"] { background: var(--k); color: var(--w); }
+
+  .tablewrap { overflow-x: auto; border-bottom: 4px solid var(--k); }
+  table { border-collapse: collapse; width: 100%; font: 16px "Courier New", Courier, monospace; }
+  th, td { border: 2px solid var(--k); padding: 7px 9px; vertical-align: top; text-align: left; }
+  tr > :first-child { border-left: 0; } tr > :last-child { border-right: 0; }
+  thead th { background: var(--k); color: var(--w); text-transform: uppercase; font-weight: bold; position: sticky; top: 0; }
+  td.what { font-family: "Times New Roman", serif; font-size: 20px; }
+  td.what i { display: block; font-size: 15px; margin-top: 2px; }
+  td.price { font-weight: bold; white-space: nowrap; text-align: right; }
+  td.price.free { color: var(--hot); }
+  td.cat { text-transform: uppercase; white-space: nowrap; }
+  tbody tr:hover { background: #ffff00; }
+  tbody tr:hover td a { text-decoration: none; }
+  .empty td { font: 900 30px Arial, sans-serif; text-align: center; padding: 30px; }
+  .note { padding: 10px 14px; font: 16px "Courier New", monospace; border-bottom: 4px solid var(--k); display: flex; justify-content: space-between; gap: 12px; }
+
+  .post { background: var(--hot); border-bottom: 4px solid var(--k); display: grid; grid-template-columns: 1.15fr 1fr; }
+  .post .call { padding: 18px 16px; border-right: 4px solid var(--k); }
+  .post h2 { font: 900 clamp(56px, 9vw, 122px) "Arial Black", Arial, sans-serif; margin: 0; line-height: .82; letter-spacing: -.05em; text-transform: uppercase; }
+  .post .call p { font-size: 28px; line-height: 1.1; margin: 18px 0 0; }
+  .post form { padding: 18px 16px; background: var(--w); font: 16px "Courier New", monospace; }
+  .post form label { display: block; text-transform: uppercase; font-weight: bold; margin: 0 0 4px; }
+  .post form .f { margin-bottom: 12px; }
+  .post input, .post select, .post textarea { width: 100%; font: 20px "Times New Roman", serif; border: 3px solid var(--k); padding: 7px 8px; border-radius: 0; background: var(--w); }
+  .post input:focus, .post select:focus, .post textarea:focus { outline: 4px solid var(--hot); outline-offset: 0; }
+  .post textarea { height: 86px; resize: vertical; }
+  .post .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .post form button { width: 100%; background: var(--k); color: var(--w); border: 0; font: 900 34px Arial, sans-serif; padding: 14px; text-transform: uppercase; cursor: pointer; }
+  .post form button:hover { background: var(--hot); color: var(--k); outline: 3px solid var(--k); }
+  #done { display: none; font: 900 26px Arial, sans-serif; text-transform: uppercase; margin-top: 10px; }
+
+  .never { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 4px solid var(--k); }
+  .never div { padding: 14px; border-right: 4px solid var(--k); font: 900 24px Arial, sans-serif; text-transform: uppercase; line-height: 1; }
+  .never div:last-child { border-right: 0; }
+  .never div b { display: block; font: 400 15px "Courier New", monospace; margin-bottom: 8px; color: var(--hot); }
+  footer { display: flex; justify-content: space-between; padding: 12px 14px 40px; font: 16px "Courier New", monospace; }
+
+  @media (max-width: 900px) {
+    .cats { grid-template-columns: repeat(4, 1fr); }
+    .cats button:nth-child(4) { border-right: 0; }
+    .cats button:nth-child(-n+4) { border-bottom: 4px solid var(--k); }
+    .post, .never { grid-template-columns: 1fr; }
+    .post .call, .never div { border-right: 0; border-bottom: 4px solid var(--k); }
+    ol.manifesto li { grid-template-columns: 84px 1fr; }
+    .hero .sub { flex-direction: column; align-items: flex-start; }
+    .hero .sub p { font-size: 24px; }
+    .find label { font-size: 26px; }
+    .find input { font-size: 24px; }
+    .bar .hide { display: none; }
+  }
+  @media (max-width: 520px) {
+    .find { flex-wrap: wrap; }
+    .find label { width: 100%; border-right: 0; border-bottom: 4px solid var(--k); }
+    .find button { padding: 12px 16px; }
+    .cats { grid-template-columns: repeat(2, 1fr); }
+    .cats button { border-bottom: 4px solid var(--k); }
+    .cats button:nth-child(2n) { border-right: 0; }
+    .post .two { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <a class="gallery" href="../">&larr; Gallery</a>
+  <span class="grow">STOOP / CHICAGO / A BOARD, NOT A PLATFORM</span>
+  <span class="hide">MON 05 OCT 2026</span>
+  <span class="hide">1,204 POSTS. 0 ADS. 0 FEES.</span>
+</div>
+
+<header class="hero">
+  <h1>Stoop.</h1>
+  <div class="sub">
+    <p>A classifieds board for Chicago. Neighbors post. Neighbors read. <b>Nobody in between.</b></p>
+    <div class="stamp">Free forever<br>or we shut it down</div>
+  </div>
+</header>
+
+<div class="tape" aria-hidden="true"><div>
+  &nbsp;NO FEES &#9632; NO ALGORITHM &#9632; NO FEED &#9632; NO LIKES &#9632; NO BOOST &#9632; NO TRACKING &#9632; NO STRANGERS &#9632; JUST NEIGHBORS &#9632; NO FEES &#9632; NO ALGORITHM &#9632; NO FEED &#9632; NO LIKES &#9632; NO BOOST &#9632; NO TRACKING &#9632; NO STRANGERS &#9632; JUST NEIGHBORS &#9632;
+</div></div>
+
+<ol class="manifesto">
+  <li><span>No fees. <span class="hot" style="padding:0">Not to post. Not to sell. Not ever.</span><small>Your $40 couch stays a $40 couch. We take 0%.</small></span></li>
+  <li><span>No algorithm.<small>Newest post on top. That&rsquo;s the whole ranking system. You can read it in one sentence because it is one sentence.</small></span></li>
+  <li><span>No strangers in Silicon Valley deciding what you see.<small>The only people who decide what&rsquo;s here are the people on your block.</small></span></li>
+  <li><span>You deal <s>through us</s> direct.<small>Message, meet on the stoop, shake hands. We never touch the money.</small></span></li>
+  <li><span>Post in under a minute.<small>No account wall. No &ldquo;complete your profile.&rdquo; Write it, send it, done.</small></span></li>
+</ol>
+
+<h2 class="sect"><span>&darr; The board. Raw. Unranked. Sorted by time.</span><span id="count">20 POSTS SHOWN</span></h2>
+
+<form class="find" onsubmit="return false" role="search">
+  <label for="q">SEARCH:</label>
+  <input id="q" type="search" placeholder="couch / pilsen / free / bike&hellip;" autocomplete="off">
+  <button type="submit">GO &rarr;</button>
+</form>
+
+<div class="cats" id="cats">
+  <button type="button" data-c="all" aria-pressed="true">All<b>1,204</b></button>
+  <button type="button" data-c="for sale" aria-pressed="false">For Sale<b>412</b></button>
+  <button type="button" data-c="free" aria-pressed="false">Free<b>96</b></button>
+  <button type="button" data-c="housing" aria-pressed="false">Housing<b>238</b></button>
+  <button type="button" data-c="jobs" aria-pressed="false">Jobs<b>87</b></button>
+  <button type="button" data-c="gigs" aria-pressed="false">Gigs<b>64</b></button>
+  <button type="button" data-c="services" aria-pressed="false">Services<b>151</b></button>
+  <button type="button" data-c="community" aria-pressed="false">Community<b>119</b></button>
+</div>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>#</th><th>Posted</th><th>Cat.</th><th>What</th><th>Price</th><th>Where</th><th>Contact</th></tr></thead>
+  <tbody id="rows">
+    <tr><td>1204</td><td>2 MIN AGO</td><td class="cat">for sale</td><td class="what">Schwinn 10-speed, 1974, orange<i>New tires. Squeaks only on Tuesdays.</i></td><td class="price">$140</td><td>LOGAN SQ</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1203</td><td>6 MIN AGO</td><td class="cat">free</td><td class="what">Tomatoes. Too many tomatoes.<i>Garden gate, 45th &amp; Calumet. Bring a bag.</i></td><td class="price free">FREE</td><td>BRONZEVILLE</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1202</td><td>11 MIN AGO</td><td class="cat">housing</td><td class="what">2BR in a 2-flat, heat incl.<i>Hardwood floors. Landlord lives downstairs, bakes on Sundays.</i></td><td class="price">$1,450/MO</td><td>HUMBOLDT PK</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1201</td><td>14 MIN AGO</td><td class="cat">gigs</td><td class="what">Need 2 strong backs, 1 fridge, 3 flights<i>Saturday AM. Pizza after.</i></td><td class="price">$60 EA</td><td>UPTOWN</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1200</td><td>20 MIN AGO</td><td class="cat">for sale</td><td class="what">Green velvet couch, 3 cushions<i>Seats 4 friends or 2 dogs. 3rd floor walk-up. You carry.</i></td><td class="price">$75</td><td>HYDE PARK</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1199</td><td>26 MIN AGO</td><td class="cat">jobs</td><td class="what">Bakery counter, 5&ndash;11 AM shift<i>Plus all the day-olds you can carry.</i></td><td class="price">$18/HR</td><td>PILSEN</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1198</td><td>31 MIN AGO</td><td class="cat">community</td><td class="what">Block party, 2900 W Palmer, Sat 2 PM<i>Bring a dish. DJ only plays Earth, Wind &amp; Fire.</i></td><td class="price free">FREE</td><td>LOGAN SQ</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1197</td><td>38 MIN AGO</td><td class="cat">services</td><td class="what">Bike tune-ups on my stoop<i>Flats $8. Evenings. I have opinions about chain lube.</i></td><td class="price">$35</td><td>HUMBOLDT PK</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1196</td><td>44 MIN AGO</td><td class="cat">for sale</td><td class="what">Kimball upright piano<i>Middle C sticks. Free if you move it; $50 tip for the bench.</i></td><td class="price free">FREE</td><td>BRIDGEPORT</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1195</td><td>52 MIN AGO</td><td class="cat">housing</td><td class="what">Room in 3BR, quiet house<i>1 cat, 1 sourdough starter named Gus.</i></td><td class="price">$760/MO</td><td>LOGAN SQ</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1194</td><td>1 HR AGO</td><td class="cat">free</td><td class="what">Cat tree, 5 ft<i>Cat refused it. By the alley.</i></td><td class="price free">FREE</td><td>AVONDALE</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1193</td><td>1 HR AGO</td><td class="cat">gigs</td><td class="what">Accordion player for 1 wedding<i>Polkas preferred. Polkas required, honestly.</i></td><td class="price">$200</td><td>ARCHER HTS</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1192</td><td>1 HR AGO</td><td class="cat">for sale</td><td class="what">300 LPs, mostly Chess &amp; Motown<i>Some polka. Lot or by the crate.</i></td><td class="price">$400</td><td>UKR VILLAGE</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1191</td><td>2 HR AGO</td><td class="cat">services</td><td class="what">Hems, zippers, alterations<i>40 years at the same machine on Wentworth.</i></td><td class="price">$12+</td><td>CHINATOWN</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1190</td><td>2 HR AGO</td><td class="cat">jobs</td><td class="what">P/T bookkeeper, family hardware since 1952<i>Ledgers and spreadsheets. Both.</i></td><td class="price">$24/HR</td><td>PORTAGE PK</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1189</td><td>3 HR AGO</td><td class="cat">housing</td><td class="what">Garage parking space<i>Snow-season dibs chair included.</i></td><td class="price">$150/MO</td><td>LAKEVIEW</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1188</td><td>3 HR AGO</td><td class="cat">community</td><td class="what">Tool library now open<i>Borrow a drill. Return a drill.</i></td><td class="price free">FREE</td><td>AVONDALE</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1187</td><td>4 HR AGO</td><td class="cat">for sale</td><td class="what">Smith-Corona typewriter<i>Works. Missing the Q. Who needs it.</i></td><td class="price">$60</td><td>ROGERS PK</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1186</td><td>5 HR AGO</td><td class="cat">services</td><td class="what">Snow shoveling, booking winter now<i>Walks &amp; stoops cleared by 7 AM. Two brothers, one plow.</i></td><td class="price">$25/STORM</td><td>MCKINLEY PK</td><td><a href="#post">REPLY</a></td></tr>
+    <tr><td>1185</td><td>6 HR AGO</td><td class="cat">community</td><td class="what">LOST: gray tabby, &ldquo;Mister&rdquo;<i>Doesn&rsquo;t answer to it. Reward anyway.</i></td><td class="price">REWARD</td><td>EDGEWATER</td><td><a href="#post">REPLY</a></td></tr>
+    <tr class="empty" hidden><td colspan="7">NOTHING. SO POST IT YOURSELF. &darr;</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="note"><span>THIS IS THE WHOLE RANKING: NEWEST FIRST.</span><span>NO &ldquo;FEATURED.&rdquo; NO &ldquo;SPONSORED.&rdquo; NO &ldquo;YOU MIGHT ALSO LIKE.&rdquo;</span></div>
+
+<section class="post" id="post">
+  <div class="call">
+    <h2>Post it.<br>60 sec.<br>$0.</h2>
+    <p>Four boxes. One button. It goes on top of the board right now and stays there until somebody newer shows up. That&rsquo;s fair.</p>
+  </div>
+  <form id="f" onsubmit="return false">
+    <div class="two">
+      <div class="f"><label for="c">1. Category</label><select id="c"><option>For sale</option><option>Free</option><option>Housing</option><option>Jobs</option><option>Gigs</option><option>Services</option><option>Community</option></select></div>
+      <div class="f"><label for="n">2. Neighborhood</label><input id="n" placeholder="Pilsen"></div>
+    </div>
+    <div class="f"><label for="t">3. What is it</label><textarea id="t" placeholder="Oak dresser, 4 drawers, one sticks. $80."></textarea></div>
+    <div class="two">
+      <div class="f"><label for="p">4. Price</label><input id="p" placeholder="$80 / FREE / SWAP"></div>
+      <div class="f"><label for="e">Reach you at</label><input id="e" placeholder="phone or email"></div>
+    </div>
+    <button type="submit">Post it &rarr;</button>
+    <div id="done">&#9632; Posted. You&rsquo;re #1205. Top of the board.</div>
+  </form>
+</section>
+
+<section class="never">
+  <div><b>WE WILL NEVER</b>Sell your data.</div>
+  <div><b>WE WILL NEVER</b>Charge a listing fee.</div>
+  <div><b>WE WILL NEVER</b>Rank you by &ldquo;engagement.&rdquo;</div>
+  <div><b>WE WILL NEVER</b>Put an ad between you &amp; a neighbor.</div>
+</section>
+
+<footer>
+  <a href="../">&larr; Gallery</a>
+  <span>STOOP. PRINT THIS. TAPE IT TO A LAMPPOST.</span>
+</footer>
+
+<script>
+  const rows = [...document.querySelectorAll('#rows tr:not(.empty)')];
+  const empty = document.querySelector('#rows .empty');
+  const q = document.getElementById('q'), count = document.getElementById('count');
+  let cat = 'all';
+  function apply() {
+    const t = q.value.trim().toLowerCase(); let n = 0;
+    rows.forEach(r => {
+      const ok = (cat === 'all' || r.querySelector('.cat').textContent === cat) && (!t || r.textContent.toLowerCase().includes(t));
+      r.hidden = !ok; if (ok) n++;
+    });
+    empty.hidden = n > 0;
+    count.textContent = n + ' POST' + (n === 1 ? '' : 'S') + ' SHOWN';
+  }
+  q.addEventListener('input', apply);
+  document.getElementById('cats').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    cat = b.dataset.c;
+    document.querySelectorAll('#cats button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    apply();
+  });
+  document.getElementById('f').addEventListener('submit', () => {
+    const tx = document.getElementById('t').value.trim();
+    if (tx) {
+      const tr = document.createElement('tr');
+      const td = (cls, txt) => { const d = document.createElement('td'); if (cls) d.className = cls; d.textContent = txt; return d; };
+      const p = document.getElementById('p').value.trim() || 'FREE';
+      tr.append(td('', '1205'), td('', 'JUST NOW'), td('cat', document.getElementById('c').value.toLowerCase()), td('what', tx),
+        td('price' + (/free/i.test(p) ? ' free' : ''), p.toUpperCase()), td('', (document.getElementById('n').value || 'CHICAGO').toUpperCase()), td('', 'YOU'));
+      tr.style.background = '#ffff00';
+      document.getElementById('rows').prepend(tr); rows.unshift(tr); apply();
+    }
+    document.getElementById('done').style.display = 'block';
+  });
+</script>
+</body>
+</html>
