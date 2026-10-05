@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop · A Neighbor's Map of the Fourth Ward</title>
+<style>
+  :root {
+    --paper: #f3ead5;
+    --paper2: #fbf6ea;
+    --ink: #2b2622;
+    --muted: #7a6d5d;
+    --line: #cdbb98;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--paper); color: var(--ink); font: 15px/1.4 var(--sans); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  /* ---- header ---- */
+  header {
+    height: 58px; display: flex; align-items: center; gap: 22px; padding: 0 20px;
+    border-bottom: 4px double var(--ink); background: var(--paper2);
+  }
+  .gallery { color: var(--ink); text-decoration: none; font-size: 13px; letter-spacing: .04em; border: 1.5px solid var(--ink); border-radius: 999px; padding: 4px 12px; }
+  .gallery:hover { background: var(--ink); color: var(--paper2); }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand b { font: italic 700 28px/1 var(--serif); letter-spacing: .02em; }
+  .brand span { font: italic 15px var(--serif); color: var(--muted); }
+  header .sp { flex: 1; }
+  .facts { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .drop {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    background: #d64532; color: #fff; border: 2px solid var(--ink); border-radius: 999px;
+    padding: 7px 16px 7px 12px; font-weight: 700; letter-spacing: .02em; box-shadow: 3px 3px 0 var(--ink);
+  }
+  .drop:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+  .drop:active, body.dropping .drop { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+
+  /* ---- layout ---- */
+  main { display: grid; grid-template-columns: 1fr 360px; height: calc(100vh - 58px); min-height: 620px; }
+  .mapwrap { position: relative; overflow: hidden; border-right: 4px double var(--ink); }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  body.dropping #map { cursor: crosshair; }
+
+  /* svg styling */
+  .casing { stroke: #b9a681; stroke-width: 8; fill: none; stroke-linecap: round; }
+  .street { stroke: #fffaf0; stroke-width: 5.5; fill: none; stroke-linecap: round; }
+  .ave-c { stroke: var(--ink); stroke-width: 15; fill: none; stroke-linecap: round; }
+  .ave { stroke: #f6d27a; stroke-width: 11; fill: none; stroke-linecap: round; }
+  .hood { font: 600 19px var(--serif); letter-spacing: .32em; fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--paper2); stroke-width: 5px; stroke-linejoin: round; }
+  .hood-sub { font: italic 12px var(--serif); fill: var(--muted); text-anchor: middle; paint-order: stroke; stroke: var(--paper2); stroke-width: 4px; }
+  .lbl { font: 700 9.5px var(--sans); letter-spacing: .22em; fill: #6b5a3e; }
+  .water-lbl { font: italic 17px var(--serif); letter-spacing: .25em; fill: #3f7d97; }
+  .sta { font: 700 10px var(--sans); fill: var(--ink); letter-spacing: .06em; paint-order: stroke; stroke: var(--paper2); stroke-width: 3px; }
+  .pin { cursor: pointer; }
+  .pin .body { transition: transform .15s; }
+  .pin:hover .body, .pin.on .body { transform: scale(1.3); }
+  .pin.dim { opacity: .14; pointer-events: none; }
+  .pin text { font: 800 10px var(--sans); text-anchor: middle; fill: var(--ink); pointer-events: none; }
+  .pulse { animation: pulse 2.4s ease-out infinite; transform-origin: 0 0; transform-box: fill-box; }
+  @keyframes pulse { 0% { transform: scale(.4); opacity: .8; } 100% { transform: scale(2.4); opacity: 0; } }
+
+  /* ---- overlays on map ---- */
+  .callout {
+    position: absolute; z-index: 10; width: 268px; background: var(--paper2); border: 2px solid var(--ink);
+    border-radius: 10px; box-shadow: 4px 4px 0 rgba(43,38,34,.85); padding: 12px 14px 12px; display: none;
+  }
+  .callout.show { display: block; }
+  .callout::after {
+    content: ""; position: absolute; left: var(--tail, 50%); bottom: -9px; width: 14px; height: 14px; margin-left: -7px;
+    background: var(--paper2); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg);
+  }
+  .callout.below::after { bottom: auto; top: -9px; transform: rotate(225deg); }
+  .callout .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #fff; border-radius: 4px; padding: 1px 7px; }
+  .callout h3 { font: 700 18px/1.2 var(--serif); margin: 7px 0 4px; }
+  .callout .price { font: 700 22px var(--serif); }
+  .callout p { margin: 6px 0 8px; font-size: 13.5px; color: #4b4239; }
+  .callout .meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 7px; }
+  .callout .x { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 18px; cursor: pointer; color: var(--muted); }
+  .callout .knock { margin-top: 9px; width: 100%; padding: 6px; border: 1.5px solid var(--ink); background: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .callout .knock:hover { background: var(--ink); color: var(--paper2); }
+  .callout form label { display: block; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .callout form input, .callout form select { width: 100%; padding: 5px 7px; border: 1.5px solid var(--line); border-radius: 5px; background: #fff; margin-top: 2px; }
+  .callout form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .banner {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 11; display: none;
+    background: var(--ink); color: var(--paper2); padding: 8px 18px; border-radius: 999px; font-size: 14px; white-space: nowrap;
+  }
+  body.dropping .banner { display: block; }
+  .banner button { margin-left: 10px; background: none; border: 1px solid var(--paper2); color: inherit; border-radius: 999px; padding: 1px 10px; cursor: pointer; }
+  .toast { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 12; background: var(--ink); color: var(--paper2); padding: 8px 16px; border-radius: 8px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+
+  /* ---- side panel ---- */
+  aside { display: flex; flex-direction: column; min-height: 0; background: var(--paper2); }
+  .ptop { padding: 16px 18px 12px; border-bottom: 1.5px solid var(--line); }
+  .ptop h2 { font: italic 700 22px/1.15 var(--serif); margin: 0 0 3px; }
+  .ptop .here { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+  .ptop .here b { color: var(--ink); }
+  .search { display: flex; align-items: center; gap: 8px; border: 2px solid var(--ink); border-radius: 999px; padding: 7px 14px; background: #fff; }
+  .search input { border: 0; outline: none; flex: 1; background: none; min-width: 0; }
+  .search:focus-within { box-shadow: 3px 3px 0 var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--ink); border-radius: 999px; background: #fff; padding: 2px 10px 2px 6px; font-size: 12.5px; cursor: pointer; }
+  .chip i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--ink); }
+  .chip.off { opacity: .38; background: transparent; text-decoration: line-through; }
+  .list { flex: 1; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+  .list li { display: grid; grid-template-columns: 14px 1fr auto; gap: 4px 10px; padding: 10px 18px; border-bottom: 1px dashed var(--line); cursor: pointer; align-items: start; }
+  .list li:hover, .list li.on { background: #f1e5c8; }
+  .list .dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--ink); margin-top: 4px; }
+  .list .t { font-weight: 600; font-size: 14px; line-height: 1.25; }
+  .list .s { grid-column: 2; font-size: 12px; color: var(--muted); }
+  .list .d { font: 700 13px var(--mono); text-align: right; white-space: nowrap; }
+  .list .p { grid-column: 3; font: 600 13px var(--serif); text-align: right; white-space: nowrap; }
+  .list .none { display: block; padding: 24px 18px; color: var(--muted); cursor: default; }
+  .pfoot { padding: 10px 18px; font-size: 12px; color: var(--muted); border-top: 1.5px solid var(--line); }
+
+  @media (max-width: 860px) {
+    header { height: auto; flex-wrap: wrap; padding: 10px 14px; gap: 10px; }
+    .facts, .brand span { display: none; }
+    main { display: block; height: auto; }
+    .mapwrap { height: 68vh; min-height: 420px; border-right: 0; border-bottom: 4px double var(--ink); }
+    .list { overflow: visible; }
+    .callout { width: 230px; }
+    .banner { white-space: normal; width: 90%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="gallery" href="../">← Gallery</a>
+  <div class="brand"><b>Stoop</b><span>a neighbor's map of things for sale, free &amp; wanted</span></div>
+  <div class="sp"></div>
+  <div class="facts">Fourth Ward · No fees · No algorithm</div>
+  <button class="drop" id="dropBtn" type="button">
+    <svg width="16" height="20" viewBox="-12 -36 24 37" aria-hidden="true"><path d="M0,0 C-3,-8 -11,-13 -11,-23 A11,11 0 1 1 11,-23 C11,-13 3,-8 0,0Z" fill="#fff" stroke="#2b2622" stroke-width="2"/><circle cx="0" cy="-23" r="4" fill="#d64532"/></svg>
+    Drop a pin
+  </button>
+</header>
+
+<main>
+  <div class="mapwrap" id="mapwrap">
+    <svg id="map" viewBox="0 0 1000 760" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Illustrated map of the Fourth Ward with listing pins">
+      <defs>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7"/>
+          <feDisplacementMap in="SourceGraphic" scale="5"/>
+        </filter>
+        <filter id="wash" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="22"/></filter>
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/>
+          <feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.28  0 0 0 0 0.18  0 0 0 0.09 0"/>
+        </filter>
+        <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><line x1="0" y1="0" x2="0" y2="7" stroke="#9fb37a" stroke-width="1.2"/></pattern>
+        <path id="riverPath" d="M250,-30 C270,90 210,170 280,260 C340,340 470,330 540,420 C600,500 720,520 820,560 C900,590 960,600 1030,645"/>
+        <path id="ashby" d="M-20,605 L1020,165"/>
+        <path id="mainst" d="M-20,335 C300,300 620,296 1020,338"/>
+        <path id="hillrd" d="M610,780 C625,610 700,420 765,270 S830,60 870,-20"/>
+        <g id="grid">
+          <path d="M-100,40 H1100 M-100,100 H1100 M-100,160 H1100 M-100,220 H1100 M-100,280 H1100 M-100,400 H1100 M-100,460 H1100 M-100,520 H1100 M-100,580 H1100 M-100,640 H1100 M-100,700 H1100 M-100,760 H1100"/>
+          <path d="M20,-100 V900 M80,-100 V900 M140,-100 V900 M200,-100 V900 M260,-100 V900 M320,-100 V900 M380,-100 V900 M440,-100 V900 M500,-100 V900 M560,-100 V900 M620,-100 V900 M680,-100 V900 M740,-100 V900 M800,-100 V900 M860,-100 V900 M920,-100 V900 M980,-100 V900"/>
+        </g>
+      </defs>
+
+      <rect x="-200" y="-200" width="1400" height="1160" fill="#f3ead5"/>
+      <!-- watercolor neighborhood washes -->
+      <g filter="url(#wash)" opacity=".75">
+        <ellipse cx="110" cy="190" rx="150" ry="170" fill="#ecc795"/>
+        <ellipse cx="420" cy="140" rx="150" ry="120" fill="#d9e6ad"/>
+        <ellipse cx="880" cy="110" rx="150" ry="120" fill="#f2cfb3"/>
+        <ellipse cx="650" cy="400" rx="140" ry="90" fill="#f1c2b8"/>
+        <ellipse cx="890" cy="390" rx="130" ry="110" fill="#d6d0ee"/>
+        <ellipse cx="180" cy="540" rx="190" ry="150" fill="#e8d7a3"/>
+        <ellipse cx="460" cy="620" rx="150" ry="110" fill="#c6e0e4"/>
+        <ellipse cx="830" cy="680" rx="190" ry="90" fill="#dcccbe"/>
+      </g>
+
+      <g filter="url(#wobble)">
+        <!-- minor street grid, slightly askew -->
+        <g transform="rotate(-4 500 380)">
+          <use href="#grid" class="casing"/>
+          <use href="#grid" class="street"/>
+        </g>
+
+        <!-- park -->
+        <path d="M550,110 C580,70 700,70 740,110 C780,150 760,230 710,250 C650,275 570,250 550,210 C535,180 535,135 550,110 Z" fill="#b9d69a" stroke="#5f7d3e" stroke-width="2.5"/>
+        <path d="M550,110 C580,70 700,70 740,110 C780,150 760,230 710,250 C650,275 570,250 550,210 C535,180 535,135 550,110 Z" fill="url(#hatch)" opacity=".5"/>
+        <ellipse cx="610" cy="172" rx="32" ry="18" fill="#a9cfdc" stroke="#5d93a8" stroke-width="2"/>
+        <path d="M600,96 C630,140 680,150 720,200" stroke="#e9dcb8" stroke-width="3" fill="none" stroke-dasharray="1 5" stroke-linecap="round"/>
+        <g fill="#7ea35a" stroke="#4d6b30" stroke-width="1.5">
+          <circle cx="580" cy="120" r="9"/><circle cx="596" cy="112" r="7"/><circle cx="700" cy="110" r="10"/><circle cx="716" cy="124" r="7"/>
+          <circle cx="680" cy="220" r="9"/><circle cx="700" cy="232" r="7"/><circle cx="575" cy="215" r="8"/><circle cx="735" cy="160" r="8"/>
+          <circle cx="650" cy="135" r="6"/><circle cx="660" cy="200" r="6"/>
+        </g>
+
+        <!-- river -->
+        <use href="#riverPath" stroke="#5d93a8" stroke-width="52" fill="none" stroke-linecap="round"/>
+        <use href="#riverPath" stroke="#a9cfdc" stroke-width="45" fill="none" stroke-linecap="round"/>
+        <use href="#riverPath" stroke="#d7ebf1" stroke-width="2" fill="none" stroke-dasharray="14 22" transform="translate(0,-9)"/>
+        <use href="#riverPath" stroke="#d7ebf1" stroke-width="2" fill="none" stroke-dasharray="9 30" transform="translate(4,10)"/>
+
+        <!-- avenues (bridges where they cross water) -->
+        <use href="#ashby" class="ave-c"/><use href="#ashby" class="ave"/>
+        <use href="#mainst" class="ave-c"/><use href="#mainst" class="ave"/>
+        <use href="#hillrd" class="ave-c"/><use href="#hillrd" class="ave"/>
+
+        <!-- rail: the Orchard Line -->
+        <path d="M-20,82 L1020,524" stroke="#2b2622" stroke-width="7" fill="none"/>
+        <path d="M-20,82 L1020,524" stroke="#fffaf0" stroke-width="3" fill="none" stroke-dasharray="11 9"/>
+      </g>
+
+      <!-- stations -->
+      <g>
+        <circle cx="150" cy="155" r="8" fill="#fff" stroke="#2b2622" stroke-width="3.5"/>
+        <text class="sta" x="164" y="149">FERRY STA.</text>
+        <circle cx="478" cy="297" r="8" fill="#fff" stroke="#2b2622" stroke-width="3.5"/>
+        <text class="sta" x="434" y="281">MAIN ST STA.</text>
+        <circle cx="862" cy="457" r="8" fill="#fff" stroke="#2b2622" stroke-width="3.5"/>
+        <text class="sta" x="876" y="474">EASTGATE STA.</text>
+      </g>
+
+      <!-- labels -->
+      <text class="water-lbl" dy="6"><textPath href="#riverPath" startOffset="64%">≈ Wending River ≈</textPath></text>
+      <text class="lbl" dy="3.5"><textPath href="#ashby" startOffset="16%">ASHBY AVENUE</textPath></text>
+      <text class="lbl" dy="3.5"><textPath href="#ashby" startOffset="76%">ASHBY AVENUE</textPath></text>
+      <text class="lbl" dy="3.5"><textPath href="#mainst" startOffset="70%">MAIN STREET</textPath></text>
+      <text class="lbl" dy="3.5"><textPath href="#hillrd" startOffset="22%">HILL ROAD</textPath></text>
+      <text class="lbl" x="560" y="507" transform="rotate(23 560 507)">THE ORCHARD LINE</text>
+
+      <text class="hood" x="108" y="225">OLD FERRY</text>
+      <text class="hood" x="410" y="140">MILLBROOK</text>
+      <text class="hood" x="645" y="56">LARKSPUR HILL</text>
+      <text class="hood-sub" x="648" y="270">Larkspur Commons</text>
+      <text class="hood" x="880" y="78">JUNIPER HTS</text>
+      <text class="hood" x="680" y="410">TANNER'S ROW</text>
+      <text class="hood" x="895" y="320">EASTGATE</text>
+      <text class="hood" x="200" y="455">THE BOTTOMS</text>
+      <text class="hood" x="440" y="610">CANAL ST</text>
+      <text class="hood" x="810" y="705">CINDER FLATS</text>
+
+      <!-- walk rings around you -->
+      <g id="you" transform="translate(585,372)">
+        <circle r="156" fill="none" stroke="#d64532" stroke-width="1.5" stroke-dasharray="4 6" opacity=".6"/>
+        <circle r="312" fill="none" stroke="#d64532" stroke-width="1.5" stroke-dasharray="4 6" opacity=".45"/>
+        <text x="0" y="-160" text-anchor="middle" class="lbl" fill="#d64532" style="fill:#b23a2a">¼ MI · 5 MIN WALK</text>
+        <text x="0" y="-316" text-anchor="middle" class="lbl" style="fill:#b23a2a">½ MI · 10 MIN</text>
+        <circle class="pulse" r="12" fill="#d64532" opacity=".5"/>
+        <circle r="8" fill="#d64532" stroke="#fff" stroke-width="3"/>
+        <text x="14" y="26" class="sta" style="fill:#b23a2a">YOU ARE HERE</text>
+      </g>
+
+      <g id="pins"></g>
+
+      <!-- compass + scale -->
+      <g transform="translate(62,690)">
+        <circle r="34" fill="#fbf6ea" stroke="#2b2622" stroke-width="1.5"/>
+        <circle r="27" fill="none" stroke="#2b2622" stroke-width=".8" stroke-dasharray="2 3"/>
+        <path d="M0,-30 L7,0 L0,30 L-7,0Z" fill="#fbf6ea" stroke="#2b2622" stroke-width="1.5"/>
+        <path d="M0,-30 L7,0 L-7,0Z" fill="#d64532" stroke="#2b2622" stroke-width="1.5"/>
+        <path d="M-30,0 L0,-5 L30,0 L0,5Z" fill="#2b2622" opacity=".75"/>
+        <text y="-38" text-anchor="middle" style="font:700 12px var(--serif)">N</text>
+      </g>
+      <g transform="translate(130,722)">
+        <rect width="78" height="7" fill="#2b2622"/><rect x="78" width="78" height="7" fill="#fbf6ea" stroke="#2b2622"/>
+        <text y="-5" class="lbl">0</text><text x="70" y="-5" class="lbl">⅛</text><text x="146" y="-5" class="lbl">¼ MI</text>
+        <text y="22" style="font:italic 11px var(--serif);fill:#7a6d5d">Drawn by neighbors, not to any satellite.</text>
+      </g>
+      <rect x="6" y="6" width="988" height="748" fill="none" stroke="#2b2622" stroke-width="2"/>
+      <rect x="12" y="12" width="976" height="736" fill="none" stroke="#2b2622" stroke-width=".8"/>
+      <rect x="-200" y="-200" width="1400" height="1160" filter="url(#grain)" pointer-events="none"/>
+    </svg>
+
+    <div class="banner" id="banner">Click anywhere on the map to drop your pin. <button type="button" id="cancelDrop">Cancel</button></div>
+    <div class="callout" id="callout"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <aside>
+    <div class="ptop">
+      <h2>What's on your block</h2>
+      <p class="here">You are here: <b>Tanner's Row</b>, Ashby &amp; 9th. Closest first, always.</p>
+      <label class="search">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="#2b2622" stroke-width="2"/><path d="M10.5 10.5 L15 15" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="q" type="search" placeholder="Search near you: bike, free, room…" aria-label="Search near you">
+      </label>
+      <div class="chips" id="chips"></div>
+    </div>
+    <ul class="list" id="list"></ul>
+    <div class="pfoot">Sorted by distance and nothing else. No sponsored pins, no fees, no cut. You deal directly with your neighbor.</div>
+  </aside>
+</main>
+
+<script>
+const CATS = {
+  sale:      { name: "For Sale",  color: "#e2604c", g: "$" },
+  free:      { name: "Free",      color: "#4fb06a", g: "F" },
+  housing:   { name: "Housing",   color: "#9a7ad6", g: "H" },
+  jobs:      { name: "Jobs",      color: "#f0b53a", g: "J" },
+  gigs:      { name: "Gigs",      color: "#ef7fae", g: "G" },
+  services:  { name: "Services",  color: "#5b8fd8", g: "S" },
+  community: { name: "Community", color: "#8c8378", g: "C" },
+};
+const YOU = { x: 585, y: 372 };
+const MI_PER_UNIT = 0.0016;
+let L = [
+  ["sale", 380, 190, "Schwinn Collegiate 3-speed, mint green", "$140", "Millbrook", "Rode it to the farmers market for 9 years. New tubes, basket included. Bell goes ding, not dong.", "2h ago"],
+  ["sale", 780, 240, "Mid-century credenza, one sticky drawer", "$220", "Larkspur Hill", "Walnut veneer. The sticky drawer holds 40 years of takeout menus, can include.", "5h ago"],
+  ["sale", 690, 432, "Box of 60 jazz LPs, mostly Blue Note", "$180", "Tanner's Row", "Some sleeves chewed by a cat named Thelonious. Records are fine. Cat not included.", "1d ago"],
+  ["sale", 120, 290, "Cast iron skillet, 12 in, grandma-seasoned", "$35", "Old Ferry", "Bacon-based seasoning since 1971. Do not put it in the dishwasher. I will know.", "3h ago"],
+  ["sale", 905, 420, "1950s Singer sewing machine, all metal", "$90", "Eastgate", "Weighs as much as a small dog. Sews leather. Pickup only, obviously.", "2d ago"],
+  ["free", 230, 610, "Half a cord of oak firewood", "Free", "The Bottoms", "From the tree that fell on the garage. Tree: 1, garage: 0. You haul.", "1h ago"],
+  ["free", 470, 205, "Sourdough starter named Gerald", "Free", "Millbrook", "Gerald is six and very active. Bring a jar. He likes Tuesdays.", "4h ago"],
+  ["free", 720, 305, "Upright piano (yes, really)", "Free", "Larkspur Hill", "Plays, slightly out of tune. Ground floor. You need four friends and a truck.", "6h ago"],
+  ["free", 60, 118, "Zucchini. So much zucchini.", "Free", "Old Ferry", "Box on the curb at 3rd & Pell. Please. I am begging.", "20m ago"],
+  ["free", 505, 650, "~30 moving boxes, flattened", "Free", "Canal St", "Lightly used for one move. On the porch, take what you need.", "1d ago"],
+  ["housing", 545, 325, "Room in sunny 3BR, two nurse roommates", "$725/mo", "Tanner's Row", "Quiet house, odd hours. Clawfoot tub, basil on the fire escape. Available Nov 1.", "3h ago"],
+  ["housing", 335, 82, "Garden-level 1BR, own entrance", "$1,150/mo", "Millbrook", "Low ceilings (6'4\"), great light. Landlord lives upstairs and bakes on Sundays.", "8h ago"],
+  ["housing", 415, 560, "Winter sublet studio, cat-sit required", "$800/mo", "Canal St", "Dec through Feb. Rent's cheap because you're feeding Marmalade twice a day. She's nice.", "2d ago"],
+  ["housing", 185, 385, "2BR above the hardware store", "$1,400/mo", "Old Ferry", "Smells faintly of sawdust. Store owner is the landlord and is extremely handy.", "1d ago"],
+  ["jobs", 150, 205, "Weekend brunch line cook, Ferry Diner", "$19/hr", "Old Ferry", "Must flip eggs without breaking yolks. We will test you.", "5h ago"],
+  ["jobs", 860, 205, "Bookshop clerk, 20 hrs a week", "$17/hr", "Juniper Hts", "Must love books and tolerate the shop cat's opinions.", "1d ago"],
+  ["jobs", 760, 640, "Bike mechanic, apprentice okay", "$18/hr", "Cinder Flats", "We'll teach you. Bring your own grease-proof sense of humor.", "3d ago"],
+  ["gigs", 360, 500, "Help me carry a couch up 3 floors", "$60", "The Bottoms", "Saturday 10am. One hour, max. Pizza after. Couch is heavy but polite.", "2h ago"],
+  ["gigs", 935, 155, "Fiddler for a backyard wedding", "$200", "Juniper Hts", "Oct 19, 2 to 4pm. Folk tunes. Dogs will be in attendance.", "9h ago"],
+  ["gigs", 520, 55, "Rake leaves on a corner lot", "$40", "Millbrook", "Two big maples. Rakes, bags, and hot cider provided.", "1d ago"],
+  ["services", 640, 365, "Knife sharpening, at your stoop", "$5/knife", "Tanner's Row", "Wednesdays. Look for the blue bike with the whetstone cart.", "4h ago"],
+  ["services", 815, 470, "Retired electrician, small jobs", "$45/hr", "Eastgate", "Outlets, fixtures, ceiling fans. 41 years licensed. No job too dinky.", "1d ago"],
+  ["services", 905, 615, "Hemming & tailoring, 2-day turnaround", "$12+", "Cinder Flats", "Pants hemmed in two days. Wedding dresses by appointment.", "2d ago"],
+  ["community", 470, 278, "LOST: grey tabby 'Biscuit', white paws", "Reward", "Tanner's Row", "Last seen near the laundromat on Ashby. Answers to the sound of a can opener.", "40m ago"],
+  ["community", 605, 590, "Block party on Pell St, Sat 10/12", "Bring a dish", "Canal St", "Bounce house, Mr. Ruiz's grill, and a very long table.", "1d ago"],
+  ["community", 95, 470, "Tool library, open Sundays", "Borrow", "The Bottoms", "Drills, ladders, a tile saw. Borrow it, bring it back. That's the deal.", "4d ago"],
+].map((r, i) => ({ id: i, cat: r[0], x: r[1], y: r[2], t: r[3], p: r[4], n: r[5], d: r[6], ago: r[7] }));
+
+const $ = s => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const svg = $("#map"), pinsG = $("#pins"), wrap = $("#mapwrap"), call = $("#callout"), list = $("#list"), q = $("#q");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const dist = r => Math.hypot(r.x - YOU.x, r.y - YOU.y) * MI_PER_UNIT;
+const fmt = m => (m < 0.1 ? "0.1" : m.toFixed(1)) + " mi";
+const off = new Set();
+let sticky = null;
+
+const PIN = `<ellipse rx="6" ry="2.2" fill="rgba(0,0,0,.25)"/><g class="body"><path d="M0,0 C-3,-8 -11,-13 -11,-23 A11,11 0 1 1 11,-23 C11,-13 3,-8 0,0Z" stroke="#2b2622" stroke-width="2"/><circle cy="-23" r="6.5" fill="#fffaf0" stroke="#2b2622" stroke-width="1"/><text y="-19.5">G</text></g>`;
+
+function visible(r) {
+  if (off.has(r.cat)) return false;
+  const words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+  const hay = (r.t + " " + r.n + " " + r.d + " " + CATS[r.cat].name + " " + r.p).toLowerCase();
+  return words.every(w => hay.includes(w));
+}
+
+function drawPins() {
+  pinsG.innerHTML = "";
+  [...L].sort((a, b) => a.y - b.y).forEach(r => {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "pin");
+    g.setAttribute("transform", `translate(${r.x},${r.y})`);
+    g.dataset.id = r.id;
+    g.innerHTML = PIN.replace(">G<", `>${CATS[r.cat].g}<`);
+    g.querySelector("path").setAttribute("fill", CATS[r.cat].color);
+    g.addEventListener("mouseenter", () => { if (sticky === null) show(r); });
+    g.addEventListener("mouseleave", () => { if (sticky === null) hide(); });
+    g.addEventListener("click", e => { if (document.body.classList.contains("dropping")) return; e.stopPropagation(); sticky = r.id; show(r); });
+    pinsG.appendChild(g);
+  });
+  filter();
+}
+
+function filter() {
+  pinsG.querySelectorAll(".pin").forEach(g => g.classList.toggle("dim", !visible(L[g.dataset.id])));
+  const rows = L.filter(visible).sort((a, b) => dist(a) - dist(b));
+  list.innerHTML = rows.length ? rows.map(r => `<li data-id="${r.id}"><span class="dot" style="background:${CATS[r.cat].color}"></span><span class="t">${esc(r.t)}</span><span class="d">${fmt(dist(r))}</span><span class="s">${CATS[r.cat].name} · ${esc(r.n)} · ${r.ago}</span><span class="p">${esc(r.p)}</span></li>`).join("")
+    : `<li class="none">Nothing like that within a mile. Be the first: drop a pin and your neighbors will see it.</li>`;
+  document.querySelectorAll(".chip").forEach(c => c.querySelector("small").textContent = L.filter(r => r.cat === c.dataset.cat).length);
+}
+
+function pinEl(id) { return pinsG.querySelector(`.pin[data-id="${id}"]`); }
+
+function place(el) {
+  const w = wrap.getBoundingClientRect(), p = el.getBoundingClientRect();
+  const cx = p.left + p.width / 2 - w.left, top = p.top - w.top, bot = p.bottom - w.top;
+  const cw = call.offsetWidth, ch = call.offsetHeight;
+  let left = Math.min(Math.max(8, cx - cw / 2), w.width - cw - 8);
+  let y = top - ch - 14, below = false;
+  if (y < 8) { y = bot + 14; below = true; }
+  call.classList.toggle("below", below);
+  call.style.left = left + "px"; call.style.top = y + "px";
+  call.style.setProperty("--tail", (cx - left) + "px");
+}
+
+function show(r) {
+  pinsG.querySelectorAll(".pin.on").forEach(p => p.classList.remove("on"));
+  list.querySelectorAll("li.on").forEach(li => li.classList.remove("on"));
+  const el = pinEl(r.id); el.classList.add("on");
+  if (sticky !== null) pinsG.appendChild(el); // bring to front
+  const li = list.querySelector(`li[data-id="${r.id}"]`); if (li) li.classList.add("on");
+  const c = CATS[r.cat];
+  call.innerHTML = `<button class="x" aria-label="Close">×</button>
+    <span class="tag" style="background:${c.color};color:#2b2622">${c.name}</span>
+    <h3>${esc(r.t)}</h3><div class="price">${esc(r.p)}</div><p>${esc(r.d)}</p>
+    <div class="meta"><span>${esc(r.n)} · ${r.ago}</span><b>${fmt(dist(r))} away</b></div>
+    <button class="knock" type="button">Knock on their door →</button>`;
+  call.classList.add("show");
+  call.querySelector(".x").onclick = hide;
+  call.querySelector(".knock").onclick = () => toast(`Message sent to the poster in ${r.n}. Replies come straight to you.`);
+  place(el);
+}
+function hide() {
+  sticky = null; call.classList.remove("show");
+  pinsG.querySelectorAll(".pin.on").forEach(p => p.classList.remove("on"));
+  list.querySelectorAll("li.on").forEach(li => li.classList.remove("on"));
+  const tmp = pinsG.querySelector(".pin.tmp"); if (tmp) tmp.remove();
+}
+
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 2600); }
+
+// side panel
+const chips = $("#chips");
+for (const [k, c] of Object.entries(CATS)) chips.insertAdjacentHTML("beforeend", `<button class="chip" type="button" data-cat="${k}"><i style="background:${c.color}"></i>${c.name} <small></small></button>`);
+chips.addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; off.has(b.dataset.cat) ? off.delete(b.dataset.cat) : off.add(b.dataset.cat); b.classList.toggle("off"); hide(); filter(); });
+q.addEventListener("input", () => { hide(); filter(); });
+list.addEventListener("click", e => { const li = e.target.closest("li[data-id]"); if (!li) return; sticky = +li.dataset.id; show(L[sticky]); });
+list.addEventListener("mouseover", e => { const li = e.target.closest("li[data-id]"); if (li && sticky === null) pinEl(li.dataset.id).classList.add("on"); });
+list.addEventListener("mouseout", e => { const li = e.target.closest("li[data-id]"); if (li && sticky === null) pinEl(li.dataset.id).classList.remove("on"); });
+
+// drop a pin
+const setDrop = on => { hide(); document.body.classList.toggle("dropping", on); };
+$("#dropBtn").onclick = () => setDrop(!document.body.classList.contains("dropping"));
+$("#cancelDrop").onclick = e => { e.stopPropagation(); setDrop(false); };
+svg.addEventListener("click", e => {
+  if (!document.body.classList.contains("dropping")) { if (sticky !== null) hide(); return; }
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const m = pt.matrixTransform(svg.getScreenCTM().inverse());
+  document.body.classList.remove("dropping");
+  const g = document.createElementNS(NS, "g");
+  g.setAttribute("class", "pin tmp on"); g.setAttribute("transform", `translate(${m.x.toFixed(0)},${m.y.toFixed(0)})`);
+  g.innerHTML = PIN.replace(">G<", ">+<"); g.querySelector("path").setAttribute("fill", "#fffaf0");
+  pinsG.appendChild(g);
+  sticky = -1;
+  const d = fmt(Math.hypot(m.x - YOU.x, m.y - YOU.y) * MI_PER_UNIT);
+  call.innerHTML = `<button class="x" aria-label="Close">×</button><h3 style="margin-top:0">New pin, ${d} from you</h3>
+    <form id="pf"><label>What is it?<input name="t" required maxlength="60" placeholder="Oak bookshelf, 5 shelves"></label>
+    <div class="two"><label>Price<input name="p" maxlength="14" placeholder="$40 or Free"></label>
+    <label>Kind<select name="cat">${Object.entries(CATS).map(([k, c]) => `<option value="${k}">${c.name}</option>`).join("")}</select></label></div>
+    <label>One quirky detail<input name="d" maxlength="120" placeholder="Slight wobble. Very loved."></label>
+    <button class="knock" type="submit">Pin it to the map</button></form>`;
+  call.classList.add("show"); call.querySelector(".x").onclick = hide;
+  place(g);
+  const f = $("#pf"); f.t.focus({ preventScroll: true });
+  f.onsubmit = ev => {
+    ev.preventDefault();
+    const r = { id: L.length, cat: f.cat.value, x: Math.round(m.x), y: Math.round(m.y), t: f.t.value.trim(), p: f.p.value.trim() || "Make an offer", n: "Your block", d: f.d.value.trim() || "Ask me about it.", ago: "just now" };
+    L.push(r); sticky = null; g.remove(); drawPins(); sticky = r.id; show(r);
+    toast("Pinned. Your neighbors can see it now. No fee, no account.");
+  };
+});
+addEventListener("resize", () => { if (call.classList.contains("show")) { const el = pinsG.querySelector(".pin.on"); if (el) place(el); } });
+addEventListener("keydown", e => { if (e.key === "Escape") { setDrop(false); } });
+
+drawPins();
+</script>
+</body>
+</html>
