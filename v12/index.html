@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STOOP. WHAT DO YOU NEED?</title>
+<style>
+  :root { --b: 8px; --t: 4px; --k: #000; --w: #fff; --o: #f0f0f0; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; --black: "Arial Black", "Arial Bold", Gadget, Arial, sans-serif; --huge: clamp(44px, 9.4vw, 120px); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; background: var(--w); color: var(--k); }
+  button, input, select, textarea { font: inherit; color: inherit; border-radius: 0; }
+  ::selection { background: var(--k); color: var(--w); }
+
+  .bar { display: flex; border-bottom: var(--b) solid var(--k); font: 700 13px/1 var(--mono); text-transform: uppercase; }
+  .bar > * { padding: 14px 16px; border-right: var(--t) solid var(--k); white-space: nowrap; }
+  .bar > :last-child { border-right: 0; }
+  .bar a { background: var(--k); color: var(--w); text-decoration: none; }
+  .bar a:hover { background: var(--w); color: var(--k); }
+  .bar .grow { flex: 1; }
+
+  /* the field */
+  .field { border-bottom: var(--b) solid var(--k); display: flex; flex-direction: column; }
+  .field textarea {
+    display: block; width: 100%; height: calc(var(--huge) * 2.05 + 48px); resize: none; overflow: hidden; border: 0; outline: 0;
+    font: 900 var(--huge)/1 var(--black); letter-spacing: -.05em; padding: 22px 22px 0; background: var(--w); color: var(--k); cursor: text;
+  }
+  .field textarea::placeholder { color: var(--k); opacity: 1; }
+  .field textarea:hover { background: var(--o); }
+  .field textarea:focus::placeholder { color: #c9c9c9; }
+  .strip { display: flex; border-top: var(--t) solid var(--k); font: 700 13px/1 var(--mono); text-transform: uppercase; }
+  .strip > * { padding: 12px 16px; border-right: var(--t) solid var(--k); display: flex; align-items: center; gap: 4px; }
+  .strip > :last-child { border-right: 0; }
+  .strip .grow { flex: 1; flex-wrap: wrap; }
+  .strip button { border: 0; background: none; font-weight: 700; cursor: pointer; padding: 2px 6px; text-transform: uppercase; }
+  .strip button:hover, .strip button.on { background: var(--k); color: var(--w); }
+  .strip a { color: var(--k); text-decoration: none; background: var(--k); color: var(--w); }
+  .strip a:hover { background: var(--w); color: var(--k); }
+  .strip #count { font-size: 13px; }
+
+  .postline {
+    display: block; width: 100%; text-align: left; border: 0; border-bottom: var(--b) solid var(--k); background: var(--w); cursor: pointer;
+    font: 900 var(--huge)/1 var(--black); letter-spacing: -.05em; padding: 22px 22px 26px; min-height: calc(var(--huge) * 2.05 + 48px);
+  }
+  .postline:hover, .postline[aria-expanded="true"] { background: var(--k); color: var(--w); }
+  .postline .arr { display: inline-block; transition: transform .2s; }
+  .postline:hover .arr { transform: translateX(.15em); }
+  .postline[aria-expanded="true"] .arr { transform: rotate(90deg); }
+
+  .pform { display: none; border-bottom: var(--b) solid var(--k); background: var(--k); }
+  .pform.open { display: block; }
+  .pgrid { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1.2fr; gap: var(--t); background: var(--k); border-bottom: var(--t) solid var(--k); }
+  .pgrid label { background: var(--w); display: flex; flex-direction: column; padding: 12px 16px 14px; font: 700 12px var(--mono); text-transform: uppercase; }
+  .pgrid input, .pgrid select { border: 0; outline: 0; background: transparent; font: 900 30px/1.15 var(--black); letter-spacing: -.03em; margin-top: 8px; width: 100%; min-width: 0; -webkit-appearance: none; appearance: none; cursor: pointer; }
+  .pgrid input { cursor: text; }
+  .pgrid input::placeholder { color: #bdbdbd; }
+  .pgrid label:focus-within { background: var(--o); }
+  .psend { display: grid; grid-template-columns: 1fr auto; gap: var(--t); }
+  .psend button { border: 0; font: 900 clamp(32px, 5vw, 64px)/1 var(--black); letter-spacing: -.04em; padding: 18px 22px; text-align: left; cursor: pointer; background: var(--w); color: var(--k); }
+  .psend button:hover { background: var(--k); color: var(--w); outline: var(--t) solid var(--w); outline-offset: calc(var(--t) * -1); }
+  .psend .x { font: 700 14px var(--mono); padding: 0 26px; text-transform: uppercase; }
+  .msg { display: none; background: var(--k); color: var(--w); font: 700 15px var(--mono); text-transform: uppercase; padding: 14px 22px; border-bottom: var(--b) solid var(--k); }
+  .msg.show { display: block; }
+  .msg a { color: var(--w); }
+
+  /* results */
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; padding: 26px 22px 18px; border-bottom: var(--b) solid var(--k); }
+  .head h2 { font: 900 clamp(34px, 5.6vw, 72px)/.9 var(--black); letter-spacing: -.045em; text-transform: uppercase; overflow-wrap: anywhere; }
+  .head span { font: 700 13px/1.3 var(--mono); text-transform: uppercase; text-align: right; flex-shrink: 0; }
+  .twrap { overflow-x: auto; border-bottom: var(--b) solid var(--k); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: var(--t) solid var(--k); padding: 12px 14px; text-align: left; vertical-align: top; }
+  tr > :first-child { border-left: 0; } tr > :last-child { border-right: 0; }
+  thead th { border-top: 0; background: var(--k); color: var(--w); font: 700 12px var(--mono); text-transform: uppercase; }
+  td { font: 700 14px/1.3 var(--mono); text-transform: uppercase; }
+  td.no { width: 64px; }
+  td.what { font: 900 21px/1.1 var(--black); text-transform: uppercase; letter-spacing: -.02em; }
+  td.what small { display: block; font: 400 14px/1.35 "Helvetica Neue", Helvetica, Arial, sans-serif; text-transform: none; letter-spacing: 0; margin-top: 6px; max-width: 46em; }
+  td.price { font: 900 26px/1 var(--black); letter-spacing: -.04em; text-align: right; white-space: nowrap; }
+  td.where, td.type, td.when { white-space: nowrap; }
+  tbody tr { cursor: default; }
+  tbody tr:hover, tbody tr.hl { background: var(--k); color: var(--w); }
+  tbody tr:hover td, tbody tr.hl td { border-color: var(--k); border-bottom-color: var(--w); }
+  mark { background: var(--k); color: var(--w); padding: 0 .08em; }
+  tr:hover mark, tr.hl mark { background: var(--w); color: var(--k); }
+  tr.fresh td { animation: blink .35s steps(1) 6; }
+  @keyframes blink { 50% { background: var(--k); color: var(--w); } }
+  td.none { text-align: left; padding: 40px 22px; }
+  td.none button { border: 0; background: none; cursor: pointer; font: 900 clamp(30px, 5vw, 64px)/1 var(--black); letter-spacing: -.045em; text-align: left; text-transform: uppercase; }
+  td.none button:hover { background: var(--k); color: var(--w); }
+
+  /* map */
+  .mbox { margin: 36px 22px 0; border: var(--b) solid var(--k); display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); }
+  .mleft { border-right: var(--b) solid var(--k); background: var(--k); }
+  #svg { display: block; width: 100%; height: auto; }
+  .m-land { fill: #fff; }
+  .m-minor { stroke: #ebebeb; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .m-half { stroke: #c9c9c9; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .m-major { stroke: #000; stroke-width: 1.2; fill: none; vector-effect: non-scaling-stroke; }
+  .m-parks { fill: #e2e2e2; }
+  .m-lake { fill: #000; }
+  .m-pier { fill: #fff; }
+  .m-river { stroke: #000; stroke-width: 4.5; fill: none; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .m-loop { fill: #000; }
+  .m-labels text { font: 900 1.45px var(--black); text-anchor: middle; fill: #000; text-transform: uppercase; paint-order: stroke; stroke: #fff; stroke-width: .7px; stroke-linejoin: round; letter-spacing: -.02px; }
+  .m-labels text.on { fill: #fff; stroke: #000; }
+  .m-lakelabel { font: 900 4.6px var(--black); fill: #fff; letter-spacing: -.25px; }
+  .mk { cursor: pointer; }
+  .mk rect.sq { fill: #000; stroke: #fff; stroke-width: 1.5; vector-effect: non-scaling-stroke; transition: transform .1s; }
+  .mk .tip { display: none; }
+  .mk .tip rect { fill: #000; }
+  .mk .tip text { font: 900 1.7px var(--black); fill: #fff; letter-spacing: -.05px; }
+  .mk.hl rect.sq { transform: scale(1.9); }
+  .mk.hl .tip { display: block; }
+  .mk.off { display: none; }
+
+  .mright { display: flex; flex-direction: column; min-width: 0; }
+  .sel { border-bottom: var(--b) solid var(--k); padding: 18px 22px 22px; min-height: 340px; }
+  .k { font: 700 12px var(--mono); text-transform: uppercase; display: flex; justify-content: space-between; }
+  .sel .pr { font: 900 clamp(48px, 7vw, 96px)/.9 var(--black); letter-spacing: -.06em; margin-top: 22px; }
+  .sel h3 { font: 900 26px/1.05 var(--black); text-transform: uppercase; letter-spacing: -.03em; margin-top: 14px; }
+  .sel p { font-size: 15px; line-height: 1.35; margin-top: 12px; max-width: 34em; }
+  .sel .meta { display: flex; flex-wrap: wrap; margin-top: 18px; border: var(--t) solid var(--k); font: 700 13px var(--mono); text-transform: uppercase; }
+  .sel .meta span { padding: 8px 12px; border-right: var(--t) solid var(--k); }
+  .sel .meta span:last-child { border-right: 0; }
+  .hoods { padding: 18px 22px 22px; }
+  .hoods table { margin-top: 12px; border: var(--t) solid var(--k); }
+  .hoods td { padding: 7px 10px; font-size: 13px; cursor: pointer; }
+  .hoods td.sqs { letter-spacing: .1em; width: 45%; }
+  .hoods td.c { text-align: right; width: 48px; }
+  .hoods tr:hover { background: var(--k); color: var(--w); }
+
+  footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 36px; border-top: var(--b) solid var(--k); font: 700 13px var(--mono); text-transform: uppercase; }
+  footer > * { padding: 14px 22px 40px; }
+  footer a { color: var(--k); }
+
+  @media (max-width: 900px) {
+    :root { --b: 6px; --t: 3px; }
+    .bar .hide { display: none; }
+    .strip { flex-wrap: wrap; }
+    .strip #catbox { flex-wrap: wrap; flex-basis: 100%; border-right: 0; border-bottom: var(--t) solid var(--k); }
+    .strip .grow { flex-basis: 100%; border-right: 0; border-bottom: var(--t) solid var(--k); }
+    .pgrid { grid-template-columns: 1fr 1fr; }
+    .pgrid label:first-child { grid-column: 1 / -1; }
+    .pgrid input, .pgrid select { font-size: 22px; }
+    .head { flex-direction: column; align-items: flex-start; }
+    .head span { text-align: left; }
+    td.where, td.type, td.when, th.where, th.type, th.when { display: none; }
+    td.what small::after { content: attr(data-meta); display: block; font: 700 12px var(--mono); text-transform: uppercase; margin-top: 6px; }
+    td.what { font-size: 17px; }
+    td.price { font-size: 19px; }
+    .mbox { grid-template-columns: 1fr; margin: 24px 12px 0; }
+    .mleft { border-right: 0; border-bottom: var(--b) solid var(--k); }
+    .sel { min-height: 0; }
+  }
+</style>
+</head>
+<body>
+<nav class="bar">
+  <a href="../">&larr; Gallery</a>
+  <span>Stoop</span>
+  <span class="grow hide">Chicago classifieds. No fees. No algorithm. No feed.</span>
+  <span class="hide">Mon 05 Oct 2026</span>
+  <span id="total">20 listings</span>
+</nav>
+
+<form class="field" id="sform" role="search">
+  <label for="q" style="position:absolute;left:-9999px">Search Stoop</label>
+  <textarea id="q" rows="2" placeholder="What do&#10;you need?" spellcheck="false" autocomplete="off"></textarea>
+  <div class="strip">
+    <span class="grow">Search every listing in Chicago. Try: <button type="button" class="try">bike</button><button type="button" class="try">free</button><button type="button" class="try">Pilsen</button><button type="button" class="try">sublet</button><button type="button" class="try">piano</button></span>
+    <span id="catbox"><button type="button" class="cat on" data-c="All">All</button></span>
+    <a href="#results" id="count">20 results &darr;</a>
+  </div>
+</form>
+
+<button class="postline" id="postBtn" type="button" aria-expanded="false" aria-controls="pform">Got something?<br>Post it <span class="arr">&rarr;</span></button>
+<form class="pform" id="pform" autocomplete="off">
+  <div class="pgrid">
+    <label>01 / What is it<input id="pt" required maxlength="70" placeholder="OAK DRESSER"></label>
+    <label>02 / Price<input id="pp" maxlength="16" placeholder="$60 OR FREE"></label>
+    <label>03 / Where<select id="pn"></select></label>
+    <label>04 / Type<select id="pc"></select></label>
+  </div>
+  <div class="psend"><button type="submit">Post it. Free. &rarr;</button><button type="button" class="x" id="cancel">Cancel</button></div>
+</form>
+<div class="msg" id="msg" aria-live="polite"></div>
+
+<section id="results">
+  <div class="head"><h2 id="rh">Everything.</h2><span id="rs">Newest first.<br>No ranking. No boosts.</span></div>
+  <div class="twrap">
+    <table>
+      <thead><tr><th>No.</th><th>What</th><th style="text-align:right">Price</th><th class="where">Where</th><th class="type">Type</th><th class="when">When</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="map">
+  <div class="head"><h2>Where.</h2><span>One square, one listing.<br>Only what you searched for.</span></div>
+  <div class="mbox">
+    <div class="mleft"><svg id="svg" viewBox="-58 -80 88 146" role="img" aria-label="Black and white map of Chicago with square listing markers"></svg></div>
+    <div class="mright">
+      <div class="sel" id="sel"></div>
+      <div class="hoods"><div class="k"><span>Squares by neighborhood</span><span>Click one to search it</span></div><table><tbody id="hoods"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<footer><span>Stoop. Chicago. No fees. No algorithm.</span><a href="../">&larr; Gallery</a></footer>
+
+<script>
+/* ---------- Stoop: shared listings + stylized Chicago geometry ----------
+   Map units: 1 unit = 100 address numbers = 1/8 mile. State & Madison = (0,0).
+   +x is east, +y is south. 8 units = 1 mile. */
+const NS = "http://www.w3.org/2000/svg";
+const CATS = ["For Sale", "Free", "Housing", "Jobs", "Gigs", "Services", "Community"];
+const HOODS = {
+  "Rogers Park": [-15, -70], "Andersonville": [-15, -54], "Uptown": [-9, -46], "Lincoln Square": [-23, -49],
+  "Albany Park": [-38, -49], "Lakeview": [-9, -34], "Avondale": [-33, -34], "Logan Square": [-30, -25],
+  "Lincoln Park": [-7, -23], "Bucktown": [-20, -20], "Wicker Park": [-16, -14], "Humboldt Park": [-38, -12],
+  "Ukrainian Village": [-22, -8], "Garfield Park": [-46, 2], "West Loop": [-11, 0], "Loop": [-0.5, 7],
+  "Pilsen": [-16, 19], "Chinatown": [-2, 23], "Little Village": [-31, 23], "Bridgeport": [-8, 32],
+  "Back of the Yards": [-18, 46], "Bronzeville": [3, 38], "Hyde Park": [12, 54], "Woodlawn": [11, 63]
+};
+const SHORE = [[-12,-95],[-12,-76],[-11,-70],[-10,-64],[-9,-58],[-7,-52],[-5,-48],[-4,-44],[-3,-38],[-2,-32],[-1,-27],[0,-22],[1,-16],[1,-11],[2,-8],[4,-5],[4,-3],[4,2],[4.5,8],[6,11],[6,14],[5,18],[5,22],[7,31],[9,39],[12,47],[16,51],[19,55],[18,57],[21,63],[23,67],[26,72],[29,79],[32,95]];
+const RIVERS = [
+  [[4.5,-3.2],[-4,-3.2]],
+  [[-4,-3.2],[-5.5,-5.5],[-7.5,-8],[-10,-11],[-12.5,-14.5],[-14.5,-17.5],[-17,-20],[-20,-22],[-23.5,-24],[-26,-27],[-27.5,-30],[-28,-34],[-29,-38],[-30.5,-42],[-32,-46],[-34,-50],[-38,-54],[-44,-60],[-52,-68],[-62,-74]],
+  [[-32,-46],[-31,-52],[-30,-58],[-29,-64],[-29,-72],[-30,-95]],
+  [[-4,-3.2],[-4,4],[-4.5,10],[-5,14],[-5.5,18],[-7.5,21],[-10,23.5],[-13,25],[-16,26],[-19,27.5],[-25,30],[-32,33.5],[-40,37.5],[-50,42],[-70,51]],
+  [[-10,23.5],[-10.5,28],[-11,33]]
+];
+const DIAG = [
+  [[-6,-4],[-12,-10],[-16,-15],[-22,-20],[-28,-26],[-34,-31],[-40,-36],[-48,-43],[-70,-62]],          /* Milwaukee */
+  [[-4,-17],[-10,-24],[-16,-31],[-20,-38],[-24,-47],[-28,-54],[-36,-64],[-46,-76]],                    /* Lincoln */
+  [[0,-6],[-2,-14],[-4,-22],[-8,-30],[-10,-36],[-12,-44],[-15,-52],[-17,-60],[-17,-95]],               /* Clark */
+  [[0,18],[-6,22],[-12,26],[-20,31],[-30,38],[-40,45],[-70,62]],                                       /* Archer */
+  [[-6,-1],[-14,3],[-22,8],[-30,13],[-40,18],[-70,30]]                                                 /* Ogden */
+];
+const MAJOR_EW = [-76,-64,-56,-48,-40,-32,-24,-16,-8,0,12,22,31,39,47,55,63];
+const MAJOR_NS = [-56,-48,-40,-32,-24,-16,-8,0,8,16];
+const HALF_EW = [-72,-68,-60,-52,-44,-36,-28,-20,-12,-4,4,8,16,18,26,35,43,51,59,67];
+const HALF_NS = [-52,-44,-36,-28,-20,-12,-4,4,12];
+const STREETS_NS = [[-48,"Cicero"],[-40,"Pulaski"],[-32,"Kedzie"],[-24,"Western"],[-16,"Ashland"],[-8,"Halsted"],[0,"State"]];
+const STREETS_EW = [[-76,"Howard"],[-64,"Devon"],[-48,"Lawrence"],[-40,"Irving Park"],[-32,"Belmont"],[-24,"Fullerton"],[-16,"North"],[-8,"Chicago"],[0,"Madison"],[12,"Roosevelt"],[22,"Cermak"],[31,"31st"],[39,"Pershing"],[47,"47th"],[55,"55th"],[63,"63rd"]];
+
+let LISTINGS = [
+  { t: "Walnut mid-century credenza", d: "One veneer chip on the left door. Came out of my grandma's place on 55th. Needs two people.", p: 340, c: "For Sale", n: "Hyde Park", a: 6, x: 10.5, y: 52 },
+  { t: "Moving boxes, about 40, flattened", d: "Some say KITCHEN in Sharpie. Stacked by the gangway, take as many as you want.", p: 0, c: "Free", n: "Logan Square", a: 11, x: -27.5, y: -27.5 },
+  { t: "Room in a 3BR two-flat, Nov 1", d: "Two artists and a very calm dog. Radiator heat, back porch, 6 min to the 18th St Pink Line.", p: 825, u: "/mo", c: "Housing", n: "Pilsen", a: 18, x: -13.5, y: 17 },
+  { t: "Trek FX 2 hybrid, 54cm, new tires", d: "Tuned in August. Comes with a Kryptonite lock but not the key, sorry.", p: 260, c: "For Sale", n: "Andersonville", a: 24, x: -12.5, y: -56.5 },
+  { t: "Help moving an upright piano down one flight", d: "About 400 lb. Need three strong people Saturday at 10am. Pizza after.", p: 120, c: "Gigs", n: "Bridgeport", a: 31, x: -5.5, y: 29.5 },
+  { t: "Barista, part-time, 6 to 11am", d: "Corner cafe on Division. Tips split evenly. Must tolerate regulars who talk a lot.", p: 19, u: "/hr", c: "Jobs", n: "Wicker Park", a: 47, x: -13.5, y: -12 },
+  { t: "Lost: grey tabby, answers to \"Pierogi\"", d: "Last seen near 26th and Pulaski. Very food motivated. Rattle a bag of treats.", p: null, c: "Community", n: "Little Village", a: 62, x: -37.5, y: 26 },
+  { t: "Hemming and alterations, same week", d: "22 years on Broadway. Bring it pinned, I'll do the rest.", p: 15, u: "+", c: "Services", n: "Uptown", a: 75, x: -6.5, y: -48.5 },
+  { t: "Window AC, 8,000 BTU, works", d: "Loud, but it got us through July. Brackets included. Second-floor walk-up.", p: 75, c: "For Sale", n: "Rogers Park", a: 96, x: -13, y: -72.5 },
+  { t: "Snow shoveling, whole winter, two walks", d: "One reliable person for the season. Corner lot off Southport, plus the neighbor's walk.", p: 300, c: "Gigs", n: "Lakeview", a: 118, x: -13.5, y: -36 },
+  { t: "Tomato cages and 6 bags of potting soil", d: "Garden is done for the year. On the front steps on King Drive, first come.", p: 0, c: "Free", n: "Bronzeville", a: 150, x: 4.5, y: 41 },
+  { t: "Block party on Kedzie, Sat Oct 17", d: "Bring a chair and a dish. Street closed noon to 8. Somebody's uncle is DJing.", p: null, c: "Community", n: "Humboldt Park", a: 170, x: -32.5, y: -14 },
+  { t: "Furnished studio sublet, Dec to May", d: "Going abroad. Very good couch, mediocre plant. Laundry in building, Blue Line at Damen.", p: 1150, u: "/mo", c: "Housing", n: "Wicker Park", a: 225, x: -19, y: -16.5 },
+  { t: "Algebra and SAT math tutor", d: "Grad student. At the Harper Library or your kitchen table, $40 an hour.", p: 40, u: "/hr", c: "Services", n: "Hyde Park", a: 290, x: 14.5, y: 57 },
+  { t: "120 LPs, mostly soul and house", d: "Selling as a lot. Frankie Knuckles in there. Come listen first.", p: 480, c: "For Sale", n: "Woodlawn", a: 340, x: 9, y: 61 },
+  { t: "Line cook at a taqueria on 26th St", d: "Nights and weekends. Spanish helpful, not required. Staff meal is excellent.", p: 18, u: "/hr", c: "Jobs", n: "Little Village", a: 410, x: -28, y: 26.5 },
+  { t: "Kids' bike, 16 in, with training wheels", d: "Outgrown in one summer. Streamers still attached. By the Western Brown Line.", p: 35, c: "For Sale", n: "Lincoln Square", a: 480, x: -25, y: -46.5 },
+  { t: "Kimball upright piano. You move it.", d: "Plays fine, needs a tuning. Ground floor, no steps. Bring four friends.", p: 0, c: "Free", n: "Uptown", a: 560, x: -11, y: -43.5 },
+  { t: "Garden 1BR, heat included", d: "Own entrance off the alley. Two blocks from the Logan Square Blue Line. Cats OK.", p: 1050, u: "/mo", c: "Housing", n: "Logan Square", a: 660, x: -32.5, y: -22.5 },
+  { t: "Seed and bulb swap, Sunday 10am", d: "Back room of the coffee shop on Clark. Bring seeds, leave with different seeds.", p: null, c: "Community", n: "Andersonville", a: 780, x: -16.5, y: -51.5 }
+];
+LISTINGS.forEach((l, i) => { l.id = i; l.u = l.u || ""; });
+let NEXT_ID = LISTINGS.length;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function money(l) { if (l.p === 0) return "Free"; if (l.p == null) return "–"; return "$" + l.p.toLocaleString("en-US") + l.u; }
+function ago(m) { if (m < 1) return "just now"; if (m < 60) return m + " min"; return Math.floor(m / 60) + " hr"; }
+function words(q) { return String(q).toLowerCase().split(/\s+/).filter(Boolean); }
+function matches(l, q, cat) {
+  if (cat && cat !== "All" && l.c !== cat) return false;
+  const hay = (l.t + " " + l.d + " " + l.n + " " + l.c + " " + money(l)).toLowerCase();
+  return words(q).every(w => hay.includes(w));
+}
+function parsePrice(s) {
+  s = String(s).trim().toLowerCase();
+  if (!s || /free/.test(s) || /^\$?0$/.test(s)) return { p: 0, u: "" };
+  const m = s.replace(/,/g, "").match(/\d+(\.\d+)?/);
+  if (!m) return { p: null, u: "" };
+  return { p: Math.round(+m[0]), u: /mo|month/.test(s) ? "/mo" : /hr|hour/.test(s) ? "/hr" : "" };
+}
+function newListing(t, priceStr, n, c) {
+  const h = HOODS[n], ang = Math.random() * Math.PI * 2, r = 1.6 + Math.random() * 1.4, pr = parsePrice(priceStr);
+  const l = { id: NEXT_ID++, t: t, d: "Just posted by a neighbor. Reply to ask about it.", p: pr.p, u: pr.u, c: c, n: n, a: 0,
+    x: +(h[0] + Math.cos(ang) * r).toFixed(1), y: +(h[1] + Math.sin(ang) * r).toFixed(1), fresh: true };
+  LISTINGS.unshift(l);
+  return l;
+}
+function shoreX(y) {
+  for (let i = 0; i < SHORE.length - 1; i++) {
+    const a = SHORE[i], b = SHORE[i + 1];
+    if (y >= a[1] && y <= b[1]) return a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]);
+  }
+  return y < 0 ? SHORE[0][0] : SHORE[SHORE.length - 1][0];
+}
+function svgEl(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const pts = a => a.map(p => p[0] + "," + p[1]).join(" ");
+const line = a => "M" + a.map(p => p[0] + " " + p[1]).join("L");
+function buildMap(svg, o) {
+  o = o || {};
+  svgEl("rect", { x: -300, y: -300, width: 700, height: 700, class: "m-land" }, svg);
+  let d = "";
+  for (let x = -62; x <= 40; x += 2) d += "M" + x + " -95V95";
+  for (let y = -94; y <= 94; y += 2) d += "M-80 " + y + "H60";
+  svgEl("path", { d: d, class: "m-minor" }, svg);
+  d = ""; HALF_NS.forEach(x => d += "M" + x + " -95V95"); HALF_EW.forEach(y => d += "M-80 " + y + "H60");
+  svgEl("path", { d: d, class: "m-half" }, svg);
+  d = ""; MAJOR_NS.forEach(x => d += "M" + x + " -95V95"); MAJOR_EW.forEach(y => d += "M-80 " + y + "H60"); DIAG.forEach(a => d += line(a));
+  svgEl("path", { d: d, class: "m-major" }, svg);
+  const parks = svgEl("g", { class: "m-parks" }, svg), lp = [];
+  for (let y = -16; y >= -58; y -= 2) lp.push([shoreX(y) + 1, y]);
+  for (let y = -58; y <= -16; y += 2) lp.push([shoreX(y) - 2.4, y]);
+  svgEl("polygon", { points: pts(lp) }, parks);
+  [[1, -2, 6, 14], [15, 56, 10, 10], [4, 51, 4, 9], [-36, -15, 5, 4.5], [-44, -2, 4, 3.5], [-26, 13, 4, 4]].forEach(r =>
+    svgEl("rect", { x: r[0], y: r[1], width: r[2], height: r[3] }, parks));
+  svgEl("polygon", { points: pts(SHORE.concat([[400, 95], [400, -95]])), class: "m-lake" }, svg);
+  svgEl("rect", { x: 4, y: -6.2, width: 9, height: 1.2, class: "m-pier" }, svg);
+  d = ""; RIVERS.forEach(a => d += line(a));
+  svgEl("path", { d: d, class: "m-river" }, svg);
+  svgEl("rect", { x: -2, y: -2, width: 3, height: 6, class: "m-loop" }, svg);
+  if (o.axis) {
+    const ax = svgEl("g", { class: "m-axis" }, svg);
+    STREETS_NS.forEach(s => { if (s[0] < shoreX(o.axis.top) - 2) { const t = svgEl("text", { x: s[0] + 0.5, y: o.axis.top }, ax); t.textContent = s[1]; } });
+    STREETS_EW.forEach(s => { const t = svgEl("text", { x: o.axis.left, y: s[0] - 0.6 }, ax); t.textContent = s[1]; });
+  }
+  const lab = svgEl("g", { class: "m-labels" }, svg);
+  for (const n in HOODS) {
+    const t = svgEl("text", { x: HOODS[n][0], y: HOODS[n][1] }, lab);
+    t.textContent = o.fmt ? o.fmt(n) : n; t.dataset.hood = n;
+  }
+  if (o.lake) o.lake.forEach(s => { const t = svgEl("text", { x: s[0], y: s[1], class: "m-lakelabel" }, svg); t.textContent = s[2]; });
+  return svgEl("g", { class: "m-pins" }, svg);
+}
+function hoodOptions(sel) { return Object.keys(HOODS).sort().map(n => "<option" + (n === sel ? " selected" : "") + ">" + n + "</option>").join(""); }
+function catOptions() { return CATS.map(c => "<option>" + c + "</option>").join(""); }
+
+
+const q = $("#q"), rows = $("#rows"), svg = $("#svg");
+let cat = "All", selId = null;
+const pins = buildMap(svg, { fmt: n => n.toUpperCase(), });
+svgEl("text", { class: "m-lakelabel", transform: "translate(15,-66) rotate(90)" }, svg).textContent = "LAKE MICHIGAN";
+svg.appendChild(pins);
+$("#pn").innerHTML = hoodOptions("Pilsen");
+$("#pc").innerHTML = catOptions();
+$("#catbox").innerHTML = ["All"].concat(CATS).map(c => `<button type="button" class="cat${c === cat ? " on" : ""}" data-c="${c}">${c}</button>`).join("");
+
+function hi(raw, ws) {
+  if (!ws.length) return esc(raw);
+  const re = new RegExp("(" + ws.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")", "ig");
+  return String(raw).split(re).map((p, i) => i % 2 ? "<mark>" + esc(p) + "</mark>" : esc(p)).join("");
+}
+
+function render() {
+  const ws = words(q.value), vis = LISTINGS.filter(l => matches(l, q.value, cat)), ids = new Set(vis.map(l => l.id));
+  const qs = q.value.trim();
+  $("#rh").textContent = qs ? `“${qs}”: ${vis.length}.` : (cat === "All" ? "Everything." : cat + ".");
+  $("#rs").innerHTML = `${vis.length} of ${LISTINGS.length} listings${cat !== "All" ? " in " + cat : ""}<br>Newest first. No ranking.`;
+  $("#count").innerHTML = vis.length + (vis.length === 1 ? " result" : " results") + " &darr;";
+  $("#total").textContent = LISTINGS.length + " listings";
+  rows.innerHTML = vis.length ? vis.map(l => {
+    const i = LISTINGS.indexOf(l);
+    return `<tr data-id="${l.id}"${l.fresh ? ' class="fresh"' : ""}><td class="no">${String(LISTINGS.length - i).padStart(3, "0")}</td>
+      <td class="what">${hi(l.t, ws)}<small data-meta="${esc(l.n + " / " + l.c + " / " + ago(l.a))}">${hi(l.d, ws)}</small></td>
+      <td class="price">${hi(money(l), ws)}</td><td class="where">${hi(l.n, ws)}</td><td class="type">${hi(l.c, ws)}</td><td class="when">${ago(l.a)}</td></tr>`;
+  }).join("") : `<tr><td class="none" colspan="6"><button type="button" id="postIt">Nothing for “${esc(qs)}”.<br>Post it yourself &rarr;</button></td></tr>`;
+  LISTINGS.forEach(l => delete l.fresh);
+
+  pins.innerHTML = "";
+  LISTINGS.slice().reverse().forEach(l => {
+    const g = svgEl("g", { class: "mk" + (ids.has(l.id) ? "" : " off"), transform: `translate(${l.x},${l.y})`, "data-id": l.id }, pins);
+    svgEl("rect", { class: "sq", x: -1.1, y: -1.1, width: 2.2, height: 2.2 }, g);
+    const tip = svgEl("g", { class: "tip" }, g), label = money(l).toUpperCase(), w = label.length * 1.25 + 1.6;
+    const left = l.x + 3 + w > 29;
+    svgEl("rect", { x: left ? -3 - w : 3, y: -1.5, width: w, height: 3 }, tip);
+    svgEl("text", { x: left ? -2.2 - w : 3.8, y: .6 }, tip).textContent = label;
+  });
+
+  const by = {};
+  vis.forEach(l => by[l.n] = (by[l.n] || 0) + 1);
+  const hs = Object.keys(by).sort((a, b) => by[b] - by[a] || a.localeCompare(b));
+  $("#hoods").innerHTML = hs.length ? hs.map(h => `<tr data-h="${h}"><td>${h}</td><td class="sqs">${"■".repeat(by[h])}</td><td class="c">${by[h]}</td></tr>`).join("") : `<tr><td>No squares. Nothing matches.</td></tr>`;
+  if (!ids.has(selId)) selId = vis.length ? vis[0].id : null;
+  showSel(selId);
+}
+
+function showSel(id) {
+  const l = LISTINGS.find(x => x.id === id);
+  svg.querySelectorAll(".m-labels text").forEach(t => t.classList.toggle("on", !!l && t.dataset.hood === l.n));
+  if (!l) { $("#sel").innerHTML = `<div class="k"><span>Selected</span></div><div class="pr">NONE.</div><h3>No squares on the map.</h3>`; return; }
+  $("#sel").innerHTML = `<div class="k"><span>Selected square</span><span>Hover another</span></div><div class="pr">${money(l).toUpperCase()}</div>
+    <h3>${esc(l.t)}</h3><p>${esc(l.d)}</p><div class="meta"><span>${l.n}</span><span>${l.c}</span><span>${ago(l.a)}</span></div>`;
+}
+
+function hl(id, on) {
+  const m = pins.querySelector(`.mk[data-id="${id}"]`), r = rows.querySelector(`tr[data-id="${id}"]`);
+  if (m) { m.classList.toggle("hl", on); if (on) pins.appendChild(m); }
+  if (r) r.classList.toggle("hl", on);
+  if (on) { selId = id; showSel(id); }
+}
+rows.addEventListener("mouseover", e => { const r = e.target.closest("tr[data-id]"); if (r) hl(+r.dataset.id, true); });
+rows.addEventListener("mouseout", e => { const r = e.target.closest("tr[data-id]"); if (r) hl(+r.dataset.id, false); });
+pins.addEventListener("mouseover", e => { const m = e.target.closest(".mk"); if (m) hl(+m.dataset.id, true); });
+pins.addEventListener("mouseout", e => { const m = e.target.closest(".mk"); if (m) hl(+m.dataset.id, false); });
+$("#hoods").addEventListener("click", e => { const r = e.target.closest("tr[data-h]"); if (r) { q.value = r.dataset.h; render(); $("#results").scrollIntoView({ behavior: "smooth" }); } });
+
+q.addEventListener("input", render);
+q.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("#results").scrollIntoView({ behavior: "smooth" }); } });
+$("#sform").addEventListener("submit", e => e.preventDefault());
+document.querySelectorAll(".try").forEach(b => b.addEventListener("click", () => { q.value = b.textContent; render(); }));
+$("#catbox").addEventListener("click", e => {
+  const b = e.target.closest(".cat"); if (!b) return;
+  cat = b.dataset.c; document.querySelectorAll(".cat").forEach(x => x.classList.toggle("on", x === b)); render();
+});
+
+const pbtn = $("#postBtn"), pform = $("#pform");
+function openPost(open, title) {
+  pform.classList.toggle("open", open); pbtn.setAttribute("aria-expanded", open);
+  if (open) { if (title != null) $("#pt").value = title; $("#msg").classList.remove("show"); $("#pt").focus({ preventScroll: true }); pbtn.scrollIntoView({ behavior: "smooth" }); }
+}
+pbtn.addEventListener("click", () => openPost(!pform.classList.contains("open")));
+$("#cancel").addEventListener("click", () => openPost(false));
+rows.addEventListener("click", e => { if (e.target.closest("#postIt")) openPost(true, q.value.trim()); });
+pform.addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#pt").value.trim(); if (!t) return;
+  const l = newListing(t, $("#pp").value, $("#pn").value, $("#pc").value);
+  q.value = ""; cat = "All"; document.querySelectorAll(".cat").forEach(x => x.classList.toggle("on", x.dataset.c === "All"));
+  selId = l.id; render();
+  openPost(false); pform.reset();
+  $("#msg").innerHTML = `Posted. No. ${String(LISTINGS.length).padStart(3, "0")} is live in ${l.n.toUpperCase()}, top of the table, square on the map. <a href="#results">See it &darr;</a>`;
+  $("#msg").classList.add("show");
+});
+
+render();
+</script>
+</body>
+</html>
