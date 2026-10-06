@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop Chicago: one bar</title>
+<style>
+  :root {
+    --bg: #f2f0ea;
+    --ink: #111;
+    --y: #ffd400;
+    --grey: #8b887f;
+    --rule: #d6d3ca;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --black: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 var(--sans); }
+  button, input { font: inherit; color: inherit; }
+  ::selection { background: var(--y); }
+  mark { background: var(--y); color: inherit; padding: 0 1px; }
+
+  .corner { position: absolute; top: 22px; font-size: 13px; font-weight: 700; }
+  .corner.l { left: 28px; } .corner.r { right: 28px; text-align: right; }
+  .corner a { color: var(--ink); text-decoration: none; }
+  .corner a:hover { background: var(--y); }
+  .corner span { display: block; font-weight: 400; color: var(--grey); }
+
+  /* first screen */
+  .first { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 90px 24px 120px; }
+  .stage { width: min(820px, 100%); position: relative; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; border: 3px solid var(--ink); margin-bottom: 18px; }
+  .seg button {
+    border: 0; background: transparent; cursor: pointer; padding: 18px 0 14px; font: 900 64px/0.9 var(--black); letter-spacing: -.04em;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .seg button small { font: 12px var(--mono); letter-spacing: .02em; color: var(--grey); }
+  .seg button + button { border-left: 3px solid var(--ink); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .seg button[aria-pressed="true"] small { color: var(--y); }
+  .seg button:not([aria-pressed="true"]):hover { background: #e7e4dc; }
+  .seg button:focus-visible { outline: 4px solid var(--y); outline-offset: -7px; }
+
+  .barwrap { position: relative; }
+  .bar { display: flex; align-items: center; gap: 8px; background: #fff; border: 3px solid var(--ink); min-height: 84px; padding: 10px 12px 10px 0; box-shadow: 0 0 0 0 var(--y); transition: box-shadow .15s; flex-wrap: wrap; }
+  .bar:focus-within { box-shadow: 8px 8px 0 0 var(--y); }
+  .bar .pre { align-self: stretch; display: grid; place-items: center; min-width: 66px; font: 900 30px var(--black); border-right: 3px solid var(--ink); margin: -10px 4px -10px 0; }
+  .tok { display: inline-flex; align-items: center; gap: 6px; background: var(--y); border: 2px solid var(--ink); padding: 3px 9px; font-weight: 700; font-size: 18px; white-space: nowrap; max-width: 320px; }
+  .tok span { overflow: hidden; text-overflow: ellipsis; }
+  .tok i { font: normal 10px var(--mono); color: #5a5300; }
+  .tok + .arr, .arr { font: 700 18px var(--sans); color: var(--grey); }
+  #bar { flex: 1; min-width: 180px; border: 0; outline: none; background: none; font-size: 30px; font-weight: 700; letter-spacing: -.02em; padding: 6px 4px; }
+  #bar::placeholder { color: #b9b6ad; font-weight: 400; }
+  .bar .kbd { font: 11px var(--mono); border: 1.5px solid var(--ink); padding: 3px 7px; white-space: nowrap; }
+  .hint { margin-top: 14px; font: 12px var(--mono); color: var(--grey); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 18px; }
+  .hint b { color: var(--ink); font-weight: 700; }
+  .hint .try { border: 0; background: none; padding: 0 4px; font: 700 12px var(--mono); color: var(--ink); cursor: pointer; border-bottom: 2px solid var(--y); }
+  .hint .try:hover { background: var(--y); }
+  .steps { display: flex; gap: 6px; flex-wrap: wrap; }
+  .steps span { padding: 1px 6px; }
+  .steps span.now { background: var(--ink); color: var(--y); }
+  .steps span.done { color: var(--ink); text-decoration: line-through; text-decoration-color: var(--y); text-decoration-thickness: 3px; }
+  .done-msg { color: var(--ink); background: var(--y); padding: 2px 8px; }
+  .done-msg a { color: inherit; font-weight: 700; }
+
+  .drop { position: absolute; left: 0; right: 0; top: calc(100% + 10px); background: #fff; border: 3px solid var(--ink); z-index: 20; max-height: min(60vh, 520px); overflow-y: auto; display: none; }
+  .drop.show { display: block; }
+  .grp { font: 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; padding: 10px 16px 5px; color: var(--grey); display: flex; justify-content: space-between; border-top: 1px solid var(--rule); }
+  .grp:first-child { border-top: 0; }
+  .opt { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; padding: 8px 16px; cursor: pointer; }
+  .opt b { font-size: 17px; letter-spacing: -.01em; }
+  .opt span { grid-column: 1; font-size: 13px; color: var(--grey); }
+  .opt em { font-style: normal; font-weight: 700; grid-row: 1; grid-column: 2; }
+  .opt.act { background: var(--ink); color: #fff; }
+  .opt.act span { color: #bdbab1; }
+  .opt.act mark { color: var(--ink); }
+  .drop .foot { padding: 9px 16px; font: 11px var(--mono); color: var(--grey); border-top: 1px solid var(--rule); background: #faf9f6; position: sticky; bottom: 0; }
+
+  .cue { position: absolute; bottom: 26px; left: 0; right: 0; text-align: center; font: 12px var(--mono); color: var(--grey); }
+  .cue a { color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--y); }
+
+  /* section heads */
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; border-top: 3px solid var(--ink); padding-top: 14px; }
+  .head h2 { margin: 0; font: 900 46px/1 var(--black); letter-spacing: -.04em; }
+  .head p { margin: 0; font: 12px var(--mono); color: var(--grey); text-align: right; }
+  .head p b { color: var(--ink); }
+  .head p button { border: 0; background: var(--y); padding: 1px 6px; cursor: pointer; font: inherit; }
+
+  /* numbered list */
+  .recent { padding: 40px 0 60px; }
+  ol.num { list-style: none; margin: 22px 0 0; padding: 0; columns: 2; column-gap: 48px; column-rule: 1px solid var(--rule); }
+  ol.num li { break-inside: avoid; display: grid; grid-template-columns: 38px 1fr auto; gap: 0 12px; padding: 7px 0 7px; border-bottom: 1px solid var(--rule); cursor: pointer; align-items: baseline; }
+  ol.num .n { font: 700 13px var(--mono); }
+  ol.num .t { font-weight: 700; font-size: 17px; letter-spacing: -.015em; line-height: 1.2; }
+  ol.num .t small { display: block; font-weight: 400; font-size: 12.5px; color: var(--grey); letter-spacing: 0; margin-top: 1px; }
+  ol.num .p { font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  ol.num li:hover .t { text-decoration: underline; text-decoration-color: var(--y); text-decoration-thickness: 4px; text-underline-offset: 2px; }
+  ol.num li.flash { animation: flash 2.6s ease-out; }
+  @keyframes flash { 0%, 35% { background: var(--y); } 100% { background: transparent; } }
+  .zero { margin-top: 22px; font: 900 28px var(--black); letter-spacing: -.03em; display: none; }
+  .zero button { font: inherit; border: 0; background: var(--y); cursor: pointer; padding: 0 8px; }
+
+  /* map + radius */
+  .near { padding: 20px 0 70px; }
+  .near-grid { display: grid; grid-template-columns: 380px 1fr; gap: 0 40px; margin-top: 22px; align-items: start; }
+  .ctl { position: sticky; top: 20px; }
+  .sentence { font: 900 34px/1.08 var(--black); letter-spacing: -.035em; margin: 0 0 18px; }
+  .sentence .v { background: var(--y); padding: 0 6px; white-space: nowrap; }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 40px; background: transparent; cursor: pointer; margin: 0; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 6px; background: var(--ink); }
+  input[type="range"]::-moz-range-track { height: 6px; background: var(--ink); }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -12px; background: var(--y); border: 3px solid var(--ink); border-radius: 50%; }
+  input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; background: var(--y); border: 3px solid var(--ink); border-radius: 50%; }
+  input[type="range"]:focus-visible { outline: 2px dashed var(--ink); outline-offset: 4px; }
+  .ticks { display: flex; justify-content: space-between; font: 11px var(--mono); color: var(--grey); margin-top: 2px; }
+  .centers { margin: 18px 0 0; font: 12px var(--mono); color: var(--grey); }
+  .centers div { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .centers button { border: 1.5px solid var(--ink); background: none; padding: 2px 7px; cursor: pointer; font: 12px var(--sans); font-weight: 700; color: var(--ink); }
+  .centers button.on { background: var(--ink); color: var(--y); }
+  .centers button:hover { background: var(--y); color: var(--ink); }
+  .within { list-style: none; margin: 18px 0 0; padding: 0; border-top: 3px solid var(--ink); max-height: 380px; overflow-y: auto; }
+  .within li { display: grid; grid-template-columns: 54px 1fr auto; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 14px; cursor: pointer; }
+  .within li .d { font: 12px var(--mono); padding-top: 2px; }
+  .within li b { font-weight: 700; }
+  .within li span { display: block; color: var(--grey); font-size: 12px; }
+  .within li .pp { font-weight: 700; white-space: nowrap; }
+  .within li:hover { background: #fff; }
+  .within li.flash { animation: flash 2.6s ease-out; }
+  .within .nil { display: block; color: var(--grey); cursor: default; }
+  .mapbox { position: relative; border: 3px solid var(--ink); background: var(--ink); }
+  #map { display: block; width: 100%; height: auto; aspect-ratio: 540 / 840; cursor: crosshair; }
+  #map .land { fill: var(--bg); }
+  #map .minor { stroke: #e7e4dc; stroke-width: .5; fill: none; }
+  #map .major { stroke: #dad7cd; stroke-width: 1; fill: none; }
+  #map .diag { stroke: #cfccc1; stroke-width: 1.6; fill: none; }
+  #map .park { fill: #e3e0d6; }
+  #map .lake { fill: var(--ink); }
+  #map .shore { fill: none; stroke: var(--ink); stroke-width: 1; }
+  #map .pier { fill: var(--bg); }
+  #map .river { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
+  #map .elloop { fill: var(--ink); }
+  #map .hood { font: 700 9px var(--sans); letter-spacing: .06em; fill: var(--ink); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; pointer-events: none; }
+  #map .water { font: 900 15px var(--black); letter-spacing: .3em; fill: var(--bg); text-anchor: middle; }
+  #map .rlabel { display: none; }
+  #ring { fill: rgba(255, 212, 0, .38); stroke: var(--ink); stroke-width: 2; transition: r .12s; }
+  #ringTag rect { fill: var(--ink); }
+  #ringTag text { font: 700 10px var(--mono); fill: var(--y); text-anchor: middle; }
+  #ctr circle { fill: var(--ink); }
+  .pin { cursor: pointer; }
+  .pin circle { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5; transition: r .15s; }
+  .pin.in circle { fill: var(--y); stroke: var(--ink); stroke-width: 2; }
+  .pin.gone { opacity: .12; pointer-events: none; }
+  .pin.hot circle { r: 9; }
+  .maptip { position: absolute; pointer-events: none; background: var(--ink); color: #fff; padding: 6px 10px; font-size: 13px; transform: translate(-50%, calc(-100% - 14px)); white-space: nowrap; display: none; z-index: 5; }
+  .maptip b { color: var(--y); }
+  .mapnote { position: absolute; left: 12px; bottom: 12px; font: 11px var(--mono); color: var(--bg); pointer-events: none; }
+
+  footer { border-top: 3px solid var(--ink); padding: 14px 0 40px; display: flex; justify-content: space-between; gap: 20px; font-size: 13px; }
+  footer a { color: var(--ink); font-weight: 700; }
+  footer span { color: var(--grey); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  @media (max-width: 860px) {
+    .corner.r span { display: none; }
+    .first { padding: 80px 16px 90px; min-height: 92vh; }
+    .seg button { font-size: 40px; padding: 14px 0 10px; }
+    .bar { min-height: 64px; }
+    .bar .pre { min-width: 48px; font-size: 22px; }
+    #bar { font-size: 21px; min-width: 120px; }
+    .bar .kbd { display: none; }
+    .tok { font-size: 15px; max-width: 200px; }
+    .wrap { padding: 0 16px; }
+    .head { flex-direction: column; gap: 6px; }
+    .head h2 { font-size: 32px; }
+    .head p { text-align: left; }
+    ol.num { columns: 1; }
+    .near-grid { grid-template-columns: 1fr; }
+    .ctl { position: static; margin-bottom: 18px; }
+    .sentence { font-size: 26px; }
+    .within { max-height: 260px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<section class="first" id="top">
+  <div class="corner l"><a href="../">&larr; Gallery</a></div>
+  <div class="corner r">Stoop / Chicago<span>No fees. No algorithm. Newest first.</span></div>
+  <div class="stage">
+    <div class="seg" role="group" aria-label="Mode">
+      <button type="button" id="mFind" aria-pressed="true">FIND<small>search 20 listings</small></button>
+      <button type="button" id="mPost" aria-pressed="false">POST<small>free, four steps</small></button>
+    </div>
+    <div class="barwrap">
+      <label class="sr" for="bar" id="barLabel">Search listings</label>
+      <div class="bar" id="barBox">
+        <span class="pre" id="pre" aria-hidden="true">?</span>
+        <span id="toks" style="display:contents"></span>
+        <input id="bar" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="drop" aria-autocomplete="list" placeholder="bike, sublet, free couch&hellip;">
+        <span class="kbd" id="kbd">&crarr; Enter</span>
+      </div>
+      <div class="drop" id="drop" role="listbox"></div>
+    </div>
+    <div class="hint" id="hint"></div>
+  </div>
+  <div class="cue"><a href="#recent">&darr; Recent listings</a> &nbsp;&middot;&nbsp; <a href="#near">&darr; What&rsquo;s near you</a></div>
+</section>
+
+<div class="wrap">
+  <section class="recent" id="recent">
+    <div class="head"><h2>Recent</h2><p id="rstat"></p></div>
+    <ol class="num" id="list"></ol>
+    <div class="zero" id="zero">Nobody has posted that yet. <button type="button" id="zpost">Post it &uarr;</button></div>
+  </section>
+
+  <section class="near" id="near">
+    <div class="head"><h2>Near</h2><p>Click anywhere on the map to move the center.</p></div>
+    <div class="near-grid">
+      <div class="ctl">
+        <p class="sentence" id="sentence"></p>
+        <label class="sr" for="rad">Radius in miles</label>
+        <input type="range" id="rad" min="0.25" max="4" step="0.25" value="1.5">
+        <div class="ticks"><span>&frac14; mi</span><span>1</span><span>2</span><span>3</span><span>4 mi</span></div>
+        <div class="centers">Center on<div id="centers"></div></div>
+        <ul class="within" id="within"></ul>
+      </div>
+      <div class="mapbox">
+        <svg id="map" viewBox="20 8 540 840" role="img" aria-label="Map of Chicago with a resizable radius ring">
+<defs><clipPath id="landclip"><path d="M-1400,-400 L268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L-1400,1300 Z"/></clipPath></defs>
+<path class="land" d="M-1400,-400 L268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L-1400,1300 Z"/>
+<g clip-path="url(#landclip)"><path class="minor" d="M-1400,-400H700M-1400,-350H700M-1400,-300H700M-1400,-250H700M-1400,-200H700M-1400,-150H700M-1400,-100H700M-1400,-50H700M-1400,0H700M-1400,50H700M-1400,100H700M-1400,150H700M-1400,200H700M-1400,250H700M-1400,300H700M-1400,350H700M-1400,400H700M-1400,450H700M-1400,500H700M-1400,550H700M-1400,600H700M-1400,650H700M-1400,700H700M-1400,750H700M-1400,800H700M-1400,850H700M-1400,900H700M-1400,950H700M-1400,1000H700M-1400,1050H700M-1400,1100H700M-1400,1150H700M-1400,1200H700M-1400,1250H700M-1400,1300H700M-1400,1350H700M-1375,-400V1300M-1325,-400V1300M-1275,-400V1300M-1225,-400V1300M-1175,-400V1300M-1125,-400V1300M-1075,-400V1300M-1025,-400V1300M-975,-400V1300M-925,-400V1300M-875,-400V1300M-825,-400V1300M-775,-400V1300M-725,-400V1300M-675,-400V1300M-625,-400V1300M-575,-400V1300M-525,-400V1300M-475,-400V1300M-425,-400V1300M-375,-400V1300M-325,-400V1300M-275,-400V1300M-225,-400V1300M-175,-400V1300M-125,-400V1300M-75,-400V1300M-25,-400V1300M25,-400V1300M75,-400V1300M125,-400V1300M175,-400V1300M225,-400V1300M275,-400V1300M325,-400V1300M375,-400V1300M425,-400V1300M475,-400V1300M525,-400V1300M575,-400V1300M625,-400V1300M675,-400V1300M725,-400V1300"/><path class="major" d="M-1400,-425H700M-1400,-375H700M-1400,-325H700M-1400,-275H700M-1400,-225H700M-1400,-175H700M-1400,-125H700M-1400,-75H700M-1400,-25H700M-1400,25H700M-1400,75H700M-1400,125H700M-1400,175H700M-1400,225H700M-1400,275H700M-1400,325H700M-1400,375H700M-1400,425H700M-1400,475H700M-1400,525H700M-1400,575H700M-1400,625H700M-1400,675H700M-1400,725H700M-1400,775H700M-1400,825H700M-1400,875H700M-1400,925H700M-1400,975H700M-1400,1025H700M-1400,1075H700M-1400,1125H700M-1400,1175H700M-1400,1225H700M-1400,1275H700M-1400,1325H700M-1400,-400V1300M-1350,-400V1300M-1300,-400V1300M-1250,-400V1300M-1200,-400V1300M-1150,-400V1300M-1100,-400V1300M-1050,-400V1300M-1000,-400V1300M-950,-400V1300M-900,-400V1300M-850,-400V1300M-800,-400V1300M-750,-400V1300M-700,-400V1300M-650,-400V1300M-600,-400V1300M-550,-400V1300M-500,-400V1300M-450,-400V1300M-400,-400V1300M-350,-400V1300M-300,-400V1300M-250,-400V1300M-200,-400V1300M-150,-400V1300M-100,-400V1300M-50,-400V1300M0,-400V1300M50,-400V1300M100,-400V1300M150,-400V1300M200,-400V1300M250,-400V1300M300,-400V1300M350,-400V1300M400,-400V1300M450,-400V1300M500,-400V1300M550,-400V1300M600,-400V1300M650,-400V1300M700,-400V1300"/><path class="diag" d="M328,453 L250,375 L188,313 L120,245 L50,175 L-60,90 M345,455 L344,375 L313,300 L285,225 L256,150 L248,60 L244,-100 M344,380 L290,320 L245,262 L200,175 L160,110 M350,588 L250,645 L100,731 L-100,846 M300,452 L240,505 L150,580 L50,650 L-100,760"/></g>
+<g class="parks"><path class="park" d="M352,375 L344,320 L335,275 L334,240 L323,213 L318,185 L300,150 L295,152 L309,192 L320,242 L323,282 L333,330 L341,375 Z"/><path class="park" d="M360,466 L376,462 L381,475 L384,500 L388,548 L371,548 L364,500 Z"/><path class="park" d="M440,826 L453,820 L449,840 L462,869 L470,892 L452,892 L438,858 Z"/><path class="park" d="M398,790 h24 v32 h-24 Z"/><path class="park" d="M133,395 h20 v14 h-20 Z"/></g>
+<path class="lake" d="M268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L2600,1300 L2600,-400 Z"/>
+<path class="shore" d="M268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300"/>
+<rect class="pier" x="372" y="443" width="40" height="4"/>
+<path class="river" d="M381,453 L328,453 M328,453 L318,440 L300,425 L282,392 L275,375 L262,352 L238,325 L205,298 L175,275 L168,240 L163,200 L130,182 L90,168 L40,150 L-50,120 L-200,80 M163,200 L158,150 L152,80 L150,-100 M328,453 L327,500 L325,550 L310,590 L294,612 L270,628 L250,637 L225,652 L200,669 L150,678 L100,687 L50,706 L-100,760 L-300,840 M262,632 L268,660 L272,700"/>
+<rect class="elloop" x="337" y="462" width="16" height="38"/>
+<g class="hoodlabels">
+<text class="hood" data-h="Rogers Park" x="256" y="29" text-anchor="middle">ROGERS PARK</text>
+<text class="hood" data-h="Andersonville" x="256" y="129" text-anchor="middle">ANDERSONVILLE</text>
+<text class="hood" data-h="Uptown" x="290" y="183" text-anchor="start">UPTOWN</text>
+<text class="hood" data-h="Lincoln Square" x="222" y="181" text-anchor="end">LINCOLN SQUARE</text>
+<text class="hood" data-h="Lakeview" x="298" y="263" text-anchor="middle">LAKEVIEW</text>
+<text class="hood" data-h="Lincoln Park" x="302" y="329" text-anchor="middle">LINCOLN PARK</text>
+<text class="hood" data-h="Logan Square" x="168" y="307" text-anchor="middle">LOGAN SQUARE</text>
+<text class="hood" data-h="Wicker Park" x="240" y="375" text-anchor="middle">WICKER PARK</text>
+<text class="hood" data-h="Humboldt Park" x="140" y="395" text-anchor="middle">HUMBOLDT PARK</text>
+<text class="hood" data-h="West Loop" x="284" y="482" text-anchor="end">WEST LOOP</text>
+<text class="hood" data-h="The Loop" x="357" y="486" text-anchor="start">THE LOOP</text>
+<text class="hood" data-h="Chinatown" x="338" y="603" text-anchor="middle">CHINATOWN</text>
+<text class="hood" data-h="Pilsen" x="250" y="581" text-anchor="middle">PILSEN</text>
+<text class="hood" data-h="Little Village" x="150" y="625" text-anchor="middle">LITTLE VILLAGE</text>
+<text class="hood" data-h="Bridgeport" x="298" y="673" text-anchor="middle">BRIDGEPORT</text>
+<text class="hood" data-h="Bronzeville" x="372" y="721" text-anchor="middle">BRONZEVILLE</text>
+<text class="hood" data-h="Hyde Park" x="428" y="803" text-anchor="middle">HYDE PARK</text>
+</g>
+<text class="water" x="500" y="400">LAKE MICHIGAN</text>
+<text class="rlabel" x="-70" y="104" transform="rotate(16 -70 104)">CHICAGO RIVER</text>
+          <circle id="ring" cx="0" cy="0" r="75"/>
+          <g id="ctr"><circle r="4"/></g>
+          <g id="pins"></g>
+          <g id="ringTag"><rect x="-26" y="-9" width="52" height="16"/><text y="3">1.5 MI</text></g>
+        </svg>
+        <div class="maptip" id="tip"></div>
+        <div class="mapnote">50 map units = 1 mile, roughly</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <a href="../">&larr; Gallery</a>
+    <span>Stoop is a neighborhood board for Chicago. Stoop never handles money. You deal directly with your neighbor.</span>
+    <span>v16 &middot; One bar, two modes</span>
+  </footer>
+</div>
+
+<script>
+const HOODS = {"Rogers Park":[256,38],"Andersonville":[256,138],"Uptown":[294,192],"Lincoln Square":[206,190],"Lakeview":[298,272],"Lincoln Park":[302,338],"Logan Square":[168,316],"Wicker Park":[240,384],"Humboldt Park":[140,404],"West Loop":[290,478],"The Loop":[345,482],"Chinatown":[338,612],"Pilsen":[250,590],"Little Village":[150,634],"Bridgeport":[298,682],"Bronzeville":[372,730],"Hyde Park":[428,812]};
+const CATS = ["For Sale", "Free", "Housing", "Jobs", "Gigs", "Services", "Community"];
+const RAW = [
+  ["Trek FX 2 hybrid bike, 54 cm, new tires", "For Sale", "Logan Square", 180, "", 4, "Tuned in August. Comes with a lock but not the key, sorry."],
+  ["Moving boxes, about 40, flattened", "Free", "Lakeview", 0, "", 9, "Some say KITCHEN in Sharpie. Stacked in the gangway off Roscoe."],
+  ["Room in a 2-flat, available Nov 1", "Housing", "Pilsen", 850, "/mo", 15, "Two artists and a calm dog. Radiator heat, 6 min to the 18th St Pink Line."],
+  ["Barista, early shifts", "Jobs", "Wicker Park", 19, "/hr", 38, "Corner café on Damen. Tips are good, regulars are chatty."],
+  ["Lost: grey tabby, answers to “Pierogi”", "Community", "Bridgeport", null, "", 51, "Last seen near Halsted and 31st. Very food motivated."],
+  ["Schwinn single-speed bike, needs a chain", "For Sale", "Humboldt Park", 60, "", 64, "Frame is solid. Has lived in a dry garage since 2019."],
+  ["Window AC, 8,000 BTU, works", "For Sale", "Rogers Park", 75, "", 80, "Loud, but it got us through July. Brackets included."],
+  ["Help carrying an upright piano", "Gigs", "Bronzeville", 120, "", 110, "One flight down, Saturday 10am. Need three people. Pizza after."],
+  ["Furnished studio sublet, Dec to May", "Housing", "Wicker Park", 1150, "/mo", 130, "Going abroad. Very good couch, mediocre plant. Laundry in building."],
+  ["Algebra and SAT math tutor", "Services", "Hyde Park", 40, "/hr", 170, "Grad student. At the Harper library or your kitchen table."],
+  ["Tomato cages and potting soil", "Free", "Little Village", 0, "", 190, "Garden is done for the year. On the front steps off 26th St."],
+  ["Birch bookshelf, 5 shelves", "For Sale", "Andersonville", 95, "", 240, "Swedish, of course. Comes apart with one hex key."],
+  ["Bike tune-ups in my garage", "Services", "Uptown", 35, "", 300, "Brakes, gears, truing. Same day if you drop it off by 10."],
+  ["Drafting table, tilting oak top", "For Sale", "Lincoln Park", 65, "", 340, "From a retired architect. A little paint on one leg."],
+  ["Taquería prep cook, weekends", "Jobs", "Little Village", 18, "/hr", 390, "Fri to Sun mornings. Must love cilantro. Spanish a plus."],
+  ["Snow shoveling, whole winter", "Gigs", "Lincoln Square", 300, "", 450, "Corner lot plus the neighbor's walk. One reliable person, all season."],
+  ["Yuba cargo bike with kid seat", "For Sale", "Logan Square", 1400, "", 520, "Kid outgrew it. Hauled groceries up Milwaukee for four years."],
+  ["Green velvet couch, curb by 6pm", "Free", "Humboldt Park", 0, "", 560, "No stains, one cat scratch. Out front on Division. Bring a friend."],
+  ["Block party on Throop, Sat 10/17", "Community", "Bridgeport", null, "", 640, "Street closed noon to 8. Bring a chair and a dish."],
+  ["Vintage Pyrex bowls, set of 4", "For Sale", "Chinatown", 45, "", 700, "Butterprint pattern. Found in my aunt's basement on Wentworth."]
+];
+let L = RAW.map((r, i) => ({ id: i, t: r[0], c: r[1], h: r[2], p: r[3], u: r[4], m: r[5], d: r[6] }));
+function place(l) {
+  const [x, y] = HOODS[l.h], a = (0.1 + ((l.id * 0.618) % 1) * 0.8) * Math.PI, r = 9 + (l.id % 3) * 7;
+  l.x = x + Math.cos(a) * r * 1.3; l.y = y + Math.sin(a) * r;
+}
+L.forEach(place);
+
+const $ = s => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ago = m => m < 1 ? "just now" : m < 60 ? m + " min" : Math.floor(m / 60) + " hr";
+const money = l => l.p === null ? "&mdash;" : l.p === 0 ? "Free" : "$" + l.p.toLocaleString() + (l.u || "");
+const UNIT = 50; // map units per mile
+
+/* ---------- state ---------- */
+let mode = "find", findQ = "", act = -1, opts = [];
+let step = 0, draft = {};
+const STEPS = [
+  { k: "t", name: "Title", ph: "Title… e.g. Oak desk, 48 in" },
+  { k: "p", name: "Price", ph: "Price… a number, or “free”" },
+  { k: "h", name: "Neighborhood", ph: "Neighborhood… start typing" },
+  { k: "c", name: "Category", ph: "Category… pick one" }
+];
+const bar = $("#bar"), drop = $("#drop");
+
+/* ---------- search ---------- */
+const words = s => s.toLowerCase().split(/[^a-z0-9à-ÿ]+/).filter(w => w && !["a", "an", "the", "for", "in"].includes(w)).map(w => w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w);
+function matches(l, q = findQ) {
+  const ws = words(q); if (!ws.length) return true;
+  const hay = (l.t + " " + l.d + " " + l.c + " " + l.h + (l.p === 0 ? " free" : "")).toLowerCase();
+  return ws.every(w => hay.includes(w));
+}
+function hi(s, q) {
+  const ws = words(q); if (!ws.length) return esc(s);
+  return esc(s).replace(new RegExp("(" + ws.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")", "gi"), "<mark>$1</mark>");
+}
+
+/* ---------- dropdown ---------- */
+function showDrop(html) { drop.innerHTML = html; drop.classList.toggle("show", !!html); bar.setAttribute("aria-expanded", !!html); }
+function setAct(i) {
+  act = i;
+  drop.querySelectorAll(".opt").forEach((o, j) => { o.classList.toggle("act", j === i); if (j === i) o.scrollIntoView({ block: "nearest" }); });
+}
+function typeahead() {
+  const q = bar.value.trim();
+  if (!q) { opts = []; showDrop(""); return; }
+  const hits = L.filter(l => matches(l, q)).sort((a, b) => a.m - b.m);
+  const hoods = Object.keys(HOODS).filter(h => h.toLowerCase().includes(q.toLowerCase()));
+  opts = []; let html = "";
+  CATS.forEach(c => {
+    const g = hits.filter(l => l.c === c); if (!g.length) return;
+    html += `<div class="grp"><span>${c}</span><span>${g.length}</span></div>`;
+    g.slice(0, 4).forEach(l => { html += `<div class="opt" role="option" data-i="${opts.length}"><b>${hi(l.t, q)}</b><em>${money(l)}</em><span>${esc(l.h)} &middot; ${ago(l.m)}</span></div>`; opts.push({ type: "l", l }); });
+  });
+  if (hoods.length) {
+    html += `<div class="grp"><span>Neighborhoods</span><span>${hoods.length}</span></div>`;
+    hoods.forEach(h => { html += `<div class="opt" role="option" data-i="${opts.length}"><b>${hi(h, q)}</b><em>&rarr; map</em><span>Center the radius here</span></div>`; opts.push({ type: "h", h }); });
+  }
+  if (!opts.length) html = `<div class="grp"><span>No matches</span><span>0</span></div><div class="opt" role="option" data-i="0"><b>Post &ldquo;${esc(q)}&rdquo; instead</b><em>&rarr;</em><span>Switch to POST with this as the title</span></div>`, opts.push({ type: "post", q });
+  html += `<div class="foot">${hits.length} result${hits.length === 1 ? "" : "s"} &middot; &uarr;&darr; to move &middot; Enter to open &middot; Esc to close</div>`;
+  showDrop(html); setAct(-1);
+}
+function composerOpts() {
+  const q = bar.value.trim().toLowerCase(), s = STEPS[step].k;
+  let list = [];
+  if (s === "h") list = Object.keys(HOODS).sort().filter(h => h.toLowerCase().includes(q));
+  else if (s === "c") list = CATS.filter((c, i) => c.toLowerCase().includes(q) || String(i + 1) === q);
+  else { opts = []; showDrop(""); return; }
+  opts = list.map(v => ({ type: "v", v }));
+  showDrop(list.length ? `<div class="grp"><span>${STEPS[step].name}</span><span>${list.length}</span></div>` + list.map((v, i) => `<div class="opt" role="option" data-i="${i}"><b>${s === "c" ? `<span style="font:12px var(--mono);color:inherit;display:inline;margin-right:8px">${i + 1}</span>` : ""}${hi(v, bar.value)}</b><em>${s === "h" ? "" : ""}</em></div>`).join("") + `<div class="foot">Enter picks the highlighted one</div>` : `<div class="grp"><span>No ${STEPS[step].name.toLowerCase()} like that</span><span>0</span></div>`);
+  setAct(list.length ? 0 : -1);
+}
+drop.addEventListener("mousedown", e => { const o = e.target.closest(".opt"); if (!o) return; e.preventDefault(); choose(+o.dataset.i); });
+drop.addEventListener("mousemove", e => { const o = e.target.closest(".opt"); if (o && +o.dataset.i !== act) setAct(+o.dataset.i); });
+
+function choose(i) {
+  const o = opts[i]; if (!o) return;
+  if (o.type === "l") { showDrop(""); goTo(o.l.id); }
+  else if (o.type === "h") { showDrop(""); setCenter(HOODS[o.h][0], HOODS[o.h][1], o.h); $("#near").scrollIntoView({ behavior: "smooth" }); }
+  else if (o.type === "post") { step = 0; draft = {}; setMode("post"); bar.value = o.q; }
+  else if (o.type === "v") { bar.value = o.v; advance(); }
+}
+function goTo(id) {
+  const li = $(`#list li[data-id="${id}"]`);
+  if (li) { li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash"); li.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  const l = L[id]; setCenter(l.x, l.y, null, l.h);
+  hot(id);
+}
+
+/* ---------- modes ---------- */
+function setMode(m) {
+  mode = m;
+  $("#mFind").setAttribute("aria-pressed", m === "find"); $("#mPost").setAttribute("aria-pressed", m === "post");
+  showDrop("");
+  if (m === "find") { bar.value = findQ; }
+  else { bar.value = draft[STEPS[step].k] || ""; }
+  paintBar(); bar.focus();
+}
+$("#mFind").onclick = () => setMode("find");
+$("#mPost").onclick = () => setMode("post");
+function paintBar(msg) {
+  const toks = $("#toks");
+  if (mode === "find") {
+    toks.innerHTML = ""; $("#pre").textContent = "?";
+    bar.placeholder = "bike, sublet, free couch…";
+    $("#barLabel").textContent = "Search listings";
+    $("#kbd").innerHTML = "&crarr; See all";
+    $("#hint").innerHTML = msg || `<span>Results appear as you type, grouped by category.</span><span>Try <button type="button" class="try">bike</button> <button type="button" class="try">free</button> <button type="button" class="try">Pilsen</button></span>`;
+  } else {
+    toks.innerHTML = STEPS.slice(0, step).map(s => `<span class="tok"><i>${s.name.toUpperCase()}</i><span>${esc(fmtTok(s.k))}</span></span><span class="arr">&rarr;</span>`).join("");
+    $("#pre").textContent = "+";
+    bar.placeholder = STEPS[step].ph;
+    $("#barLabel").textContent = "Post: " + STEPS[step].name;
+    $("#kbd").innerHTML = step === 3 ? "&crarr; Post it" : "&crarr; Next";
+    $("#hint").innerHTML = msg || `<span class="steps">${STEPS.map((s, i) => `<span class="${i < step ? "done" : i === step ? "now" : ""}">${i + 1} ${s.name}</span>`).join("<span>&rarr;</span>")}</span><span>${step ? "&#9003; Backspace to go back" : "Free. No account."}</span>`;
+    if (step >= 2) composerOpts(); else showDrop("");
+  }
+}
+function fmtTok(k) {
+  const v = draft[k];
+  if (k === "p") return v === 0 ? "Free" : "$" + v.toLocaleString();
+  return v;
+}
+function advance() {
+  const s = STEPS[step].k, raw = bar.value.trim();
+  let err = "";
+  if (s === "t") { if (!raw) err = "Give it a title first."; else draft.t = raw.charAt(0).toUpperCase() + raw.slice(1); }
+  if (s === "p") { if (/^(free|0|\$?0)$/i.test(raw)) draft.p = 0; else if (/^\$?\d[\d,]*$/.test(raw)) draft.p = +raw.replace(/[$,]/g, ""); else err = "Price needs a number (or “free”)."; }
+  if (s === "h") { const h = opts[act] ? opts[act].v : Object.keys(HOODS).find(n => n.toLowerCase() === raw.toLowerCase()); if (!h) err = "Pick a neighborhood from the list."; else draft.h = h; }
+  if (s === "c") { const c = opts[act] ? opts[act].v : CATS.find(n => n.toLowerCase() === raw.toLowerCase()); if (!c) err = "Pick a category from the list."; else draft.c = c; }
+  if (err) { paintBar(`<span><b>${err}</b></span><span>Step ${step + 1} of 4</span>`); return; }
+  if (step < 3) { step++; bar.value = draft[STEPS[step].k] != null ? String(draft[STEPS[step].k]) : ""; showDrop(""); paintBar(); return; }
+  publish();
+}
+function publish() {
+  const l = { id: L.length, t: draft.t, c: draft.c, h: draft.h, p: draft.c === "Free" ? 0 : draft.c === "Community" && !draft.p ? null : draft.p, u: draft.c === "Housing" ? "/mo" : draft.c === "Jobs" ? "/hr" : "", m: 0, d: "Just posted from the bar. Ask me about it." };
+  place(l); L.push(l);
+  draft = {}; step = 0; bar.value = ""; findQ = ""; showDrop("");
+  renderList(); drawPins(); updateNear();
+  paintBar(`<span class="done-msg">Posted. &ldquo;${esc(l.t)}&rdquo; is <a href="#recent" id="seeNew">No. 01 on the board</a> and pinned in ${esc(l.h)}.</span><span>Post another, or switch to FIND.</span>`);
+  $("#seeNew").onclick = e => { e.preventDefault(); goTo(l.id); };
+  setCenter(l.x, l.y, null, l.h);
+  $("#mFind").querySelector("small").textContent = `search ${L.length} listings`;
+}
+
+/* ---------- bar events ---------- */
+bar.addEventListener("input", () => {
+  if (mode === "find") { findQ = bar.value; typeahead(); renderList(); drawPins(); updateNear(); }
+  else if (STEPS[step].k === "h" || STEPS[step].k === "c") composerOpts();
+  else if (STEPS[step].k === "p") bar.value = bar.value.replace(/[^\d$,freFRE]/g, "");
+});
+bar.addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" && opts.length) { e.preventDefault(); setAct(Math.min(opts.length - 1, act + 1)); }
+  else if (e.key === "ArrowUp" && opts.length) { e.preventDefault(); setAct(Math.max(mode === "find" ? -1 : 0, act - 1)); }
+  else if (e.key === "Escape") { showDrop(""); opts = []; }
+  else if (e.key === "Enter") {
+    e.preventDefault();
+    if (mode === "find") {
+      if (act >= 0) choose(act);
+      else { showDrop(""); $("#recent").scrollIntoView({ behavior: "smooth" }); }
+    } else advance();
+  } else if (e.key === "Backspace" && mode === "post" && !bar.value && step > 0) {
+    e.preventDefault(); step--; const k = STEPS[step].k; bar.value = k === "p" ? (draft.p === 0 ? "free" : String(draft.p)) : draft[k]; delete draft[k]; paintBar();
+  } else if (mode === "post" && STEPS[step].k === "c" && /^[1-7]$/.test(e.key) && !bar.value) {
+    e.preventDefault(); bar.value = CATS[+e.key - 1]; composerOpts(); advance();
+  }
+});
+bar.addEventListener("focus", () => { if (mode === "find" && bar.value.trim()) typeahead(); if (mode === "post" && step >= 2) composerOpts(); });
+bar.addEventListener("blur", () => setTimeout(() => showDrop(""), 120));
+$("#barBox").addEventListener("click", e => { if (e.target !== bar) bar.focus(); });
+
+/* ---------- recent list ---------- */
+function renderList() {
+  const rows = L.filter(l => matches(l)).sort((a, b) => a.m - b.m);
+  $("#list").innerHTML = rows.map((l, i) => `<li data-id="${l.id}"><span class="n">${String(i + 1).padStart(2, "0")}</span><span class="t">${hi(l.t, findQ)}<small>${esc(l.h)} &middot; ${l.c} &middot; ${ago(l.m)}</small></span><span class="p">${money(l)}</span></li>`).join("");
+  $("#zero").style.display = rows.length ? "none" : "block";
+  $("#rstat").innerHTML = findQ.trim() ? `<b>${rows.length}</b> of ${L.length} match &ldquo;${esc(findQ.trim())}&rdquo; &nbsp;<button type="button" id="clr">clear</button>` : `${L.length} listings &middot; newest first &middot; nothing boosted`;
+  const c = $("#clr"); if (c) c.onclick = () => { findQ = ""; if (mode === "find") bar.value = ""; renderList(); drawPins(); updateNear(); };
+}
+$("#list").addEventListener("click", e => { const li = e.target.closest("li[data-id]"); if (!li) return; const l = L[+li.dataset.id]; setCenter(l.x, l.y, null, l.h); hot(l.id); $("#near").scrollIntoView({ behavior: "smooth" }); });
+$("#zpost").onclick = () => { const q = findQ.trim(); setMode("post"); step = 0; draft = {}; bar.value = q; paintBar(); scrollTo({ top: 0, behavior: "smooth" }); };
+
+/* ---------- map + radius ---------- */
+const svg = $("#map"), pinsG = $("#pins"), ring = $("#ring"), rad = $("#rad"), tip = $("#tip");
+let C = { x: HOODS["Wicker Park"][0], y: HOODS["Wicker Park"][1], name: "Wicker Park" }, hotId = null;
+const dist = l => Math.hypot(l.x - C.x, l.y - C.y) / UNIT;
+function drawPins() {
+  pinsG.innerHTML = "";
+  const r = +rad.value;
+  [...L].sort((a, b) => a.y - b.y).forEach(l => {
+    const g = document.createElementNS(NS, "g"), ok = matches(l), inside = dist(l) <= r;
+    g.setAttribute("class", "pin" + (ok ? "" : " gone") + (ok && inside ? " in" : "") + (l.id === hotId ? " hot" : ""));
+    g.setAttribute("transform", `translate(${l.x.toFixed(1)},${l.y.toFixed(1)})`);
+    g.dataset.id = l.id;
+    g.innerHTML = `<circle r="${ok && inside ? 6 : 4.5}"/>`;
+    pinsG.appendChild(g);
+  });
+}
+function nearestHood(x, y) { let best = null, bd = 1e9; for (const [n, [hx, hy]] of Object.entries(HOODS)) { const d = Math.hypot(hx - x, hy - y); if (d < bd) { bd = d; best = n; } } return best; }
+function setCenter(x, y, name, near) {
+  C = { x, y, name: name || null, near: near || nearestHood(x, y) };
+  updateNear(); drawPins();
+}
+function updateNear() {
+  const r = +rad.value;
+  ring.setAttribute("cx", C.x); ring.setAttribute("cy", C.y); ring.setAttribute("r", r * UNIT);
+  $("#ctr").setAttribute("transform", `translate(${C.x},${C.y})`);
+  const ty = Math.max(C.y - r * UNIT, 34);
+  $("#ringTag").setAttribute("transform", `translate(${C.x},${ty})`);
+  $("#ringTag text").textContent = (r % 1 ? r.toFixed(2).replace(/0$/, "") : r) + " MI";
+  const inside = L.filter(l => matches(l) && dist(l) <= r).sort((a, b) => dist(a) - dist(b));
+  const where = C.name || ("a spot in " + C.near);
+  const what = findQ.trim() ? `&ldquo;${esc(findQ.trim())}&rdquo; listings` : "listings";
+  $("#sentence").innerHTML = `<span class="v">${inside.length}</span> ${inside.length === 1 ? what.replace(/listings$/, "listing") : what} within <span class="v">${$("#ringTag text").textContent.toLowerCase()}</span> of ${esc(where)}.`;
+  $("#within").innerHTML = inside.map(l => `<li data-id="${l.id}"><span class="d">${dist(l) < .1 ? "0.1" : dist(l).toFixed(1)} mi</span><span><b>${esc(l.t)}</b><span>${esc(l.h)} &middot; ${ago(l.m)}</span></span><span class="pp">${money(l)}</span></li>`).join("") || `<li class="nil">Nothing inside the ring. Drag the slider out, or click somewhere busier.</li>`;
+  $("#centers").innerHTML = Object.keys(HOODS).sort().map(h => `<button type="button" class="${C.name === h ? "on" : ""}">${h}</button>`).join("");
+}
+rad.addEventListener("input", () => { updateNear(); drawPins(); });
+$("#centers").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setCenter(HOODS[b.textContent][0], HOODS[b.textContent][1], b.textContent); });
+$("#within").addEventListener("mouseover", e => { const li = e.target.closest("li[data-id]"); if (li) hot(+li.dataset.id); });
+$("#within").addEventListener("mouseleave", () => hot(null));
+$("#within").addEventListener("click", e => { const li = e.target.closest("li[data-id]"); if (li) goTo(+li.dataset.id); });
+function pinPick(id) {
+  hot(id);
+  const li = $(`#within li[data-id="${id}"]`);
+  if (li) { li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash"); const w = $("#within"); w.scrollTop = li.offsetTop - w.offsetTop - 40; }
+  else { const l = L[id]; setCenter(l.x, l.y, null, l.h); hot(id); }
+}
+function hot(id) { hotId = id; pinsG.querySelectorAll(".pin").forEach(g => g.classList.toggle("hot", +g.dataset.id === id)); }
+function svgPt(e) { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+svg.addEventListener("click", e => {
+  const g = e.target.closest(".pin");
+  if (g) { pinPick(+g.dataset.id); return; }
+  const p = svgPt(e); setCenter(p.x, p.y);
+});
+svg.addEventListener("mousemove", e => {
+  const g = e.target.closest(".pin"), box = svg.parentNode.getBoundingClientRect();
+  if (!g) { tip.style.display = "none"; return; }
+  const l = L[+g.dataset.id];
+  tip.innerHTML = `${esc(l.t)} &middot; <b>${money(l)}</b> &middot; ${dist(l).toFixed(1)} mi`;
+  tip.style.left = (e.clientX - box.left) + "px"; tip.style.top = (e.clientY - box.top) + "px"; tip.style.display = "block";
+});
+svg.addEventListener("mouseleave", () => tip.style.display = "none");
+
+$("#hint").addEventListener("mousedown", e => { const t = e.target.closest(".try"); if (!t) return; e.preventDefault(); bar.value = t.textContent; findQ = bar.value; bar.focus(); typeahead(); renderList(); drawPins(); updateNear(); });
+
+/* ---------- start ---------- */
+document.querySelector("#map .water").setAttribute("x", 492);
+document.querySelector("#map .water").setAttribute("transform", "rotate(90 492 400)");
+paintBar(); renderList(); drawPins(); updateNear();
+</script>
+</body>
+</html>
