@@ -95,20 +95,21 @@
     { n: 8,  title: "Mail-Order Catalog", note: "1970s department-store catalog with item numbers and line drawings.", verdict: "dropped", why: "Charming, but retro decoration gets in the way." },
     { n: 9,  title: "Photocopied Zine", note: "Cut-and-paste punk zine: tape, ransom letters, xerox grain.", verdict: "dropped", why: "Too chaotic, and kitschy." },
     { n: 10, title: "Local Trading Floor", note: "Stock-ticker dashboard showing live prices for neighborhood goods.", verdict: "dropped", why: "The finance metaphor doesn't make sense here." },
-    { n: 11, title: "Swiss Synthesis", note: "Direct combo: Find | Post split hero, v07 table, Swiss-style map, rows and pins linked." },
-    { n: 12, title: "The Giant Field", note: "One enormous search input fills the first screen. Post sits at the same size beneath it." },
-    { n: 13, title: "Split Screen", note: "LOOKING (black) and SELLING (white) halves. Hover a side and it expands." },
-    { n: 14, title: "Fill in the Blank", note: "Search and post as giant editable sentences: \"I'm looking for ___ in ___.\"" },
-    { n: 15, title: "Map + List Workspace", note: "Compact Search | Post tabs above a two-pane list and sticky map." },
-    { n: 16, title: "One Bar, Two Modes", note: "A single command bar with a FIND / POST toggle, typeahead, and a radius slider on the map." },
-    { n: 17, title: "Transit Diagram", note: "The map becomes a CTA L diagram, and listings become a departure board." },
-    { n: 18, title: "Night Mode Index", note: "Giant SEARCH / POST words on black that turn into their own inputs when clicked." },
-    { n: 19, title: "Linked Columns", note: "Search, listings, and map on one screen as three linked columns." },
+    { n: 11, title: "Swiss Synthesis", note: "Direct combo: Find | Post split hero, v07 table, Swiss-style map, rows and pins linked.", verdict: "dropped", why: "The vertical split hero isn\'t attractive here." },
+    { n: 12, title: "The Giant Field", note: "One enormous search input fills the first screen. Post sits at the same size beneath it.", verdict: "kept", why: "Kept how straightforward it is. Dropped the thick borders, which were distracting." },
+    { n: 13, title: "Split Screen", note: "LOOKING (black) and SELLING (white) halves. Hover a side and it expands.", verdict: "dropped", why: "The split screen is very distracting." },
+    { n: 14, title: "Fill in the Blank", note: "Search and post as giant editable sentences: \"I'm looking for ___ in ___.\"", verdict: "kept", why: "Kept the straightforward, low-effort feel." },
+    { n: 15, title: "Map + List Workspace", note: "Compact Search | Post tabs above a two-pane list and sticky map.", verdict: "kept", why: "Kept the list + sticky map workspace." },
+    { n: 16, title: "One Bar, Two Modes", note: "A single command bar with a FIND / POST toggle, typeahead, and a radius slider on the map.", verdict: "kept", why: "Kept the first screen: calm, direct, not overwhelming." },
+    { n: 17, title: "Transit Diagram", note: "The map becomes a CTA L diagram, and listings become a departure board.", verdict: "dropped", why: "Clever, but unnecessary here." },
+    { n: 18, title: "Night Mode Index", note: "Giant SEARCH / POST words on black that turn into their own inputs when clicked.", verdict: "dropped", why: "Fun, but not functional. It reads like a data visualization." },
+    { n: 19, title: "Linked Columns", note: "Search, listings, and map on one screen as three linked columns.", verdict: "dropped", why: "Too similar to the existing craigslist layout." },
+    { n: 20, title: "Convergence Base", note: "v16's calm FIND/POST bar over v15's list + map, plus a fuller post form with description and photos, in light blue, cream, and white." },
   ];
   const PHASES = [
     { from: 1,  to: 10, name: "Round 1: Go wide",  story: "Ten radically different directions across era, medium, and tone. The review cut seven: the nostalgic ones (newspaper, corkboard, zine, catalog, BBS) read as kitsch or costume, and the trading floor didn't fit. What survived was the bold, minimal type of v02 and v07, v07's recent-listings table, and v06's map." },
     { from: 11, to: 19, name: "Round 2: Narrow down", story: "One brief, nine layouts. Search becomes the tentpole and shares the hero with Post a listing at equal weight. Then come recent listings, then the map, all in Chicago and in the v02/v07 type. Each version tests a different way to give search and post equal footing." },
-    { from: 20, to: 25, name: "Round 3: Converge", story: "Coming next: refining toward the final version, v25." },
+    { from: 20, to: 25, name: "Round 3: Converge", story: "The Round 2 review kept the calm first screen of v16 and the list + map workspace of v15, plus the low effort of v12 and v14. Split screens, the transit metaphor, the night-mode data look, and anything too close to craigslist itself were cut. The user also asked for posts with real descriptions and photos, and a light-blue, cream, and white palette instead of black and white. v20 combines all of it, and each later version refines the one before." },
   ];
 
   const pad = n => String(n).padStart(2, "0");

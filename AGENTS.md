@@ -30,3 +30,10 @@
   - Page order: search/post → recent listings → map.
   - Setting: Chicago neighborhoods.
 - v11–v19: narrowing round. Each version tries a different layout and interaction for that same hierarchy and type direction.
+- **Round 2 review (user's decisions):**
+  - Out: v17 ("clever but unnecessary"), v13 and v11 (the vertical split screen is distracting/unattractive), v19 ("too similar to existing craigslist"), and v18 ("fun but not functional, looks like a data visualization"). v12's thick borders are distracting.
+  - Liked: v12 and v14 are straightforward and take little effort.
+  - Winner structure: v16's calm FIND/POST first screen (not overwhelming, direct), then scroll to v15's list + sticky map workspace.
+  - Post needs more body: title + description + photo upload, not just a one-word title.
+  - Palette: light blue, cream, white. No black/white scheme.
+- v20–v25: converge. v20 = v16 hero + v15 workspace + rich post + new palette; later versions refine it.
