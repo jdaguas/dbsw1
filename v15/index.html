@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop Chicago: map + list</title>
+<style>
+  :root {
+    --ink: #000;
+    --paper: #fff;
+    --g1: #f4f4f4;
+    --g2: #e3e3e3;
+    --g3: #9a9a9a;
+    --acc: #41b6e6;
+    --acc-ink: #0a6fa3;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --barh: 44px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.35 var(--sans); }
+  button, input, select { font: inherit; color: inherit; }
+  ::selection { background: var(--acc); }
+
+  /* top bar */
+  .bar { height: var(--barh); display: grid; grid-template-columns: 140px 1fr auto auto; align-items: center; border-bottom: 1px solid var(--ink); font-size: 12px; }
+  .bar > * { padding: 0 16px; height: 100%; display: flex; align-items: center; border-right: 1px solid var(--ink); }
+  .bar > *:last-child { border-right: 0; }
+  .bar a { color: var(--ink); text-decoration: none; font-weight: 700; }
+  .bar a:hover { background: var(--ink); color: var(--paper); }
+  .bar .brand { font-weight: 700; gap: 10px; }
+  .bar .brand span { font-weight: 400; color: var(--g3); }
+  .bar .mono { font-family: var(--mono); font-size: 11px; }
+
+  /* hero: tab bar */
+  .hero { padding: 26px 24px 22px; border-bottom: 1px solid var(--ink); }
+  .hero .intro { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 18px; align-items: end; }
+  .hero h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -.005em; }
+  .hero h1 span { display: block; font-weight: 400; color: #555; }
+  .hero .intro p { margin: 0; font: 11px var(--mono); color: var(--g3); text-align: right; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--ink); }
+  .tab {
+    border: 0; background: var(--paper); cursor: pointer; text-align: left; padding: 14px 18px 14px; display: grid;
+    grid-template-columns: auto 1fr auto; align-items: end; gap: 0 16px; position: relative;
+  }
+  .tab + .tab { border-left: 2px solid var(--ink); }
+  .tab .k { font: 11px var(--mono); align-self: start; padding-top: 6px; }
+  .tab b { font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; font-weight: 900; font-size: 64px; line-height: .86; letter-spacing: -.045em; }
+  .tab small { font-size: 12px; color: var(--g3); text-align: right; padding-bottom: 4px; }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+  .tab[aria-selected="true"] small { color: #bdbdbd; }
+  .tab[aria-selected="true"]::after { content: ""; position: absolute; left: 50%; bottom: -12px; margin-left: -10px; border: 10px solid transparent; border-bottom: 0; border-top-color: var(--ink); }
+  .tab:not([aria-selected="true"]):hover b { text-decoration: underline; text-decoration-thickness: 4px; text-underline-offset: 6px; }
+  .tab:focus-visible { outline: 3px solid var(--acc); outline-offset: -5px; }
+
+  .pane { margin-top: 12px; border: 2px solid var(--ink); }
+  .pane[hidden] { display: none; }
+  .srow { display: grid; grid-template-columns: 1fr 190px 150px 120px; }
+  .srow > * { border-right: 1px solid var(--ink); }
+  .srow > *:last-child { border-right: 0; }
+  .fld { display: flex; flex-direction: column; justify-content: center; padding: 8px 14px; position: relative; }
+  .fld label, .lbl { font: 10px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--g3); }
+  .fld input, .fld select { border: 0; outline: none; background: none; padding: 2px 0 0; font-size: 18px; font-weight: 700; min-width: 0; width: 100%; border-radius: 0; }
+  .fld.big input { font-size: 26px; letter-spacing: -.02em; }
+  .fld input::placeholder { color: #c4c4c4; }
+  .fld:focus-within { background: #eef8fd; }
+  .fld:focus-within label { color: var(--acc-ink); }
+  .count { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding: 8px 14px; font-family: var(--mono); }
+  .count b { font: 700 26px var(--sans); letter-spacing: -.03em; }
+  .chips { display: flex; border-top: 1px solid var(--ink); overflow-x: auto; }
+  .chip { flex: 1; border: 0; border-right: 1px solid var(--ink); background: none; padding: 8px 10px; cursor: pointer; text-align: left; white-space: nowrap; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
+  .chip:last-child { border-right: 0; }
+  .chip i { font: normal 11px var(--mono); color: var(--g3); }
+  .chip:hover { background: var(--g1); }
+  .chip.on { background: var(--acc); }
+  .chip.on i { color: var(--ink); }
+  .prow { display: grid; grid-template-columns: 1fr 140px 190px 170px 200px; }
+  .prow > * { border-right: 1px solid var(--ink); }
+  .prow > *:last-child { border-right: 0; }
+  .postbtn { border: 0; background: var(--ink); color: var(--paper); font-weight: 700; font-size: 18px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 0 18px; }
+  .postbtn:hover { background: var(--acc); color: var(--ink); }
+  .pnote { border-top: 1px solid var(--ink); padding: 8px 14px; font: 11px var(--mono); color: var(--g3); display: flex; justify-content: space-between; gap: 12px; }
+  .pnote b { color: var(--acc-ink); font-weight: 700; }
+  .fld.bad { background: #fff3f0; }
+  .fld.bad label { color: #c0391b; }
+
+  /* workspace */
+  .ws { display: grid; grid-template-columns: minmax(0, 1fr) 46%; align-items: start; }
+  .list { border-right: 1px solid var(--ink); min-height: 100vh; }
+  .lh { position: sticky; top: 0; z-index: 3; background: var(--paper); }
+  .lt { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--ink); }
+  .lt h2 { margin: 0; font-size: 13px; font-weight: 700; }
+  .lt h2 span { font-weight: 400; color: var(--g3); margin-left: 8px; }
+  .seg { display: flex; border: 1px solid var(--ink); }
+  .seg button { border: 0; background: none; padding: 3px 9px; cursor: pointer; font: 11px var(--mono); }
+  .seg button + button { border-left: 1px solid var(--ink); }
+  .seg button.on { background: var(--ink); color: var(--paper); }
+  .cols, .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 118px 52px 92px; column-gap: 12px; padding: 0 16px; }
+  .cols { font: 10px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--g3); padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--ink); }
+  .cols .r, .row .pr { text-align: right; }
+  #rows { list-style: none; margin: 0; padding: 0; }
+  .row { padding-top: 9px; padding-bottom: 8px; border-bottom: 1px solid var(--g2); cursor: pointer; align-items: baseline; position: relative; }
+  .row .no { font: 11px var(--mono); color: var(--g3); }
+  .row .ti { font-weight: 700; font-size: 15px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .ti small { display: block; font-weight: 400; font-size: 12px; color: #6d6d6d; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; }
+  .row .ti small em { font-style: normal; color: var(--ink); }
+  .row .nb { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .ag { font: 11px var(--mono); color: var(--g3); white-space: nowrap; }
+  .row .pr { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .row:hover { background: var(--g1); }
+  .row.sel { background: var(--ink); color: var(--paper); }
+  .row.sel .no, .row.sel .ag, .row.sel .ti small, .row.sel .ti small em { color: #cfcfcf; }
+  .row.sel::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--acc); }
+  .row.fresh .no::after { content: " new"; color: var(--acc-ink); font-weight: 700; }
+  .row.sel.fresh .no::after { color: var(--acc); }
+  .empty { padding: 30px 16px; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .empty button { border: 0; background: none; padding: 0; text-decoration: underline; cursor: pointer; font-weight: 700; }
+  .keys { padding: 12px 16px 30px; font: 11px var(--mono); color: var(--g3); }
+  .keys kbd { font: inherit; border: 1px solid var(--g3); padding: 0 4px; color: var(--ink); }
+
+  .mappane { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: var(--g1); }
+  .mh { display: flex; align-items: stretch; border-bottom: 1px solid var(--ink); background: var(--paper); height: 41px; }
+  .mh > * { display: flex; align-items: center; padding: 0 12px; border-right: 1px solid var(--ink); }
+  .mh .ro { flex: 1; font: 11px var(--mono); gap: 14px; white-space: nowrap; overflow: hidden; }
+  .mh .ro b { font-weight: 700; color: var(--ink); }
+  .mh button { border: 0; border-left: 1px solid var(--ink); background: var(--paper); padding: 0 13px; cursor: pointer; font: 700 15px var(--sans); }
+  .mh button:hover { background: var(--ink); color: var(--paper); }
+  .mh label { border: 0; font: 11px var(--mono); gap: 6px; cursor: pointer; white-space: nowrap; }
+  .mapbox { position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: grab; touch-action: none; }
+  .mapbox.drag { cursor: grabbing; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
+  #map .land { fill: #fff; }
+  #map .minor { stroke: #f2f2f2; stroke-width: .7; fill: none; vector-effect: non-scaling-stroke; }
+  #map .major { stroke: #e2e2e2; stroke-width: 1; fill: none; vector-effect: non-scaling-stroke; }
+  #map .diag { stroke: #d2d2d2; stroke-width: 1.3; fill: none; vector-effect: non-scaling-stroke; }
+  #map .park { fill: #f0f0f0; }
+  #map .lake { fill: #ececec; }
+  #map .shore { fill: none; stroke: var(--ink); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  #map .pier { fill: #fff; stroke: var(--ink); stroke-width: .6; vector-effect: non-scaling-stroke; }
+  #map .river { fill: none; stroke: var(--acc); stroke-width: 2.4; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  #map .elloop { fill: none; stroke: var(--ink); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+  #map .hood { font-family: var(--sans); font-weight: 700; font-size: calc(9.5px * var(--k, 1)); letter-spacing: .08em; fill: #555; paint-order: stroke; stroke: #fff; stroke-width: calc(3px * var(--k, 1)); pointer-events: none; }
+  #map .water { font-family: var(--mono); font-size: calc(10px * var(--k, 1)); letter-spacing: .4em; fill: var(--g3); text-anchor: middle; }
+  #map .rlabel { display: none; }
+  .pin { cursor: pointer; }
+  .pin rect { fill: var(--ink); }
+  .pin text { font: 700 8px var(--mono); fill: #fff; text-anchor: middle; pointer-events: none; }
+  .pin.off rect { fill: #fff; stroke: #b5b5b5; stroke-width: 1; }
+  .pin.off text { display: none; }
+  .pin.off { opacity: .8; }
+  .pin.hov rect { fill: var(--acc); }
+  .pin.hov text { fill: var(--ink); }
+  .pin.sel rect { fill: var(--acc); stroke: var(--ink); stroke-width: 1.5; }
+  .pin.sel text { fill: var(--ink); }
+  #xh { pointer-events: none; transition: transform .55s cubic-bezier(.65, 0, .35, 1), opacity .2s; }
+  #xh line { stroke: var(--acc-ink); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 3 3; }
+  #xh rect { fill: none; stroke: var(--acc-ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .scale { position: absolute; left: 12px; bottom: 12px; font: 10px var(--mono); pointer-events: none; }
+  .scale i { display: block; height: 5px; border: 1px solid var(--ink); border-top: 0; margin-top: 2px; }
+  .north { position: absolute; right: 12px; bottom: 12px; font: 700 10px var(--mono); text-align: center; pointer-events: none; }
+  .north svg { display: block; margin: 0 auto 2px; }
+  .detail { border-top: 1px solid var(--ink); background: var(--paper); padding: 12px 16px 14px; display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; min-height: 112px; }
+  .detail .lbl { grid-column: 1 / -1; }
+  .detail h3 { margin: 0; font-size: 20px; line-height: 1.15; letter-spacing: -.02em; }
+  .detail .pp { font-size: 22px; font-weight: 700; letter-spacing: -.02em; text-align: right; }
+  .detail p { margin: 0; color: #555; grid-column: 1; }
+  .detail .act { grid-column: 2; align-self: end; border: 1px solid var(--ink); background: var(--paper); padding: 6px 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .detail .act:hover { background: var(--ink); color: var(--paper); }
+  .detail.empty-d { color: var(--g3); display: block; font-size: 13px; }
+
+  footer { border-top: 1px solid var(--ink); display: grid; grid-template-columns: 140px 1fr auto; font-size: 12px; }
+  footer > * { padding: 14px 16px; border-right: 1px solid var(--ink); }
+  footer > *:last-child { border-right: 0; }
+  footer a { color: var(--ink); font-weight: 700; }
+  footer .mono { font: 11px var(--mono); color: var(--g3); }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; font: 12px var(--mono); opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 1000px) {
+    .srow { grid-template-columns: 1fr 1fr; }
+    .srow .fld.big { grid-column: 1 / -1; border-right: 0; border-bottom: 1px solid var(--ink); }
+    .srow .count { display: none; }
+    .prow { grid-template-columns: 1fr 1fr; }
+    .prow > * { border-bottom: 1px solid var(--ink); }
+    .prow > *:nth-child(2n) { border-right: 0; }
+    .prow .fld:first-child { grid-column: 1 / -1; border-right: 0; }
+    .prow .postbtn { grid-column: 1 / -1; min-height: 52px; border-bottom: 0; }
+  }
+  @media (max-width: 860px) {
+    .bar { grid-template-columns: auto 1fr; }
+    .bar .mono, .bar .hide { display: none; }
+    .hero { padding: 16px 14px; }
+    .hero .intro { grid-template-columns: 1fr; }
+    .hero .intro p { text-align: left; }
+    .tab { grid-template-columns: 1fr; padding: 12px; }
+    .tab .k, .tab small { display: none; }
+    .tab b { font-size: 34px; }
+    .tabs { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .chip { flex: none; }
+    .ws { grid-template-columns: minmax(0, 1fr); }
+    .mh label { display: none; }
+    .mh .ro { padding: 0 8px; }
+    .list { border-right: 0; min-height: 0; }
+    .cols { display: none; }
+    .row { grid-template-columns: 30px minmax(0, 1fr) auto; }
+    .row .nb, .row .ag { display: none; }
+    .mappane { position: relative; height: 78vh; min-height: 460px; border-top: 1px solid var(--ink); }
+    .detail { grid-template-columns: 1fr; }
+    .detail .pp { text-align: left; }
+    .detail .act { grid-column: 1; justify-self: start; }
+    footer { grid-template-columns: 1fr; }
+    footer > * { border-right: 0; border-bottom: 1px solid var(--ink); }
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <a href="../">&larr; Gallery</a>
+  <div class="brand">Stoop <span>Chicago classifieds</span></div>
+  <div class="mono hide" id="clock">MON 05 OCT 2026 &middot; 41.8819&deg;N 87.6278&deg;W</div>
+  <div class="mono">No fees &middot; No algorithm</div>
+</header>
+
+<section class="hero">
+  <div class="intro">
+    <h1>Search the board, or post to it.<span>One city, seventeen neighborhoods, newest first. Nothing is ranked or boosted.</span></h1>
+    <p id="stat"></p>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Search or post">
+    <button class="tab" role="tab" id="tabS" aria-controls="paneS" aria-selected="true" type="button"><span class="k">A</span><b>Search</b><small id="tabSmall">20 listings live</small></button>
+    <button class="tab" role="tab" id="tabP" aria-controls="paneP" aria-selected="false" type="button"><span class="k">B</span><b>Post</b><small>Free &middot; 4 fields &middot; no account</small></button>
+  </div>
+
+  <div class="pane" id="paneS" role="tabpanel" aria-labelledby="tabS">
+    <div class="srow">
+      <div class="fld big"><label for="q">Keywords</label><input id="q" type="search" placeholder="bike, sublet, couch, tutor&hellip;" autocomplete="off"></div>
+      <div class="fld"><label for="sh">Neighborhood</label><select id="sh"></select></div>
+      <div class="fld"><label for="sp">Max price ($)</label><input id="sp" inputmode="numeric" placeholder="Any" autocomplete="off"></div>
+      <div class="count"><span class="lbl">Showing</span><b id="cnt">20</b></div>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <form class="pane" id="paneP" role="tabpanel" aria-labelledby="tabP" hidden autocomplete="off">
+    <div class="prow">
+      <div class="fld big" id="fT"><label for="pt">What is it</label><input id="pt" maxlength="60" placeholder="Oak desk, 48 in, two drawers"></div>
+      <div class="fld" id="fP"><label for="pp">Price ($)</label><input id="pp" inputmode="numeric" maxlength="6" placeholder="40 or 0"></div>
+      <div class="fld" id="fH"><label for="ph">Neighborhood</label><select id="ph"></select></div>
+      <div class="fld" id="fC"><label for="pc">Category</label><select id="pc"></select></div>
+      <button class="postbtn" type="submit">Post listing <span>&rarr;</span></button>
+    </div>
+    <div class="pnote"><span id="pmsg">It lands at the top of the list and on the map the moment you post.</span><span>Price 0 = Free</span></div>
+  </form>
+</section>
+
+<section class="ws">
+  <div class="list">
+    <div class="lh">
+      <div class="lt"><h2>Recent listings<span id="lsub"></span></h2>
+        <div class="seg" id="sort"><button type="button" data-s="new" class="on">Newest</button><button type="button" data-s="price">Price</button><button type="button" data-s="hood">Area</button></div>
+      </div>
+      <div class="cols"><span>No.</span><span>Item</span><span>Neighborhood</span><span>Age</span><span class="r">Price</span></div>
+    </div>
+    <ol id="rows"></ol>
+    <div class="keys">Select a row to fly to its pin. <kbd>&uarr;</kbd> <kbd>&darr;</kbd> step through rows, <kbd>Esc</kbd> clears, <kbd>/</kbd> jumps to search. Drag the map to pan.</div>
+  </div>
+
+  <aside class="mappane" aria-label="Map">
+    <div class="mh">
+      <div class="ro" id="ro"><span>CHICAGO</span><span id="roC">&mdash;</span></div>
+      <label><input type="checkbox" id="inView"> List only what&rsquo;s in view</label>
+      <button type="button" id="zin" aria-label="Zoom in">+</button><button type="button" id="zout" aria-label="Zoom out">&minus;</button><button type="button" id="fit" aria-label="Fit city" style="font-size:11px;font-family:var(--mono)">FIT</button>
+    </div>
+    <div class="mapbox" id="mapbox">
+      <svg id="map" viewBox="-20 -20 600 940" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Map of Chicago with numbered listing pins">
+<defs><clipPath id="landclip"><path d="M-1400,-400 L268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L-1400,1300 Z"/></clipPath></defs>
+<path class="land" d="M-1400,-400 L268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L-1400,1300 Z"/>
+<g clip-path="url(#landclip)"><path class="minor" d="M-1400,-400H700M-1400,-350H700M-1400,-300H700M-1400,-250H700M-1400,-200H700M-1400,-150H700M-1400,-100H700M-1400,-50H700M-1400,0H700M-1400,50H700M-1400,100H700M-1400,150H700M-1400,200H700M-1400,250H700M-1400,300H700M-1400,350H700M-1400,400H700M-1400,450H700M-1400,500H700M-1400,550H700M-1400,600H700M-1400,650H700M-1400,700H700M-1400,750H700M-1400,800H700M-1400,850H700M-1400,900H700M-1400,950H700M-1400,1000H700M-1400,1050H700M-1400,1100H700M-1400,1150H700M-1400,1200H700M-1400,1250H700M-1400,1300H700M-1400,1350H700M-1375,-400V1300M-1325,-400V1300M-1275,-400V1300M-1225,-400V1300M-1175,-400V1300M-1125,-400V1300M-1075,-400V1300M-1025,-400V1300M-975,-400V1300M-925,-400V1300M-875,-400V1300M-825,-400V1300M-775,-400V1300M-725,-400V1300M-675,-400V1300M-625,-400V1300M-575,-400V1300M-525,-400V1300M-475,-400V1300M-425,-400V1300M-375,-400V1300M-325,-400V1300M-275,-400V1300M-225,-400V1300M-175,-400V1300M-125,-400V1300M-75,-400V1300M-25,-400V1300M25,-400V1300M75,-400V1300M125,-400V1300M175,-400V1300M225,-400V1300M275,-400V1300M325,-400V1300M375,-400V1300M425,-400V1300M475,-400V1300M525,-400V1300M575,-400V1300M625,-400V1300M675,-400V1300M725,-400V1300"/><path class="major" d="M-1400,-425H700M-1400,-375H700M-1400,-325H700M-1400,-275H700M-1400,-225H700M-1400,-175H700M-1400,-125H700M-1400,-75H700M-1400,-25H700M-1400,25H700M-1400,75H700M-1400,125H700M-1400,175H700M-1400,225H700M-1400,275H700M-1400,325H700M-1400,375H700M-1400,425H700M-1400,475H700M-1400,525H700M-1400,575H700M-1400,625H700M-1400,675H700M-1400,725H700M-1400,775H700M-1400,825H700M-1400,875H700M-1400,925H700M-1400,975H700M-1400,1025H700M-1400,1075H700M-1400,1125H700M-1400,1175H700M-1400,1225H700M-1400,1275H700M-1400,1325H700M-1400,-400V1300M-1350,-400V1300M-1300,-400V1300M-1250,-400V1300M-1200,-400V1300M-1150,-400V1300M-1100,-400V1300M-1050,-400V1300M-1000,-400V1300M-950,-400V1300M-900,-400V1300M-850,-400V1300M-800,-400V1300M-750,-400V1300M-700,-400V1300M-650,-400V1300M-600,-400V1300M-550,-400V1300M-500,-400V1300M-450,-400V1300M-400,-400V1300M-350,-400V1300M-300,-400V1300M-250,-400V1300M-200,-400V1300M-150,-400V1300M-100,-400V1300M-50,-400V1300M0,-400V1300M50,-400V1300M100,-400V1300M150,-400V1300M200,-400V1300M250,-400V1300M300,-400V1300M350,-400V1300M400,-400V1300M450,-400V1300M500,-400V1300M550,-400V1300M600,-400V1300M650,-400V1300M700,-400V1300"/><path class="diag" d="M328,453 L250,375 L188,313 L120,245 L50,175 L-60,90 M345,455 L344,375 L313,300 L285,225 L256,150 L248,60 L244,-100 M344,380 L290,320 L245,262 L200,175 L160,110 M350,588 L250,645 L100,731 L-100,846 M300,452 L240,505 L150,580 L50,650 L-100,760"/></g>
+<g class="parks"><path class="park" d="M352,375 L344,320 L335,275 L334,240 L323,213 L318,185 L300,150 L295,152 L309,192 L320,242 L323,282 L333,330 L341,375 Z"/><path class="park" d="M360,466 L376,462 L381,475 L384,500 L388,548 L371,548 L364,500 Z"/><path class="park" d="M440,826 L453,820 L449,840 L462,869 L470,892 L452,892 L438,858 Z"/><path class="park" d="M398,790 h24 v32 h-24 Z"/><path class="park" d="M133,395 h20 v14 h-20 Z"/></g>
+<path class="lake" d="M268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L2600,1300 L2600,-400 Z"/>
+<path class="shore" d="M268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300"/>
+<rect class="pier" x="372" y="443" width="40" height="4"/>
+<path class="river" d="M381,453 L328,453 M328,453 L318,440 L300,425 L282,392 L275,375 L262,352 L238,325 L205,298 L175,275 L168,240 L163,200 L130,182 L90,168 L40,150 L-50,120 L-200,80 M163,200 L158,150 L152,80 L150,-100 M328,453 L327,500 L325,550 L310,590 L294,612 L270,628 L250,637 L225,652 L200,669 L150,678 L100,687 L50,706 L-100,760 L-300,840 M262,632 L268,660 L272,700"/>
+<rect class="elloop" x="337" y="462" width="16" height="38"/>
+<g class="hoodlabels">
+<text class="hood" data-h="Rogers Park" x="256" y="29" text-anchor="middle">ROGERS PARK</text>
+<text class="hood" data-h="Andersonville" x="256" y="129" text-anchor="middle">ANDERSONVILLE</text>
+<text class="hood" data-h="Uptown" x="290" y="183" text-anchor="start">UPTOWN</text>
+<text class="hood" data-h="Lincoln Square" x="222" y="181" text-anchor="end">LINCOLN SQUARE</text>
+<text class="hood" data-h="Lakeview" x="298" y="263" text-anchor="middle">LAKEVIEW</text>
+<text class="hood" data-h="Lincoln Park" x="302" y="329" text-anchor="middle">LINCOLN PARK</text>
+<text class="hood" data-h="Logan Square" x="168" y="307" text-anchor="middle">LOGAN SQUARE</text>
+<text class="hood" data-h="Wicker Park" x="240" y="375" text-anchor="middle">WICKER PARK</text>
+<text class="hood" data-h="Humboldt Park" x="140" y="395" text-anchor="middle">HUMBOLDT PARK</text>
+<text class="hood" data-h="West Loop" x="284" y="482" text-anchor="end">WEST LOOP</text>
+<text class="hood" data-h="The Loop" x="357" y="486" text-anchor="start">THE LOOP</text>
+<text class="hood" data-h="Chinatown" x="338" y="603" text-anchor="middle">CHINATOWN</text>
+<text class="hood" data-h="Pilsen" x="250" y="581" text-anchor="middle">PILSEN</text>
+<text class="hood" data-h="Little Village" x="150" y="625" text-anchor="middle">LITTLE VILLAGE</text>
+<text class="hood" data-h="Bridgeport" x="298" y="673" text-anchor="middle">BRIDGEPORT</text>
+<text class="hood" data-h="Bronzeville" x="372" y="721" text-anchor="middle">BRONZEVILLE</text>
+<text class="hood" data-h="Hyde Park" x="428" y="803" text-anchor="middle">HYDE PARK</text>
+</g>
+<text class="water" x="500" y="400">LAKE MICHIGAN</text>
+<text class="rlabel" x="-70" y="104" transform="rotate(16 -70 104)">CHICAGO RIVER</text>
+        <g id="pins"></g>
+        <g id="xh" style="opacity:0"><line x1="-3000" x2="3000" y1="0" y2="0"/><line y1="-3000" y2="3000" x1="0" x2="0"/><rect id="xhr" x="-11" y="-11" width="22" height="22"/></g>
+      </svg>
+      <div class="scale" id="scale"><span>1 MI</span><i id="scalebar"></i></div>
+      <div class="north"><svg width="12" height="16" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 0 L12 16 L6 12 L0 16Z"/></svg>N</div>
+    </div>
+    <div class="detail empty-d" id="detail">No row selected. Pick a listing on the left, or click a numbered pin.</div>
+  </aside>
+</section>
+
+<footer>
+  <a href="../">&larr; Gallery</a>
+  <span>Stoop never handles money. You reply to the poster and meet on the stoop, in daylight.</span>
+  <span class="mono">v15 &middot; Map + List workspace</span>
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const HOODS = {"Rogers Park":[256,38],"Andersonville":[256,138],"Uptown":[294,192],"Lincoln Square":[206,190],"Lakeview":[298,272],"Lincoln Park":[302,338],"Logan Square":[168,316],"Wicker Park":[240,384],"Humboldt Park":[140,404],"West Loop":[290,478],"The Loop":[345,482],"Chinatown":[338,612],"Pilsen":[250,590],"Little Village":[150,634],"Bridgeport":[298,682],"Bronzeville":[372,730],"Hyde Park":[428,812]};
+const CATS = ["For Sale", "Free", "Housing", "Jobs", "Gigs", "Services", "Community"];
+const RAW = [
+  ["Trek FX 2 hybrid bike, 54 cm, new tires", "For Sale", "Logan Square", 180, "", 4, "Tuned in August. Comes with a lock but not the key, sorry."],
+  ["Moving boxes, about 40, flattened", "Free", "Lakeview", 0, "", 9, "Some say KITCHEN in Sharpie. Stacked in the gangway off Roscoe."],
+  ["Room in a 2-flat, available Nov 1", "Housing", "Pilsen", 850, "/mo", 15, "Two artists and a calm dog. Radiator heat, 6 min to the 18th St Pink Line."],
+  ["Barista, early shifts", "Jobs", "Wicker Park", 19, "/hr", 38, "Corner café on Damen. Tips are good, regulars are chatty."],
+  ["Lost: grey tabby, answers to “Pierogi”", "Community", "Bridgeport", null, "", 51, "Last seen near Halsted and 31st. Very food motivated."],
+  ["Schwinn single-speed bike, needs a chain", "For Sale", "Humboldt Park", 60, "", 64, "Frame is solid. Has lived in a dry garage since 2019."],
+  ["Window AC, 8,000 BTU, works", "For Sale", "Rogers Park", 75, "", 80, "Loud, but it got us through July. Brackets included."],
+  ["Help carrying an upright piano", "Gigs", "Bronzeville", 120, "", 110, "One flight down, Saturday 10am. Need three people. Pizza after."],
+  ["Furnished studio sublet, Dec to May", "Housing", "Wicker Park", 1150, "/mo", 130, "Going abroad. Very good couch, mediocre plant. Laundry in building."],
+  ["Algebra and SAT math tutor", "Services", "Hyde Park", 40, "/hr", 170, "Grad student. At the Harper library or your kitchen table."],
+  ["Tomato cages and potting soil", "Free", "Little Village", 0, "", 190, "Garden is done for the year. On the front steps off 26th St."],
+  ["Birch bookshelf, 5 shelves", "For Sale", "Andersonville", 95, "", 240, "Swedish, of course. Comes apart with one hex key."],
+  ["Bike tune-ups in my garage", "Services", "Uptown", 35, "", 300, "Brakes, gears, truing. Same day if you drop it off by 10."],
+  ["Drafting table, tilting oak top", "For Sale", "Lincoln Park", 65, "", 340, "From a retired architect. A little paint on one leg."],
+  ["Taquería prep cook, weekends", "Jobs", "Little Village", 18, "/hr", 390, "Fri to Sun mornings. Must love cilantro. Spanish a plus."],
+  ["Snow shoveling, whole winter", "Gigs", "Lincoln Square", 300, "", 450, "Corner lot plus the neighbor's walk. One reliable person, all season."],
+  ["Yuba cargo bike with kid seat", "For Sale", "Logan Square", 1400, "", 520, "Kid outgrew it. Hauled groceries up Milwaukee for four years."],
+  ["Green velvet couch, curb by 6pm", "Free", "Humboldt Park", 0, "", 560, "No stains, one cat scratch. Out front on Division. Bring a friend."],
+  ["Block party on Throop, Sat 10/17", "Community", "Bridgeport", null, "", 640, "Street closed noon to 8. Bring a chair and a dish."],
+  ["Vintage Pyrex bowls, set of 4", "For Sale", "Chinatown", 45, "", 700, "Butterprint pattern. Found in my aunt's basement on Wentworth."]
+];
+let L = RAW.map((r, i) => ({ id: i, t: r[0], c: r[1], h: r[2], p: r[3], u: r[4], m: r[5], d: r[6] }));
+function place(l) {
+  const [x, y] = HOODS[l.h], a = (0.1 + ((l.id * 0.618) % 1) * 0.8) * Math.PI, r = 12 + (l.id % 3) * 9;
+  l.x = x + Math.cos(a) * r * 1.4; l.y = y + Math.sin(a) * r;
+}
+L.forEach(place);
+
+const $ = s => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ago = m => m < 1 ? "now" : m < 60 ? m + "m" : Math.floor(m / 60) + "h";
+const money = l => l.p === null ? "&mdash;" : l.p === 0 ? "Free" : "$" + l.p.toLocaleString() + (l.u ? "<small style='font-weight:400'>" + l.u + "</small>" : "");
+const lat = y => (41.8819 + (475 - y) / 50 / 69).toFixed(4);
+const lon = x => (87.6278 - (x - 350) / 50 / 51.6).toFixed(4);
+
+/* ---------- controls ---------- */
+const q = $("#q"), sh = $("#sh"), sp = $("#sp"), names = Object.keys(HOODS).sort();
+sh.innerHTML = `<option value="">All 17</option>` + names.map(n => `<option>${n}</option>`).join("");
+$("#ph").innerHTML = `<option value="">Choose&hellip;</option>` + names.map(n => `<option>${n}</option>`).join("");
+$("#pc").innerHTML = `<option value="">Choose&hellip;</option>` + CATS.map(c => `<option>${c}</option>`).join("");
+let cat = "", sortBy = "new", selId = null, hovId = null;
+function chips() {
+  $("#chips").innerHTML = [["", "All", L.length], ...CATS.map(c => [c, c, L.filter(l => l.c === c).length])]
+    .map(([v, n, k]) => `<button type="button" class="chip${v === cat ? " on" : ""}" data-c="${v}">${n}<i>${String(k).padStart(2, "0")}</i></button>`).join("");
+}
+$("#chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; cat = b.dataset.c; chips(); render(); });
+q.addEventListener("input", render);
+sh.addEventListener("change", () => { render(); if (sh.value) flyTo(HOODS[sh.value][0], HOODS[sh.value][1], 240); });
+sp.addEventListener("input", () => { sp.value = sp.value.replace(/\D/g, ""); render(); });
+$("#sort").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; sortBy = b.dataset.s; $("#sort").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); render(); });
+
+function tab(which) {
+  const s = which === "S";
+  $("#tabS").setAttribute("aria-selected", s); $("#tabP").setAttribute("aria-selected", !s);
+  $("#paneS").hidden = !s; $("#paneP").hidden = s;
+  (s ? q : $("#pt")).focus();
+}
+$("#tabS").onclick = () => tab("S"); $("#tabP").onclick = () => tab("P");
+document.querySelector(".tabs").addEventListener("keydown", e => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { tab($("#tabS").getAttribute("aria-selected") === "true" ? "P" : "S"); (e.key === "ArrowRight" ? $("#tabP") : $("#tabS")).focus(); } });
+
+/* ---------- filter + list ---------- */
+const words = () => q.value.toLowerCase().split(/[^a-z0-9à-ÿ]+/).filter(Boolean).map(w => w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w);
+function matches(l) {
+  if (cat && l.c !== cat) return false;
+  if (sh.value && l.h !== sh.value) return false;
+  if (sp.value && (l.p === null || l.p > +sp.value)) return false;
+  const hay = (l.t + " " + l.d + " " + l.c + " " + l.h).toLowerCase();
+  return words().every(w => hay.includes(w));
+}
+function inView(l) {
+  if (!$("#inView").checked) return true;
+  const v = curVB; return l.x >= v[0] && l.x <= v[0] + v[2] && l.y >= v[1] && l.y <= v[1] + v[3];
+}
+let shown = [];
+function render() {
+  const hits = L.filter(matches);
+  shown = hits.filter(inView).sort(sortBy === "price" ? (a, b) => (a.p ?? -1) - (b.p ?? -1) : sortBy === "hood" ? (a, b) => a.h.localeCompare(b.h) || a.m - b.m : (a, b) => a.m - b.m);
+  shown.forEach((l, i) => l.n = i + 1);
+  hits.filter(l => !shown.includes(l)).forEach(l => l.n = 0);
+  L.filter(l => !hits.includes(l)).forEach(l => l.n = 0);
+  const ws = words();
+  const mark = s => ws.length ? esc(s).replace(new RegExp("(" + ws.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")", "gi"), "<em>$1</em>") : esc(s);
+  $("#rows").innerHTML = shown.map(l => `<li class="row${l.id === selId ? " sel" : ""}${l.fresh ? " fresh" : ""}" data-id="${l.id}" tabindex="-1">
+      <span class="no">${String(l.n).padStart(2, "0")}</span>
+      <span class="ti">${esc(l.t)}<small>${l.c} &middot; ${mark(l.d)}</small></span>
+      <span class="nb">${esc(l.h)}</span><span class="ag">${ago(l.m)}</span><span class="pr">${money(l)}</span></li>`).join("")
+    || `<li class="empty">Nothing matches. <button type="button" id="toPost">Post it instead &rarr;</button></li>`;
+  const tp = $("#toPost"); if (tp) tp.onclick = () => { $("#pt").value = q.value; tab("P"); scrollTo({ top: 0, behavior: "smooth" }); };
+  $("#cnt").textContent = shown.length;
+  $("#lsub").textContent = `${shown.length} of ${L.length}${$("#inView").checked ? " in map view" : ""}`;
+  $("#tabSmall").textContent = `${L.length} listings live`;
+  $("#stat").innerHTML = `${L.length} LISTINGS &middot; ${L.filter(l => l.m < 60).length} IN THE LAST HOUR &middot; $0 TO POST`;
+  if (selId !== null && !shown.some(l => l.id === selId)) deselect();
+  drawPins();
+}
+
+/* ---------- map ---------- */
+const svg = $("#map"), pinsG = $("#pins"), xh = $("#xh"), box = $("#mapbox");
+let curVB = [-20, -20, 600, 940], kNow = 1, anim = null;
+function kOf(v) { return Math.max(v[2] / box.clientWidth, v[3] / box.clientHeight); }
+function applyVB(v) {
+  curVB = v; svg.setAttribute("viewBox", v.map(n => n.toFixed(2)).join(" "));
+  kNow = kOf(v); svg.style.setProperty("--k", kNow.toFixed(4));
+  pinsG.querySelectorAll(".pin").forEach(g => g.setAttribute("transform", `translate(${g.dataset.x},${g.dataset.y}) scale(${kNow.toFixed(4)})`));
+  $("#xhr").setAttribute("transform", `scale(${kNow.toFixed(4)})`);
+  const bar = 50 / kNow; let mi = 1; let w = bar;
+  if (w > 160) { mi = .5; w = bar / 2; } if (w < 50) { mi = 2; w = bar * 2; }
+  $("#scalebar").style.width = w + "px"; $("#scale span").textContent = mi + " MI";
+}
+function animVB(to, dur = 600) {
+  const from = curVB.slice(), t0 = performance.now();
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) dur = 1;
+  cancelAnimationFrame(anim);
+  const step = now => {
+    const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    applyVB(from.map((f, i) => f + (to[i] - f) * e));
+    if (t < 1) anim = requestAnimationFrame(step); else if ($("#inView").checked) render();
+  };
+  anim = requestAnimationFrame(step);
+}
+function fitCity() { return fitBox(-10, -10, 560, 920); }
+function fitBox(x, y, w, h) {
+  const a = box.clientWidth / box.clientHeight;
+  if (w / h > a) { const nh = w / a; return [x, y - (nh - h) / 2, w, nh]; }
+  const nw = h * a; return [x - (nw - w) / 2, y, nw, h];
+}
+function flyTo(x, y, span) {
+  const a = box.clientWidth / box.clientHeight, h = span || Math.min(curVB[3], 420), w = h * a;
+  animVB([x - w / 2, y - h / 2, w, h]);
+}
+function zoomBy(f) { const v = curVB, cx = v[0] + v[2] / 2, cy = v[1] + v[3] / 2, w = Math.min(Math.max(v[2] * f, 80), 1400), h = w * v[3] / v[2]; animVB([cx - w / 2, cy - h / 2, w, h], 300); }
+$("#zin").onclick = () => zoomBy(.6); $("#zout").onclick = () => zoomBy(1.6); $("#fit").onclick = () => animVB(fitCity());
+$("#inView").onchange = render;
+
+function drawPins() {
+  pinsG.innerHTML = "";
+  const order = [...L].sort((a, b) => (a.n ? 1 : 0) - (b.n ? 1 : 0) || (a.id === selId) - (b.id === selId) || a.y - b.y);
+  order.forEach(l => {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "pin" + (l.n ? "" : " off") + (l.id === selId ? " sel" : "") + (l.id === hovId ? " hov" : ""));
+    g.dataset.x = l.x.toFixed(1); g.dataset.y = l.y.toFixed(1); g.dataset.id = l.id;
+    g.setAttribute("transform", `translate(${l.x},${l.y}) scale(${kNow})`);
+    g.innerHTML = l.n ? `<rect x="-8" y="-7" width="16" height="14"/><text y="3">${String(l.n).padStart(2, "0")}</text><title>${esc(l.t)}</title>` : `<rect x="-3" y="-3" width="6" height="6"/><title>${esc(l.t)} (filtered out)</title>`;
+    pinsG.appendChild(g);
+  });
+}
+pinsG.addEventListener("click", e => { const g = e.target.closest(".pin"); if (!g || moved) return; const l = L[+g.dataset.id]; if (l.n) select(l.id, true); });
+pinsG.addEventListener("mouseover", e => { const g = e.target.closest(".pin"); if (g) hover(+g.dataset.id); });
+pinsG.addEventListener("mouseout", e => { if (e.target.closest(".pin")) hover(null); });
+function hover(id) {
+  hovId = id;
+  pinsG.querySelectorAll(".pin").forEach(g => g.classList.toggle("hov", +g.dataset.id === id));
+  document.querySelectorAll(".row").forEach(r => r.style.outline = +r.dataset.id === id && id !== selId ? "1px solid #000" : "");
+}
+
+function select(id, fromMap) {
+  selId = id; const l = L[id];
+  document.querySelectorAll(".row").forEach(r => r.classList.toggle("sel", +r.dataset.id === id));
+  drawPins();
+  xh.style.opacity = 1; xh.style.transform = `translate(${l.x}px, ${l.y}px)`;
+  const v = curVB, pad = .12;
+  const outside = l.x < v[0] + v[2] * pad || l.x > v[0] + v[2] * (1 - pad) || l.y < v[1] + v[3] * pad || l.y > v[1] + v[3] * (1 - pad);
+  if (outside || v[3] > 700) flyTo(l.x, l.y, v[3] > 700 ? 380 : v[3]);
+  $("#roC").innerHTML = `<b>${String(l.n).padStart(2, "0")}</b> ${lat(l.y)}&deg;N ${lon(l.x)}&deg;W &middot; ${esc(l.h).toUpperCase()}`;
+  const d = $("#detail"); d.classList.remove("empty-d");
+  d.innerHTML = `<span class="lbl">${String(l.n).padStart(2, "0")} &middot; ${l.c} &middot; ${esc(l.h)} &middot; posted ${ago(l.m)} ago</span><h3>${esc(l.t)}</h3><div class="pp">${money(l)}</div><p>${esc(l.d)}</p><button class="act" type="button">Reply to poster &rarr;</button>`;
+  d.querySelector(".act").onclick = () => toast(`Reply sent to the poster in ${l.h}. Stoop never handles money.`);
+  const row = document.querySelector(`.row[data-id="${id}"]`);
+  if (row && fromMap) {
+    const r = row.getBoundingClientRect(), top = document.querySelector(".lh").getBoundingClientRect().bottom;
+    if (r.top < top || r.bottom > innerHeight) scrollBy({ top: r.top - top - 80, behavior: "smooth" });
+  }
+}
+function deselect() {
+  selId = null; xh.style.opacity = 0; $("#roC").innerHTML = "&mdash;";
+  const d = $("#detail"); d.classList.add("empty-d"); d.textContent = "No row selected. Pick a listing on the left, or click a numbered pin.";
+  document.querySelectorAll(".row.sel").forEach(r => r.classList.remove("sel"));
+}
+$("#rows").addEventListener("click", e => { const r = e.target.closest(".row"); if (r) select(+r.dataset.id, false); });
+$("#rows").addEventListener("mouseover", e => { const r = e.target.closest(".row"); if (r && +r.dataset.id !== hovId) hover(+r.dataset.id); });
+$("#rows").addEventListener("mouseleave", () => hover(null));
+document.addEventListener("keydown", e => {
+  const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+  if (e.key === "/" && !typing) { e.preventDefault(); tab("S"); scrollTo({ top: 0, behavior: "smooth" }); return; }
+  if (e.key === "Escape") { deselect(); drawPins(); if (typing) document.activeElement.blur(); return; }
+  if (typing || !shown.length || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+  e.preventDefault();
+  let i = shown.findIndex(l => l.id === selId);
+  i = e.key === "ArrowDown" ? Math.min(shown.length - 1, i + 1) : Math.max(0, i - 1);
+  select(shown[i].id, true);
+});
+
+/* drag to pan */
+let drag = null, moved = false;
+box.addEventListener("pointerdown", e => { if (e.button !== 0) return; drag = { x: e.clientX, y: e.clientY, vb: curVB.slice() }; moved = false; });
+addEventListener("pointermove", e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!moved && Math.hypot(dx, dy) < 4) return;
+  if (!moved) { moved = true; box.classList.add("drag"); cancelAnimationFrame(anim); }
+  applyVB([drag.vb[0] - dx * kNow, drag.vb[1] - dy * kNow, drag.vb[2], drag.vb[3]]);
+});
+addEventListener("pointerup", () => { if (drag && moved && $("#inView").checked) render(); drag = null; box.classList.remove("drag"); setTimeout(() => moved = false, 0); });
+
+/* ---------- post ---------- */
+$("#paneP").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#pt").value.trim(), p = $("#pp").value.trim(), h = $("#ph").value, c = $("#pc").value;
+  const bad = [[!t, "fT"], [p === "" && c !== "Community" && c !== "Free", "fP"], [!h, "fH"], [!c, "fC"]];
+  bad.forEach(([b, id]) => $("#" + id).classList.toggle("bad", b));
+  const miss = bad.filter(b => b[0]);
+  if (miss.length) { $("#pmsg").innerHTML = `<b>Missing:</b> ${miss.map(b => ({ fT: "what it is", fP: "price", fH: "neighborhood", fC: "category" })[b[1]]).join(", ")}.`; return; }
+  const price = c === "Free" ? 0 : p === "" ? null : +p.replace(/\D/g, "");
+  const l = { id: L.length, t, c, h, p: price, u: c === "Housing" ? "/mo" : c === "Jobs" ? "/hr" : "", m: 0, d: "Just posted. Reply to ask about it.", fresh: true };
+  place(l); L.push(l);
+  q.value = ""; sh.value = ""; sp.value = ""; cat = ""; sortBy = "new";
+  $("#sort").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.s === "new"));
+  $("#paneP").reset();
+  chips(); render();
+  $("#pmsg").innerHTML = `<b>Posted.</b> &ldquo;${esc(t)}&rdquo; is row 01 and pinned in ${esc(h)}.`;
+  select(l.id, false);
+  flyTo(l.x, l.y, 300);
+  document.querySelector(".ws").scrollIntoView({ behavior: "smooth" });
+});
+$("#pp").addEventListener("input", e => e.target.value = e.target.value.replace(/\D/g, ""));
+
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 2600); }
+addEventListener("resize", () => { const v = curVB, w = v[3] * box.clientWidth / box.clientHeight; applyVB([v[0] + v[2] / 2 - w / 2, v[1], w, v[3]]); });
+
+document.querySelector("#map .water").setAttribute("x", 468);
+chips();
+applyVB(fitCity());
+render();
+</script>
+</body>
+</html>
