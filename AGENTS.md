@@ -23,3 +23,10 @@
 
 ## Process log (update as we go)
 - v01–v10: wide exploration round (see the gallery notes).
+- **Round 1 review (user's decisions):**
+  - Kept: the type of v02 and v07 (modern, bold, minimal), v06's map, and v07's recent-listings table.
+  - Dropped: v01, v04 and v09 ("kitschy, not in a good way"), v09 also "too chaotic", and v10 ("doesn't make sense in this context"). v03, v05 and v08 weren't carried forward.
+  - Search is the tentpole. It gets equal weight with "Post a listing" (search OR post).
+  - Page order: search/post → recent listings → map.
+  - Setting: Chicago neighborhoods.
+- v11–v19: narrowing round. Each version tries a different layout and interaction for that same hierarchy and type direction.
