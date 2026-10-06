@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop: Looking or Selling</title>
+<style>
+  :root { --k: #0b0b0b; --w: #fff; --o: #f3f2ee; --a: #41b6e6; --g: #8b8b8b; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; --black: "Arial Black", "Arial Bold", Gadget, Arial, sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; background: var(--w); color: var(--k); font-size: 15px; line-height: 1.35; }
+  button, input, select { font: inherit; color: inherit; border-radius: 0; }
+  a { color: inherit; }
+  .mono { font-family: var(--mono); }
+
+  /* split hero */
+  .split { display: flex; height: 100vh; min-height: 700px; max-height: 1000px; }
+  .side { flex: 1 1 0; min-width: 0; position: relative; display: flex; flex-direction: column; padding: 26px 48px 44px; container-type: inline-size; transition: flex-grow .55s cubic-bezier(.2, .7, .2, 1); }
+  .side:hover { flex-grow: 1.5; }
+  .looking { background: var(--k); color: var(--w); z-index: 2; }
+  .selling { background: var(--w); color: var(--k); }
+  .or { position: absolute; top: 50%; right: 0; transform: translate(50%, -50%); width: 64px; height: 64px; background: var(--a); color: var(--k); display: grid; place-items: center; font: 900 20px var(--black); letter-spacing: -.03em; z-index: 3; }
+  .topline { display: flex; justify-content: space-between; align-items: baseline; font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: .02em; }
+  .topline a { text-decoration: none; border-bottom: 2px solid currentColor; padding-bottom: 1px; }
+  .topline a:hover { color: var(--a); }
+  .kicker { font: 700 12px var(--mono); text-transform: uppercase; margin-top: 64px; color: var(--g); }
+  .kicker b { color: var(--a); }
+  .word { font: 900 7.4vw/.8 var(--black); font-size: 19.5cqw; letter-spacing: -.065em; margin: 14px 0 0 -.05em; white-space: nowrap; }
+  .lede { font-size: 19px; line-height: 1.3; margin-top: 18px; max-width: 26em; color: #bdbdbd; }
+  .selling .lede { color: #555; }
+  .ctl { margin-top: auto; max-width: 620px; }
+  .flabel { font: 700 11px var(--mono); text-transform: uppercase; display: block; margin-bottom: 6px; color: var(--g); }
+
+  .sbox { display: flex; border-bottom: 3px solid var(--w); }
+  .sbox input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-size: 34px; font-weight: 700; letter-spacing: -.02em; padding: 8px 0 10px; color: var(--w); }
+  .sbox input::placeholder { color: #5c5c5c; }
+  .sbox input::-webkit-search-cancel-button { display: none; }
+  .sbox button { border: 0; background: none; color: var(--w); font: 900 30px var(--black); cursor: pointer; padding: 0 0 0 16px; }
+  .sbox button:hover { color: var(--a); }
+  .sbox:focus-within { border-color: var(--a); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .chip { border: 1.5px solid #444; background: none; padding: 6px 10px; font: 700 12px var(--mono); text-transform: uppercase; cursor: pointer; color: var(--w); }
+  .chip:hover { border-color: var(--w); }
+  .chip.on { background: var(--a); border-color: var(--a); color: var(--k); }
+  .peek { margin-top: 22px; border-top: 1px solid #333; min-height: 132px; }
+  .peek a { display: grid; grid-template-columns: 1fr auto; gap: 16px; padding: 9px 0; border-bottom: 1px solid #262626; text-decoration: none; font-size: 15px; }
+  .peek a span:last-child { font: 700 14px var(--mono); }
+  .peek a:hover { color: var(--a); }
+  .peek .sum { display: flex; justify-content: space-between; padding: 9px 0; font: 700 12px var(--mono); text-transform: uppercase; color: var(--a); }
+  .peek .sum a { display: inline; border: 0; padding: 0; font: inherit; color: var(--w); text-decoration: underline; text-underline-offset: 3px; }
+
+  .pform { display: grid; grid-template-columns: 1.1fr 1fr 1fr; column-gap: 20px; row-gap: 14px; }
+  .pform .f { display: flex; flex-direction: column; min-width: 0; }
+  .pform .f.wide { grid-column: 1 / -1; }
+  .pform input, .pform select { border: 0; border-bottom: 3px solid var(--k); background: transparent; outline: 0; font-size: 22px; font-weight: 700; letter-spacing: -.015em; padding: 6px 0 8px; width: 100%; -webkit-appearance: none; appearance: none; }
+  .pform .f.wide input { font-size: 34px; letter-spacing: -.02em; padding-bottom: 10px; }
+  .pform select { cursor: pointer; background: linear-gradient(45deg, transparent 50%, var(--k) 50%) right 4px center / 8px 8px no-repeat; padding-right: 18px; }
+  .pform input::placeholder { color: #bdbdbd; }
+  .pform .f:focus-within input, .pform .f:focus-within select { border-color: var(--a); }
+  .pform button { grid-column: 1 / -1; margin-top: 10px; border: 0; background: var(--k); color: var(--w); font-size: 20px; font-weight: 700; padding: 18px 22px; display: flex; justify-content: space-between; cursor: pointer; }
+  .pform button:hover { background: var(--a); color: var(--k); }
+  .pdone { grid-column: 1 / -1; font: 700 12px var(--mono); text-transform: uppercase; min-height: 18px; }
+  .pdone a { color: var(--k); }
+
+  /* recent */
+  .sechead { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; padding: 110px 48px 26px; border-bottom: 3px solid var(--k); }
+  .sechead h2 { font: 900 clamp(48px, 7vw, 96px)/.85 var(--black); letter-spacing: -.06em; }
+  .sechead .meta { font: 700 12px/1.5 var(--mono); text-transform: uppercase; text-align: right; }
+  .sechead .meta button { border: 0; background: var(--a); font: inherit; padding: 1px 6px; cursor: pointer; }
+  .lrow { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; column-gap: 36px; align-items: center; padding: 22px 48px; border-bottom: 1px solid var(--k); cursor: pointer; }
+  .lrow .lm { font: 700 12px/1.5 var(--mono); text-transform: uppercase; color: var(--g); }
+  .lrow .lm b { display: block; color: var(--k); }
+  .lrow h3 { font-size: 30px; line-height: 1.05; letter-spacing: -.025em; }
+  .lrow p { font-size: 15px; color: #555; margin-top: 6px; max-width: 46em; }
+  .lrow p b { color: var(--k); text-transform: uppercase; font-size: 12px; font-family: var(--mono); margin-right: 6px; }
+  .lrow .lp { font: 900 clamp(44px, 7.4vw, 104px)/.85 var(--black); letter-spacing: -.06em; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .lrow .lp small { font-size: .3em; letter-spacing: -.02em; margin-left: .1em; }
+  .lrow .lp.free { color: var(--a); }
+  .lrow:hover { background: var(--k); color: var(--w); }
+  .lrow:hover .lm b, .lrow:hover p b { color: var(--w); }
+  .lrow:hover p { color: #bdbdbd; }
+  .lrow:hover .lp { color: var(--a); }
+  .lrow.fresh { animation: fresh 2.6s ease-out; }
+  @keyframes fresh { 0%, 45% { background: var(--a); } }
+  .lempty { padding: 60px 48px; font: 900 clamp(32px, 4.4vw, 56px)/1 var(--black); letter-spacing: -.045em; display: none; }
+  .lempty button { border: 0; background: none; font: inherit; color: var(--a); cursor: pointer; text-decoration: underline; text-decoration-thickness: 4px; text-underline-offset: 6px; }
+
+  /* nearest + sticky map */
+  .near { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 110px; border-top: 3px solid var(--k); }
+  .mapcol { position: sticky; top: 0; height: min(100vh, 1000px); background: var(--o); align-self: start; overflow: hidden; }
+  #svg { display: block; width: 100%; height: 100%; cursor: crosshair; }
+  .m-land { fill: #0b0b0b; }
+  .m-minor { stroke: #1b1b1b; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .m-half { stroke: #262626; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .m-major { stroke: #4a4a4a; stroke-width: 1; fill: none; vector-effect: non-scaling-stroke; }
+  .m-parks { fill: #171717; }
+  .m-lake { fill: var(--o); }
+  .m-pier { fill: #0b0b0b; }
+  .m-river { stroke: var(--o); stroke-width: 2.5; fill: none; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .m-loop { fill: none; stroke: #fff; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .m-labels text { font: 700 1.25px "Helvetica Neue", Helvetica, Arial, sans-serif; fill: #8b8b8b; text-anchor: middle; text-transform: uppercase; letter-spacing: .12px; pointer-events: none; }
+  .m-lakelabel { font: 900 2.6px var(--black); fill: #0b0b0b; letter-spacing: -.12px; }
+  .pin { cursor: pointer; }
+  .pin circle { fill: var(--a); stroke: #0b0b0b; stroke-width: 1.5; vector-effect: non-scaling-stroke; transition: transform .15s; }
+  .pin.on circle { transform: scale(1.8); fill: #fff; stroke: var(--a); stroke-width: 3; }
+  .pin.off { display: none; }
+  #you circle.dot { fill: #fff; }
+  #you circle.ring { fill: none; stroke: #fff; stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+  #you text { font: 900 1.4px var(--black); fill: #fff; letter-spacing: .05px; }
+  #leg line { stroke: #fff; stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+  #leg rect { fill: var(--a); }
+  #leg text { font: 900 1.5px var(--black); fill: #0b0b0b; text-anchor: middle; dominant-baseline: central; }
+  .maphint { position: absolute; left: 24px; bottom: 22px; font: 700 11px var(--mono); text-transform: uppercase; color: #fff; background: #0b0b0b; padding: 6px 9px; pointer-events: none; }
+  .mapcol .scale { position: absolute; left: 24px; top: 22px; font: 700 11px var(--mono); text-transform: uppercase; color: #8b8b8b; pointer-events: none; }
+
+  .listcol { min-width: 0; }
+  .nhead { padding: 40px 48px 26px; border-bottom: 3px solid var(--k); position: sticky; top: 0; background: var(--w); z-index: 2; }
+  .nhead h2 { font: 900 clamp(40px, 4.6vw, 64px)/.88 var(--black); letter-spacing: -.055em; }
+  .nhead .from { display: flex; align-items: center; gap: 10px; margin-top: 18px; font: 700 12px var(--mono); text-transform: uppercase; flex-wrap: wrap; }
+  .nhead select { border: 0; border-bottom: 3px solid var(--k); font: 700 18px "Helvetica Neue", Helvetica, Arial, sans-serif; padding: 2px 20px 4px 0; background: linear-gradient(45deg, transparent 50%, var(--k) 50%) right 4px center / 8px 8px no-repeat; -webkit-appearance: none; appearance: none; cursor: pointer; text-transform: none; }
+  .nhead .from span:last-child { color: var(--g); }
+  .nitem { display: grid; grid-template-columns: 170px minmax(0, 1fr); column-gap: 24px; padding: 30px 48px; border-bottom: 1px solid var(--k); cursor: pointer; align-items: start; min-height: 190px; transition: background .2s, color .2s; }
+  .nitem .d { font: 900 56px/.85 var(--black); letter-spacing: -.06em; }
+  .nitem .d small { font-size: 18px; letter-spacing: -.02em; margin-left: 2px; }
+  .nitem .d em { display: block; font: 700 11px var(--mono); letter-spacing: 0; color: var(--g); font-style: normal; text-transform: uppercase; margin-top: 10px; }
+  .nitem h3 { font-size: 22px; line-height: 1.1; letter-spacing: -.02em; }
+  .nitem .np { font: 900 26px var(--black); letter-spacing: -.04em; margin-top: 10px; }
+  .nitem .nm { font: 700 12px var(--mono); text-transform: uppercase; color: var(--g); margin-top: 6px; }
+  .nitem.on { background: var(--k); color: var(--w); }
+  .nitem.on .d, .nitem.on .np { color: var(--a); }
+  .nend { padding: 50px 48px 70vh; font: 700 12px var(--mono); text-transform: uppercase; color: var(--g); }
+
+  footer { display: flex; justify-content: space-between; padding: 22px 48px 40px; background: var(--k); color: var(--w); font: 700 12px var(--mono); text-transform: uppercase; }
+  footer a { color: var(--a); }
+
+  @media (max-width: 900px) {
+    .split { flex-direction: column; height: auto; min-height: 0; max-height: none; }
+    .side { flex: none; padding: 20px 20px 34px; }
+    .side:hover { flex-grow: 0; }
+    .or { top: auto; bottom: 0; right: 50%; transform: translate(50%, 50%); width: 52px; height: 52px; font-size: 16px; }
+    .kicker { margin-top: 36px; }
+    .word { font-size: 21cqw; }
+    .lede { font-size: 17px; margin-bottom: 26px; }
+    .sbox input, .pform .f.wide input { font-size: 26px; }
+    .pform { grid-template-columns: 1fr 1fr; }
+    .pform .f:nth-child(2) { grid-column: 1 / -1; }
+    .selling { padding-top: 46px; }
+    .sechead { grid-template-columns: 1fr; padding: 70px 20px 20px; }
+    .sechead .meta { text-align: left; }
+    .lrow { grid-template-columns: 1fr auto; padding: 18px 20px; column-gap: 16px; }
+    .lrow .lm { grid-column: 1 / -1; margin-bottom: 6px; }
+    .lrow .lm b { display: inline; margin-right: 8px; }
+    .lrow h3 { font-size: 20px; }
+    .lrow .lp { font-size: 34px; align-self: start; }
+    .near { grid-template-columns: 1fr; margin-top: 70px; }
+    .mapcol { position: relative; height: 80vh; }
+    .nhead { position: static; padding: 30px 20px 20px; }
+    .nitem { grid-template-columns: 110px 1fr; padding: 22px 20px; min-height: 0; }
+    .nitem .d { font-size: 36px; }
+    .nend { padding: 30px 20px; }
+    footer { padding: 20px; flex-direction: column; gap: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .side, html { transition: none; scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<section class="split">
+  <div class="side looking">
+    <div class="topline"><a href="../">&larr; Gallery</a><span>Stoop / Chicago</span></div>
+    <div class="kicker"><b>A /</b> I'm looking for something</div>
+    <h1 class="word">LOOKING</h1>
+    <p class="lede">Search every listing on the board, from Rogers Park to Woodlawn. Results, the list below and the map all update as you type.</p>
+    <div class="ctl">
+      <form id="sform" role="search">
+        <label class="flabel" for="q">Search</label>
+        <div class="sbox"><input id="q" type="search" placeholder="a bike, a room, a Saturday helper" autocomplete="off"><button type="submit" aria-label="See results">&darr;</button></div>
+      </form>
+      <div class="chips" id="chips"></div>
+      <div class="peek" id="peek" aria-live="polite"></div>
+    </div>
+    <div class="or" aria-hidden="true">OR</div>
+  </div>
+
+  <div class="side selling">
+    <div class="topline"><span>No fees. No algorithm.</span><span>Mon 5 Oct</span></div>
+    <div class="kicker"><b>B /</b> I've got something</div>
+    <h2 class="word">SELLING</h2>
+    <p class="lede">Or giving away, renting out, hiring, or asking around. Four fields, no account. It shows up at the top of the board and on the map right away.</p>
+    <form class="ctl pform" id="pform" autocomplete="off">
+      <label class="f wide"><span class="flabel">What is it</span><input id="pt" required maxlength="70" placeholder="Oak dresser, four drawers"></label>
+      <label class="f"><span class="flabel">Price</span><input id="pp" maxlength="16" placeholder="$60 or Free"></label>
+      <label class="f"><span class="flabel">Neighborhood</span><select id="pn"></select></label>
+      <label class="f"><span class="flabel">Category</span><select id="pc"></select></label>
+      <button type="submit">Post it to the board <span>&rarr;</span></button>
+      <div class="pdone" id="pdone" aria-live="polite"></div>
+    </form>
+  </div>
+</section>
+
+<section id="recent">
+  <div class="sechead"><h2>Just posted.</h2><div class="meta" id="rmeta"></div></div>
+  <div id="rows"></div>
+  <div class="lempty" id="lempty">Nobody's listed that yet. <button type="button" id="postIt">Be the first &rarr;</button></div>
+</section>
+
+<section class="near" id="near">
+  <div class="mapcol">
+    <svg id="svg" viewBox="-58 -80 84 146" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Map of Chicago. Click to set where you are."></svg>
+    <div class="scale">8 blocks = 1 mile</div>
+    <div class="maphint">Click the map to move &ldquo;You&rdquo;</div>
+  </div>
+  <div class="listcol">
+    <div class="nhead">
+      <h2>Nearest to you.</h2>
+      <div class="from"><span>From</span><select id="origin"></select><span id="fromNote">or click the map</span></div>
+    </div>
+    <div id="nlist"></div>
+    <div class="nend" id="nend">That's everything that matches. Farther than this, try the next neighborhood over.</div>
+  </div>
+</section>
+
+<footer><span>Stoop. A classifieds board for Chicago. You deal directly with your neighbor.</span><a href="../">&larr; Gallery</a></footer>
+
+<script>
+/* ---------- Stoop: shared listings + stylized Chicago geometry ----------
+   Map units: 1 unit = 100 address numbers = 1/8 mile. State & Madison = (0,0).
+   +x is east, +y is south. 8 units = 1 mile. */
+const NS = "http://www.w3.org/2000/svg";
+const CATS = ["For Sale", "Free", "Housing", "Jobs", "Gigs", "Services", "Community"];
+const HOODS = {
+  "Rogers Park": [-15, -70], "Andersonville": [-15, -54], "Uptown": [-9, -46], "Lincoln Square": [-23, -49],
+  "Albany Park": [-38, -49], "Lakeview": [-9, -34], "Avondale": [-33, -34], "Logan Square": [-30, -25],
+  "Lincoln Park": [-7, -23], "Bucktown": [-20, -20], "Wicker Park": [-16, -14], "Humboldt Park": [-38, -12],
+  "Ukrainian Village": [-22, -8], "Garfield Park": [-46, 2], "West Loop": [-11, 0], "Loop": [-0.5, 7],
+  "Pilsen": [-16, 19], "Chinatown": [-2, 23], "Little Village": [-31, 23], "Bridgeport": [-8, 32],
+  "Back of the Yards": [-18, 46], "Bronzeville": [3, 38], "Hyde Park": [12, 54], "Woodlawn": [11, 63]
+};
+const SHORE = [[-12,-95],[-12,-76],[-11,-70],[-10,-64],[-9,-58],[-7,-52],[-5,-48],[-4,-44],[-3,-38],[-2,-32],[-1,-27],[0,-22],[1,-16],[1,-11],[2,-8],[4,-5],[4,-3],[4,2],[4.5,8],[6,11],[6,14],[5,18],[5,22],[7,31],[9,39],[12,47],[16,51],[19,55],[18,57],[21,63],[23,67],[26,72],[29,79],[32,95]];
+const RIVERS = [
+  [[4.5,-3.2],[-4,-3.2]],
+  [[-4,-3.2],[-5.5,-5.5],[-7.5,-8],[-10,-11],[-12.5,-14.5],[-14.5,-17.5],[-17,-20],[-20,-22],[-23.5,-24],[-26,-27],[-27.5,-30],[-28,-34],[-29,-38],[-30.5,-42],[-32,-46],[-34,-50],[-38,-54],[-44,-60],[-52,-68],[-62,-74]],
+  [[-32,-46],[-31,-52],[-30,-58],[-29,-64],[-29,-72],[-30,-95]],
+  [[-4,-3.2],[-4,4],[-4.5,10],[-5,14],[-5.5,18],[-7.5,21],[-10,23.5],[-13,25],[-16,26],[-19,27.5],[-25,30],[-32,33.5],[-40,37.5],[-50,42],[-70,51]],
+  [[-10,23.5],[-10.5,28],[-11,33]]
+];
+const DIAG = [
+  [[-6,-4],[-12,-10],[-16,-15],[-22,-20],[-28,-26],[-34,-31],[-40,-36],[-48,-43],[-70,-62]],          /* Milwaukee */
+  [[-4,-17],[-10,-24],[-16,-31],[-20,-38],[-24,-47],[-28,-54],[-36,-64],[-46,-76]],                    /* Lincoln */
+  [[0,-6],[-2,-14],[-4,-22],[-8,-30],[-10,-36],[-12,-44],[-15,-52],[-17,-60],[-17,-95]],               /* Clark */
+  [[0,18],[-6,22],[-12,26],[-20,31],[-30,38],[-40,45],[-70,62]],                                       /* Archer */
+  [[-6,-1],[-14,3],[-22,8],[-30,13],[-40,18],[-70,30]]                                                 /* Ogden */
+];
+const MAJOR_EW = [-76,-64,-56,-48,-40,-32,-24,-16,-8,0,12,22,31,39,47,55,63];
+const MAJOR_NS = [-56,-48,-40,-32,-24,-16,-8,0,8,16];
+const HALF_EW = [-72,-68,-60,-52,-44,-36,-28,-20,-12,-4,4,8,16,18,26,35,43,51,59,67];
+const HALF_NS = [-52,-44,-36,-28,-20,-12,-4,4,12];
+const STREETS_NS = [[-48,"Cicero"],[-40,"Pulaski"],[-32,"Kedzie"],[-24,"Western"],[-16,"Ashland"],[-8,"Halsted"],[0,"State"]];
+const STREETS_EW = [[-76,"Howard"],[-64,"Devon"],[-48,"Lawrence"],[-40,"Irving Park"],[-32,"Belmont"],[-24,"Fullerton"],[-16,"North"],[-8,"Chicago"],[0,"Madison"],[12,"Roosevelt"],[22,"Cermak"],[31,"31st"],[39,"Pershing"],[47,"47th"],[55,"55th"],[63,"63rd"]];
+
+let LISTINGS = [
+  { t: "Walnut mid-century credenza", d: "One veneer chip on the left door. Came out of my grandma's place on 55th. Needs two people.", p: 340, c: "For Sale", n: "Hyde Park", a: 6, x: 10.5, y: 52 },
+  { t: "Moving boxes, about 40, flattened", d: "Some say KITCHEN in Sharpie. Stacked by the gangway, take as many as you want.", p: 0, c: "Free", n: "Logan Square", a: 11, x: -27.5, y: -27.5 },
+  { t: "Room in a 3BR two-flat, Nov 1", d: "Two artists and a very calm dog. Radiator heat, back porch, 6 min to the 18th St Pink Line.", p: 825, u: "/mo", c: "Housing", n: "Pilsen", a: 18, x: -13.5, y: 17 },
+  { t: "Trek FX 2 hybrid, 54cm, new tires", d: "Tuned in August. Comes with a Kryptonite lock but not the key, sorry.", p: 260, c: "For Sale", n: "Andersonville", a: 24, x: -12.5, y: -56.5 },
+  { t: "Help moving an upright piano down one flight", d: "About 400 lb. Need three strong people Saturday at 10am. Pizza after.", p: 120, c: "Gigs", n: "Bridgeport", a: 31, x: -5.5, y: 29.5 },
+  { t: "Barista, part-time, 6 to 11am", d: "Corner cafe on Division. Tips split evenly. Must tolerate regulars who talk a lot.", p: 19, u: "/hr", c: "Jobs", n: "Wicker Park", a: 47, x: -13.5, y: -12 },
+  { t: "Lost: grey tabby, answers to \"Pierogi\"", d: "Last seen near 26th and Pulaski. Very food motivated. Rattle a bag of treats.", p: null, c: "Community", n: "Little Village", a: 62, x: -37.5, y: 26 },
+  { t: "Hemming and alterations, same week", d: "22 years on Broadway. Bring it pinned, I'll do the rest.", p: 15, u: "+", c: "Services", n: "Uptown", a: 75, x: -6.5, y: -48.5 },
+  { t: "Window AC, 8,000 BTU, works", d: "Loud, but it got us through July. Brackets included. Second-floor walk-up.", p: 75, c: "For Sale", n: "Rogers Park", a: 96, x: -13, y: -72.5 },
+  { t: "Snow shoveling, whole winter, two walks", d: "One reliable person for the season. Corner lot off Southport, plus the neighbor's walk.", p: 300, c: "Gigs", n: "Lakeview", a: 118, x: -13.5, y: -36 },
+  { t: "Tomato cages and 6 bags of potting soil", d: "Garden is done for the year. On the front steps on King Drive, first come.", p: 0, c: "Free", n: "Bronzeville", a: 150, x: 4.5, y: 41 },
+  { t: "Block party on Kedzie, Sat Oct 17", d: "Bring a chair and a dish. Street closed noon to 8. Somebody's uncle is DJing.", p: null, c: "Community", n: "Humboldt Park", a: 170, x: -32.5, y: -14 },
+  { t: "Furnished studio sublet, Dec to May", d: "Going abroad. Very good couch, mediocre plant. Laundry in building, Blue Line at Damen.", p: 1150, u: "/mo", c: "Housing", n: "Wicker Park", a: 225, x: -19, y: -16.5 },
+  { t: "Algebra and SAT math tutor", d: "Grad student. At the Harper Library or your kitchen table, $40 an hour.", p: 40, u: "/hr", c: "Services", n: "Hyde Park", a: 290, x: 14.5, y: 57 },
+  { t: "120 LPs, mostly soul and house", d: "Selling as a lot. Frankie Knuckles in there. Come listen first.", p: 480, c: "For Sale", n: "Woodlawn", a: 340, x: 9, y: 61 },
+  { t: "Line cook at a taqueria on 26th St", d: "Nights and weekends. Spanish helpful, not required. Staff meal is excellent.", p: 18, u: "/hr", c: "Jobs", n: "Little Village", a: 410, x: -28, y: 26.5 },
+  { t: "Kids' bike, 16 in, with training wheels", d: "Outgrown in one summer. Streamers still attached. By the Western Brown Line.", p: 35, c: "For Sale", n: "Lincoln Square", a: 480, x: -25, y: -46.5 },
+  { t: "Kimball upright piano. You move it.", d: "Plays fine, needs a tuning. Ground floor, no steps. Bring four friends.", p: 0, c: "Free", n: "Uptown", a: 560, x: -11, y: -43.5 },
+  { t: "Garden 1BR, heat included", d: "Own entrance off the alley. Two blocks from the Logan Square Blue Line. Cats OK.", p: 1050, u: "/mo", c: "Housing", n: "Logan Square", a: 660, x: -32.5, y: -22.5 },
+  { t: "Seed and bulb swap, Sunday 10am", d: "Back room of the coffee shop on Clark. Bring seeds, leave with different seeds.", p: null, c: "Community", n: "Andersonville", a: 780, x: -16.5, y: -51.5 }
+];
+LISTINGS.forEach((l, i) => { l.id = i; l.u = l.u || ""; });
+let NEXT_ID = LISTINGS.length;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function money(l) { if (l.p === 0) return "Free"; if (l.p == null) return "–"; return "$" + l.p.toLocaleString("en-US") + l.u; }
+function ago(m) { if (m < 1) return "just now"; if (m < 60) return m + " min"; return Math.floor(m / 60) + " hr"; }
+function words(q) { return String(q).toLowerCase().split(/\s+/).filter(Boolean); }
+function matches(l, q, cat) {
+  if (cat && cat !== "All" && l.c !== cat) return false;
+  const hay = (l.t + " " + l.d + " " + l.n + " " + l.c + " " + money(l)).toLowerCase();
+  return words(q).every(w => hay.includes(w));
+}
+function parsePrice(s) {
+  s = String(s).trim().toLowerCase();
+  if (!s || /free/.test(s) || /^\$?0$/.test(s)) return { p: 0, u: "" };
+  const m = s.replace(/,/g, "").match(/\d+(\.\d+)?/);
+  if (!m) return { p: null, u: "" };
+  return { p: Math.round(+m[0]), u: /mo|month/.test(s) ? "/mo" : /hr|hour/.test(s) ? "/hr" : "" };
+}
+function newListing(t, priceStr, n, c) {
+  const h = HOODS[n], ang = Math.random() * Math.PI * 2, r = 1.6 + Math.random() * 1.4, pr = parsePrice(priceStr);
+  const l = { id: NEXT_ID++, t: t, d: "Just posted by a neighbor. Reply to ask about it.", p: pr.p, u: pr.u, c: c, n: n, a: 0,
+    x: +(h[0] + Math.cos(ang) * r).toFixed(1), y: +(h[1] + Math.sin(ang) * r).toFixed(1), fresh: true };
+  LISTINGS.unshift(l);
+  return l;
+}
+function shoreX(y) {
+  for (let i = 0; i < SHORE.length - 1; i++) {
+    const a = SHORE[i], b = SHORE[i + 1];
+    if (y >= a[1] && y <= b[1]) return a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]);
+  }
+  return y < 0 ? SHORE[0][0] : SHORE[SHORE.length - 1][0];
+}
+function svgEl(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const pts = a => a.map(p => p[0] + "," + p[1]).join(" ");
+const line = a => "M" + a.map(p => p[0] + " " + p[1]).join("L");
+function buildMap(svg, o) {
+  o = o || {};
+  svgEl("rect", { x: -300, y: -300, width: 700, height: 700, class: "m-land" }, svg);
+  let d = "";
+  for (let x = -62; x <= 40; x += 2) d += "M" + x + " -95V95";
+  for (let y = -94; y <= 94; y += 2) d += "M-80 " + y + "H60";
+  svgEl("path", { d: d, class: "m-minor" }, svg);
+  d = ""; HALF_NS.forEach(x => d += "M" + x + " -95V95"); HALF_EW.forEach(y => d += "M-80 " + y + "H60");
+  svgEl("path", { d: d, class: "m-half" }, svg);
+  d = ""; MAJOR_NS.forEach(x => d += "M" + x + " -95V95"); MAJOR_EW.forEach(y => d += "M-80 " + y + "H60"); DIAG.forEach(a => d += line(a));
+  svgEl("path", { d: d, class: "m-major" }, svg);
+  const parks = svgEl("g", { class: "m-parks" }, svg), lp = [];
+  for (let y = -16; y >= -58; y -= 2) lp.push([shoreX(y) + 1, y]);
+  for (let y = -58; y <= -16; y += 2) lp.push([shoreX(y) - 2.4, y]);
+  svgEl("polygon", { points: pts(lp) }, parks);
+  [[1, -2, 6, 14], [15, 56, 10, 10], [4, 51, 4, 9], [-36, -15, 5, 4.5], [-44, -2, 4, 3.5], [-26, 13, 4, 4]].forEach(r =>
+    svgEl("rect", { x: r[0], y: r[1], width: r[2], height: r[3] }, parks));
+  svgEl("polygon", { points: pts(SHORE.concat([[400, 95], [400, -95]])), class: "m-lake" }, svg);
+  svgEl("rect", { x: 4, y: -6.2, width: 9, height: 1.2, class: "m-pier" }, svg);
+  d = ""; RIVERS.forEach(a => d += line(a));
+  svgEl("path", { d: d, class: "m-river" }, svg);
+  svgEl("rect", { x: -2, y: -2, width: 3, height: 6, class: "m-loop" }, svg);
+  if (o.axis) {
+    const ax = svgEl("g", { class: "m-axis" }, svg);
+    STREETS_NS.forEach(s => { if (s[0] < shoreX(o.axis.top) - 2) { const t = svgEl("text", { x: s[0] + 0.5, y: o.axis.top }, ax); t.textContent = s[1]; } });
+    STREETS_EW.forEach(s => { const t = svgEl("text", { x: o.axis.left, y: s[0] - 0.6 }, ax); t.textContent = s[1]; });
+  }
+  const lab = svgEl("g", { class: "m-labels" }, svg);
+  for (const n in HOODS) {
+    const t = svgEl("text", { x: HOODS[n][0], y: HOODS[n][1] }, lab);
+    t.textContent = o.fmt ? o.fmt(n) : n; t.dataset.hood = n;
+  }
+  if (o.lake) o.lake.forEach(s => { const t = svgEl("text", { x: s[0], y: s[1], class: "m-lakelabel" }, svg); t.textContent = s[2]; });
+  return svgEl("g", { class: "m-pins" }, svg);
+}
+function hoodOptions(sel) { return Object.keys(HOODS).sort().map(n => "<option" + (n === sel ? " selected" : "") + ">" + n + "</option>").join(""); }
+function catOptions() { return CATS.map(c => "<option>" + c + "</option>").join(""); }
+
+
+const q = $("#q"), svg = $("#svg");
+let cat = "All", you = HOODS["Wicker Park"].slice(), activeId = null, obs = null;
+const pins = buildMap(svg, { lake: [[11, -62, "Lake"], [11, -59, "Michigan"]] });
+const leg = svgEl("g", { id: "leg" }, svg), youG = svgEl("g", { id: "you" }, svg);
+svg.appendChild(pins); svg.appendChild(leg); svg.appendChild(youG);
+svgEl("circle", { class: "ring", r: 4 }, youG); svgEl("circle", { class: "dot", r: 1 }, youG);
+svgEl("text", { x: 1.8, y: -1.4 }, youG).textContent = "YOU";
+
+$("#pn").innerHTML = hoodOptions("Bridgeport");
+$("#pc").innerHTML = catOptions();
+$("#origin").innerHTML = hoodOptions("Wicker Park");
+$("#chips").innerHTML = ["All"].concat(CATS).map(c => `<button type="button" class="chip${c === cat ? " on" : ""}" data-c="${c}">${c}</button>`).join("");
+
+const miles = l => Math.hypot(l.x - you[0], l.y - you[1]) / 8;
+const mi = m => (m < 0.1 ? "0.1" : m.toFixed(1));
+function priceHTML(l) { if (l.p === 0) return "Free"; if (l.p == null) return `<small style="font-size:.32em;letter-spacing:-.02em">No&nbsp;charge</small>`; return "$" + l.p.toLocaleString("en-US") + (l.u ? `<small>${l.u}</small>` : ""); }
+
+function render() {
+  const vis = LISTINGS.filter(l => matches(l, q.value, cat)), ids = new Set(vis.map(l => l.id)), qs = q.value.trim();
+  // peek inside the hero
+  $("#peek").innerHTML = `<div class="sum"><span>${vis.length} of ${LISTINGS.length} match${qs ? ` “${esc(qs)}”` : ""}</span><a href="#recent">See all &darr;</a></div>` +
+    vis.slice(0, 3).map(l => `<a href="#r${l.id}"><span>${esc(l.t)}</span><span>${money(l)}</span></a>`).join("");
+  // recent rows
+  $("#rmeta").innerHTML = `${vis.length} of ${LISTINGS.length} listings &middot; newest first<br>` + (qs || cat !== "All" ? `Filtered${qs ? ` by “${esc(qs)}”` : ""}${cat !== "All" ? " in " + cat : ""} <button type="button" id="clear">Clear</button>` : "No ranking, no boosts, no ads");
+  $("#rows").innerHTML = vis.map(l => `<article class="lrow${l.fresh ? " fresh" : ""}" id="r${l.id}" data-id="${l.id}">
+      <div class="lm"><b>${ago(l.a)}${l.a ? " ago" : ""}</b>${l.c}</div>
+      <div><h3>${esc(l.t)}</h3><p><b>${l.n}</b>${esc(l.d)}</p></div>
+      <div class="lp${l.p === 0 ? " free" : ""}">${priceHTML(l)}</div></article>`).join("");
+  $("#lempty").style.display = vis.length ? "none" : "block";
+  LISTINGS.forEach(l => delete l.fresh);
+  // pins
+  pins.innerHTML = "";
+  LISTINGS.forEach(l => { const g = svgEl("g", { class: "pin" + (ids.has(l.id) ? "" : " off"), transform: `translate(${l.x},${l.y})`, "data-id": l.id }, pins); svgEl("circle", { r: 1.15 }, g); });
+  renderNear(vis);
+}
+
+function renderNear(vis) {
+  vis = vis || LISTINGS.filter(l => matches(l, q.value, cat));
+  youG.setAttribute("transform", `translate(${you[0]},${you[1]})`);
+  const sorted = vis.slice().sort((a, b) => miles(a) - miles(b));
+  $("#nlist").innerHTML = sorted.map(l => { const m = miles(l); return `<div class="nitem" data-id="${l.id}">
+      <div class="d">${mi(m)}<small>mi</small><em>${Math.max(1, Math.round(m * 20))} min walk</em></div>
+      <div><h3>${esc(l.t)}</h3><div class="np">${l.p === 0 ? "Free" : money(l)}</div><div class="nm">${l.n} &middot; ${l.c} &middot; ${ago(l.a)}</div></div></div>`; }).join("");
+  $("#nend").textContent = sorted.length ? "That's everything that matches. Click the map to stand somewhere else." : "Nothing matches your search, so nothing is near you. Clear it above.";
+  if (obs) obs.disconnect();
+  obs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) activate(+e.target.dataset.id); }), { rootMargin: "-45% 0px -45% 0px" });
+  document.querySelectorAll(".nitem").forEach(n => obs.observe(n));
+  if (!sorted.some(l => l.id === activeId)) activate(sorted.length ? sorted[0].id : null);
+  else activate(activeId);
+}
+
+function activate(id) {
+  activeId = id;
+  document.querySelectorAll(".nitem").forEach(n => n.classList.toggle("on", +n.dataset.id === id));
+  pins.querySelectorAll(".pin").forEach(p => p.classList.toggle("on", +p.dataset.id === id));
+  const p = pins.querySelector(`.pin[data-id="${id}"]`); if (p) pins.appendChild(p);
+  leg.innerHTML = "";
+  const l = LISTINGS.find(x => x.id === id); if (!l) return;
+  svgEl("line", { x1: you[0], y1: you[1], x2: l.x, y2: l.y }, leg);
+  const mx = (you[0] + l.x) / 2, my = (you[1] + l.y) / 2, label = mi(miles(l)) + " MI", w = label.length * 1.15 + 1.4;
+  svgEl("rect", { x: mx - w / 2, y: my - 1.4, width: w, height: 2.8 }, leg);
+  svgEl("text", { x: mx, y: my + .1 }, leg).textContent = label;
+}
+
+function nearestHood(x, y) { let best = null, bd = 1e9; for (const n in HOODS) { const d = Math.hypot(HOODS[n][0] - x, HOODS[n][1] - y); if (d < bd) { bd = d; best = n; } } return best; }
+svg.addEventListener("click", e => {
+  const pin = e.target.closest(".pin");
+  if (pin) { const n = document.querySelector(`.nitem[data-id="${pin.dataset.id}"]`); if (n) n.scrollIntoView({ behavior: "smooth", block: "center" }); activate(+pin.dataset.id); return; }
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const m = pt.matrixTransform(svg.getScreenCTM().inverse());
+  let x = m.x, y = Math.max(-78, Math.min(64, m.y)); x = Math.max(-57, Math.min(x, shoreX(y) - 1));
+  you = [+x.toFixed(1), +y.toFixed(1)];
+  const h = nearestHood(x, y);
+  $("#origin").value = h; $("#fromNote").textContent = "a spot near " + h;
+  renderNear();
+});
+$("#origin").addEventListener("change", e => { you = HOODS[e.target.value].slice(); $("#fromNote").textContent = "or click the map"; renderNear(); });
+document.addEventListener("mouseover", e => { const n = e.target.closest(".nitem"); if (n) activate(+n.dataset.id); });
+
+q.addEventListener("input", render);
+$("#sform").addEventListener("submit", e => { e.preventDefault(); render(); $("#recent").scrollIntoView(); });
+$("#chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; cat = b.dataset.c; document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === b)); render(); });
+document.addEventListener("click", e => {
+  if (e.target.id === "clear") { q.value = ""; cat = "All"; document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x.dataset.c === "All")); render(); }
+  if (e.target.id === "postIt") { $("#pt").value = q.value.trim(); window.scrollTo({ top: 0 }); $("#pt").focus({ preventScroll: true }); }
+  const r = e.target.closest(".lrow");
+  if (r) { const id = +r.dataset.id, n = document.querySelector(`.nitem[data-id="${id}"]`); if (n) n.scrollIntoView({ block: "center" }); activate(id); }
+});
+
+$("#pform").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#pt").value.trim(); if (!t) return;
+  const l = newListing(t, $("#pp").value, $("#pn").value, $("#pc").value);
+  q.value = ""; cat = "All"; document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x.dataset.c === "All"));
+  render(); activate(l.id);
+  $("#pdone").innerHTML = `Posted in ${l.n}. It's first in the list and pinned on the map. <a href="#r${l.id}">See it &darr;</a>`;
+  $("#pform").reset(); $("#pn").value = l.n;
+});
+
+render();
+</script>
+</body>
+</html>
