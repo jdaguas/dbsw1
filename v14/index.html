@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop Chicago: fill in the blank</title>
+<style>
+  :root {
+    --bg: #f3f1ec;
+    --ink: #0d0d0d;
+    --blue: #2a34ff;
+    --grey: #77746c;
+    --rule: #cfccc3;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --pad: 48px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 var(--sans); }
+  button, input, select { font: inherit; color: inherit; }
+  ::selection { background: var(--blue); color: #fff; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 var(--pad); }
+
+  /* top bar */
+  .top { display: flex; align-items: baseline; gap: 28px; padding: 20px 0 0; font-size: 13px; }
+  .top a { color: var(--ink); font-weight: 700; text-decoration: none; }
+  .top a:hover { color: var(--blue); }
+  .top .mark { font-weight: 700; letter-spacing: -.01em; font-size: 15px; }
+  .top .sp { flex: 1; }
+  .top .meta { color: var(--grey); }
+
+  /* hero: two sentences */
+  .hero { padding: 7vh 0 40px; min-height: min(calc(100vh - 40px), 860px); display: flex; flex-direction: column; justify-content: center; }
+  .sent {
+    display: grid; grid-template-columns: 92px 1fr 112px; align-items: start; column-gap: 0;
+    border-top: 3px solid var(--ink); padding: 22px 0 30px; position: relative;
+  }
+  .sent .no { font: 700 13px var(--sans); padding-top: 14px; }
+  .sent .no span { display: block; color: var(--grey); font-weight: 400; margin-top: 2px; }
+  .sent p {
+    margin: 0; font-weight: 700; font-size: clamp(32px, 5.1vw, 70px); line-height: 1.12; letter-spacing: -.035em;
+  }
+  .blank, .sel select {
+    font-weight: 700; letter-spacing: -.03em; color: var(--blue); background: transparent;
+    border: 0; border-bottom: .065em solid var(--blue); border-radius: 0; padding: 0 .04em; margin: 0;
+    outline: none; line-height: 1.05; min-width: 1.2em; vertical-align: baseline;
+  }
+  .blank::placeholder { color: var(--blue); opacity: .38; }
+  .blank:focus, .sel select:focus { background: rgba(42, 52, 255, .08); }
+  .sel { position: relative; display: inline-block; }
+  .sel select { -webkit-appearance: none; appearance: none; cursor: pointer; padding-right: .62em; }
+  .sel::after {
+    content: ""; position: absolute; right: .1em; top: 50%; margin-top: -.08em;
+    border-left: .17em solid transparent; border-right: .17em solid transparent; border-top: .2em solid var(--blue); pointer-events: none;
+  }
+  .sel option { font-size: 16px; font-weight: 400; color: var(--ink); letter-spacing: 0; }
+  .dollar { color: var(--blue); }
+  .hidden { display: none !important; }
+  .go {
+    width: 112px; height: 112px; border: 0; background: var(--ink); color: var(--bg); cursor: pointer;
+    font: 700 64px/1 var(--sans); display: grid; place-items: center; margin-top: 4px;
+  }
+  .go svg { width: 54px; height: 54px; }
+  .go:hover, .go:focus-visible { background: var(--blue); outline: none; }
+  .sent .hint { grid-column: 2; margin-top: 16px; font-size: 14px; color: var(--grey); }
+  .sent .hint b { color: var(--ink); }
+  .sent .hint a { color: var(--blue); font-weight: 700; }
+  .sent .ok { color: var(--blue); font-weight: 700; }
+  .sent .ok a { color: inherit; }
+  .or {
+    display: grid; grid-template-columns: 92px 1fr; align-items: center; margin: -14px 0 0;
+    font-size: 13px; font-weight: 700; color: var(--grey); height: 0; position: relative; z-index: 2;
+  }
+  .or span { grid-column: 1; }
+  .sent.shake .blank.bad, .sent.shake .sel.bad select { animation: shake .4s; border-bottom-color: var(--ink); }
+  @keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+  .meas { position: absolute; visibility: hidden; white-space: pre; left: -9999px; top: 0; font-weight: 700; letter-spacing: -.03em; }
+
+  /* section headers as sentences */
+  .sec { border-top: 3px solid var(--ink); padding-top: 22px; display: grid; grid-template-columns: 92px 1fr auto; align-items: baseline; }
+  .sec .no { font-weight: 700; font-size: 13px; }
+  .sec h2 { margin: 0; font-size: 44px; line-height: 1.02; letter-spacing: -.035em; }
+  .sec h2 em { font-style: normal; color: var(--blue); }
+
+  /* listings */
+  .listings { padding: 70px 0 30px; }
+  .echo { margin: 24px 0 0 92px; display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; font-size: 14px; min-height: 30px; }
+  .echo b { font-weight: 700; }
+  .echo .chip { border: 1.5px solid var(--blue); color: var(--blue); padding: 3px 10px; font-weight: 700; }
+  .echo button { border: 0; background: none; color: var(--ink); text-decoration: underline; cursor: pointer; padding: 0; font-size: 14px; }
+  table { width: calc(100% - 92px); margin-left: 92px; border-collapse: collapse; margin-top: 18px; }
+  th { text-align: left; font-size: 12px; font-weight: 700; padding: 0 12px 8px 0; border-bottom: 1.5px solid var(--ink); }
+  th.r, td.pr { text-align: right; padding-right: 0; }
+  td { padding: 15px 12px 14px 0; border-bottom: 1px solid var(--rule); vertical-align: baseline; }
+  td.ti { font-size: 21px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  td.ti small { display: block; font-size: 14px; font-weight: 400; color: var(--grey); letter-spacing: 0; margin-top: 3px; }
+  td.ag { font: 13px var(--mono); color: var(--grey); white-space: nowrap; width: 90px; }
+  td.ca { font-size: 14px; white-space: nowrap; }
+  td.nb { white-space: nowrap; }
+  td.nb button { border: 0; background: none; padding: 0; cursor: pointer; font-size: 15px; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+  td.nb button:hover { color: var(--blue); text-decoration-color: var(--blue); }
+  td.pr { font-size: 21px; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.pr.free { color: var(--blue); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: #ebe8e0; }
+  tbody tr.flash td { animation: flash 2.4s ease-out; }
+  @keyframes flash { 0%, 30% { background: rgba(42, 52, 255, .16); } 100% { background: transparent; } }
+  .none { margin: 26px 0 0 92px; font-size: 26px; font-weight: 700; letter-spacing: -.02em; display: none; }
+  .none button { font-size: inherit; font-weight: 700; border: 0; background: none; color: var(--blue); text-decoration: underline; cursor: pointer; padding: 0; }
+
+  /* map */
+  .mapsec { padding: 60px 0 70px; }
+  .mapbox { position: relative; margin-top: 26px; height: 720px; background: #d9dcfb; overflow: hidden; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #map .land { fill: #e7e4dc; }
+  #map .minor { stroke: #efede7; stroke-width: .7; fill: none; vector-effect: non-scaling-stroke; }
+  #map .major { stroke: #fbfaf7; stroke-width: 1.6; fill: none; vector-effect: non-scaling-stroke; }
+  #map .diag { stroke: #fbfaf7; stroke-width: 2.6; fill: none; vector-effect: non-scaling-stroke; }
+  #map .park { fill: #d6d3c9; }
+  #map .lake { fill: #d9dcfb; }
+  #map .shore { fill: none; stroke: var(--blue); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+  #map .pier { fill: #e7e4dc; }
+  #map .river { fill: none; stroke: var(--blue); stroke-width: 2.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  #map .elloop { fill: none; stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  #map .hood { font-family: var(--sans); font-weight: 700; font-size: calc(11px * var(--k, 1)); letter-spacing: .05em; fill: var(--ink); cursor: pointer; paint-order: stroke; stroke: #e7e4dc; stroke-width: calc(3px * var(--k, 1)); }
+  #map .hood:hover, #map .hood.on { fill: var(--blue); }
+  #map .hood.on { font-size: calc(15px * var(--k, 1)); }
+  #map .water { font-family: var(--sans); font-weight: 700; font-size: calc(13px * var(--k, 1)); letter-spacing: .5em; fill: var(--blue); opacity: .55; text-anchor: middle; }
+  #map .rlabel { font-family: var(--sans); font-size: calc(8px * var(--k, 1)); letter-spacing: .3em; fill: var(--blue); }
+  #halo { fill: rgba(42, 52, 255, .1); stroke: var(--blue); stroke-width: 1.5; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; transition: opacity .3s; }
+  .pin { cursor: pointer; }
+  .pin circle { fill: var(--ink); stroke: #e7e4dc; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .pin.match circle { fill: var(--blue); }
+  .pin.dim { opacity: .18; }
+  .pin .ring { fill: none; stroke: var(--blue); stroke-width: 2; opacity: 0; }
+  .pin.sel .ring { opacity: 1; }
+  .pin.new .ring { opacity: 1; animation: ping 1.4s ease-out 3; }
+  @keyframes ping { from { r: 6; opacity: 1; } to { r: 22; opacity: 0; } }
+
+  .panel {
+    position: absolute; top: 24px; right: 24px; bottom: 24px; width: 350px; background: var(--bg);
+    display: flex; flex-direction: column; border-top: 6px solid var(--ink);
+  }
+  .panel .ph { padding: 16px 20px 14px; border-bottom: 1px solid var(--rule); }
+  .panel .k { font-size: 12px; font-weight: 700; color: var(--grey); }
+  .panel h3 { margin: 4px 0 2px; font-size: 40px; line-height: 1; letter-spacing: -.04em; }
+  .panel .cnt { font-size: 14px; }
+  .panel .cnt b { color: var(--blue); }
+  .panel .reset { margin-top: 10px; border: 1.5px solid var(--ink); background: none; padding: 4px 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .panel .reset:hover { background: var(--ink); color: var(--bg); }
+  .panel ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+  .panel li { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--rule); cursor: pointer; font-size: 14px; }
+  .panel li b { font-weight: 700; }
+  .panel li span { color: var(--grey); display: block; font-size: 12.5px; }
+  .panel li:hover, .panel li.sel { background: #e7e4dc; }
+  .panel li.sel b { color: var(--blue); }
+  .panel li .p { font-weight: 700; white-space: nowrap; }
+  .panel .card { padding: 14px 20px 16px; background: var(--ink); color: var(--bg); display: none; }
+  .panel .card.show { display: block; }
+  .panel .card .k { color: #9c998f; }
+  .panel .card h4 { margin: 6px 0 4px; font-size: 21px; line-height: 1.15; letter-spacing: -.02em; }
+  .panel .card .pp { font-size: 26px; font-weight: 700; letter-spacing: -.03em; }
+  .panel .card p { margin: 6px 0 10px; font-size: 14px; color: #d7d4cc; }
+  .panel .card button { border: 0; background: var(--blue); color: #fff; font-weight: 700; padding: 8px 12px; cursor: pointer; width: 100%; text-align: left; }
+  .panel .card button:hover { background: #fff; color: var(--ink); }
+  .zoom { position: absolute; left: 24px; bottom: 24px; display: flex; flex-direction: column; }
+  .zoom button { width: 40px; height: 40px; border: 0; background: var(--ink); color: var(--bg); font-size: 22px; font-weight: 700; cursor: pointer; margin-top: 2px; }
+  .zoom button:hover { background: var(--blue); }
+
+  footer { border-top: 3px solid var(--ink); padding: 16px 0 50px; display: flex; gap: 40px; font-size: 13px; }
+  footer a { color: var(--ink); font-weight: 700; }
+  footer .g { color: var(--grey); flex: 1; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--ink); color: var(--bg); padding: 12px 18px; font-size: 14px; font-weight: 700; opacity: 0; transition: .25s; pointer-events: none; z-index: 20; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 860px) {
+    :root { --pad: 18px; }
+    .top .meta { display: none; }
+    .hero { min-height: 0; padding: 40px 0 20px; }
+    .sent { grid-template-columns: 1fr; padding-bottom: 24px; }
+    .sent .no { padding: 0 0 10px; }
+    .sent .no span { display: inline; margin-left: 6px; }
+    .sent .hint { grid-column: 1; }
+    .go { width: 100%; height: 64px; margin-top: 18px; }
+    .go svg { width: 34px; height: 34px; }
+    .or { grid-template-columns: 1fr; margin: 0 0 10px; height: auto; }
+    .sec { grid-template-columns: 1fr; }
+    .sec .no { margin-bottom: 8px; }
+    .sec h2 { font-size: 30px; }
+    .echo, .none { margin-left: 0; }
+    table { width: 100%; margin-left: 0; }
+    th.ca, td.ca, th.ag, td.ag { display: none; }
+    td.ti { font-size: 17px; }
+    td.pr { font-size: 17px; }
+    td.nb button { font-size: 13px; white-space: normal; text-align: left; }
+    .mapbox { height: auto; background: none; }
+    #map { position: relative; height: 70vh; min-height: 420px; }
+    .panel { position: relative; inset: auto; width: auto; max-height: 420px; }
+    .zoom { bottom: auto; top: calc(70vh - 110px); }
+  }
+  @media (max-width: 860px) and (max-height: 600px) { .zoom { top: 310px; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a href="../">&larr; Gallery</a>
+    <span class="mark">Stoop / Chicago</span>
+    <span class="sp"></span>
+    <span class="meta">A neighborhood board. No fees, no algorithm, newest first.</span>
+  </header>
+
+  <section class="hero" aria-label="Search or post">
+    <form class="sent" id="find" autocomplete="off">
+      <div class="no">Find<span>Search the board</span></div>
+      <p>I&rsquo;m looking for <input class="blank" id="fq" aria-label="What you are looking for" placeholder="anything"> in <span class="sel"><select id="fh" aria-label="Neighborhood"></select></span> under <span class="dollar">$</span><input class="blank" id="fp" inputmode="numeric" aria-label="Maximum price" placeholder="any">.</p>
+      <button class="go" type="submit" aria-label="Search listings"><svg viewBox="0 0 54 54" aria-hidden="true"><path d="M6 27 H44 M28 10 L45 27 L28 44" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="square"/></svg></button>
+      <div class="hint" id="findHint">Type in any blank. The board below filters as you go.</div>
+    </form>
+    <div class="or" aria-hidden="true"><span>or</span></div>
+    <form class="sent" id="post" autocomplete="off">
+      <div class="no">Post<span>Free, no account</span></div>
+      <p>I&rsquo;m <span class="sel"><select id="pv" aria-label="What kind of listing"></select></span> <input class="blank" id="pt" maxlength="60" aria-label="What it is" placeholder="a desk"> in <span class="sel"><select id="ph" aria-label="Your neighborhood"></select></span><span id="pricePart"> <span id="pre">for</span> <span class="dollar">$</span><input class="blank" id="pp" inputmode="numeric" maxlength="6" aria-label="Price" placeholder="40"><span id="suf"></span></span>.</p>
+      <button class="go" type="submit" aria-label="Post listing"><svg viewBox="0 0 54 54" aria-hidden="true"><path d="M6 27 H44 M28 10 L45 27 L28 44" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="square"/></svg></button>
+      <div class="hint" id="postHint">Three blanks and an arrow. It goes to the top of the board and onto the map.</div>
+    </form>
+  </section>
+
+  <section class="listings" id="listings">
+    <div class="sec"><div class="no">01</div><h2>Here&rsquo;s what your neighbors posted, <em>newest first.</em></h2></div>
+    <div class="echo" id="echo"></div>
+    <table>
+      <thead><tr><th class="ag">Posted</th><th>What</th><th class="nb">Where</th><th class="ca">Kind</th><th class="r">Price</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="none" id="none">Nothing like that yet. <button type="button" id="flip">Post it yourself &uarr;</button></div>
+  </section>
+
+  <section class="mapsec" id="mapsec">
+    <div class="sec"><div class="no">02</div><h2>And here&rsquo;s <em>where</em> it all is.</h2></div>
+    <div class="mapbox">
+      <svg id="map" viewBox="-300 -20 1600 940" role="img" aria-label="Map of Chicago neighborhoods with listing pins">
+<defs><clipPath id="landclip"><path d="M-1400,-400 L268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L-1400,1300 Z"/></clipPath></defs>
+<path class="land" d="M-1400,-400 L268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L-1400,1300 Z"/>
+<g clip-path="url(#landclip)"><path class="minor" d="M-1400,-400H700M-1400,-350H700M-1400,-300H700M-1400,-250H700M-1400,-200H700M-1400,-150H700M-1400,-100H700M-1400,-50H700M-1400,0H700M-1400,50H700M-1400,100H700M-1400,150H700M-1400,200H700M-1400,250H700M-1400,300H700M-1400,350H700M-1400,400H700M-1400,450H700M-1400,500H700M-1400,550H700M-1400,600H700M-1400,650H700M-1400,700H700M-1400,750H700M-1400,800H700M-1400,850H700M-1400,900H700M-1400,950H700M-1400,1000H700M-1400,1050H700M-1400,1100H700M-1400,1150H700M-1400,1200H700M-1400,1250H700M-1400,1300H700M-1400,1350H700M-1375,-400V1300M-1325,-400V1300M-1275,-400V1300M-1225,-400V1300M-1175,-400V1300M-1125,-400V1300M-1075,-400V1300M-1025,-400V1300M-975,-400V1300M-925,-400V1300M-875,-400V1300M-825,-400V1300M-775,-400V1300M-725,-400V1300M-675,-400V1300M-625,-400V1300M-575,-400V1300M-525,-400V1300M-475,-400V1300M-425,-400V1300M-375,-400V1300M-325,-400V1300M-275,-400V1300M-225,-400V1300M-175,-400V1300M-125,-400V1300M-75,-400V1300M-25,-400V1300M25,-400V1300M75,-400V1300M125,-400V1300M175,-400V1300M225,-400V1300M275,-400V1300M325,-400V1300M375,-400V1300M425,-400V1300M475,-400V1300M525,-400V1300M575,-400V1300M625,-400V1300M675,-400V1300M725,-400V1300"/><path class="major" d="M-1400,-425H700M-1400,-375H700M-1400,-325H700M-1400,-275H700M-1400,-225H700M-1400,-175H700M-1400,-125H700M-1400,-75H700M-1400,-25H700M-1400,25H700M-1400,75H700M-1400,125H700M-1400,175H700M-1400,225H700M-1400,275H700M-1400,325H700M-1400,375H700M-1400,425H700M-1400,475H700M-1400,525H700M-1400,575H700M-1400,625H700M-1400,675H700M-1400,725H700M-1400,775H700M-1400,825H700M-1400,875H700M-1400,925H700M-1400,975H700M-1400,1025H700M-1400,1075H700M-1400,1125H700M-1400,1175H700M-1400,1225H700M-1400,1275H700M-1400,1325H700M-1400,-400V1300M-1350,-400V1300M-1300,-400V1300M-1250,-400V1300M-1200,-400V1300M-1150,-400V1300M-1100,-400V1300M-1050,-400V1300M-1000,-400V1300M-950,-400V1300M-900,-400V1300M-850,-400V1300M-800,-400V1300M-750,-400V1300M-700,-400V1300M-650,-400V1300M-600,-400V1300M-550,-400V1300M-500,-400V1300M-450,-400V1300M-400,-400V1300M-350,-400V1300M-300,-400V1300M-250,-400V1300M-200,-400V1300M-150,-400V1300M-100,-400V1300M-50,-400V1300M0,-400V1300M50,-400V1300M100,-400V1300M150,-400V1300M200,-400V1300M250,-400V1300M300,-400V1300M350,-400V1300M400,-400V1300M450,-400V1300M500,-400V1300M550,-400V1300M600,-400V1300M650,-400V1300M700,-400V1300"/><path class="diag" d="M328,453 L250,375 L188,313 L120,245 L50,175 L-60,90 M345,455 L344,375 L313,300 L285,225 L256,150 L248,60 L244,-100 M344,380 L290,320 L245,262 L200,175 L160,110 M350,588 L250,645 L100,731 L-100,846 M300,452 L240,505 L150,580 L50,650 L-100,760"/></g>
+<g class="parks"><path class="park" d="M352,375 L344,320 L335,275 L334,240 L323,213 L318,185 L300,150 L295,152 L309,192 L320,242 L323,282 L333,330 L341,375 Z"/><path class="park" d="M360,466 L376,462 L381,475 L384,500 L388,548 L371,548 L364,500 Z"/><path class="park" d="M440,826 L453,820 L449,840 L462,869 L470,892 L452,892 L438,858 Z"/><path class="park" d="M398,790 h24 v32 h-24 Z"/><path class="park" d="M133,395 h20 v14 h-20 Z"/></g>
+<path class="lake" d="M268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300 L2600,1300 L2600,-400 Z"/>
+<path class="shore" d="M268,-400 L274,-100 L278,0 L281,75 L292,120 L300,150 L318,185 L330,205 L323,213 L334,240 L335,275 L344,320 L352,375 L360,410 L363,428 L372,447 L376,462 L381,475 L384,500 L388,550 L392,600 L400,669 L412,720 L425,769 L440,800 L453,820 L449,840 L462,869 L475,900 L500,950 L530,1000 L600,1150 L680,1300"/>
+<rect class="pier" x="372" y="443" width="40" height="4"/>
+<path class="river" d="M381,453 L328,453 M328,453 L318,440 L300,425 L282,392 L275,375 L262,352 L238,325 L205,298 L175,275 L168,240 L163,200 L130,182 L90,168 L40,150 L-50,120 L-200,80 M163,200 L158,150 L152,80 L150,-100 M328,453 L327,500 L325,550 L310,590 L294,612 L270,628 L250,637 L225,652 L200,669 L150,678 L100,687 L50,706 L-100,760 L-300,840 M262,632 L268,660 L272,700"/>
+<rect class="elloop" x="337" y="462" width="16" height="38"/>
+<g class="hoodlabels">
+<text class="hood" data-h="Rogers Park" x="256" y="29" text-anchor="middle">ROGERS PARK</text>
+<text class="hood" data-h="Andersonville" x="256" y="129" text-anchor="middle">ANDERSONVILLE</text>
+<text class="hood" data-h="Uptown" x="290" y="183" text-anchor="start">UPTOWN</text>
+<text class="hood" data-h="Lincoln Square" x="222" y="181" text-anchor="end">LINCOLN SQUARE</text>
+<text class="hood" data-h="Lakeview" x="298" y="263" text-anchor="middle">LAKEVIEW</text>
+<text class="hood" data-h="Lincoln Park" x="302" y="329" text-anchor="middle">LINCOLN PARK</text>
+<text class="hood" data-h="Logan Square" x="168" y="307" text-anchor="middle">LOGAN SQUARE</text>
+<text class="hood" data-h="Wicker Park" x="240" y="375" text-anchor="middle">WICKER PARK</text>
+<text class="hood" data-h="Humboldt Park" x="140" y="395" text-anchor="middle">HUMBOLDT PARK</text>
+<text class="hood" data-h="West Loop" x="284" y="482" text-anchor="end">WEST LOOP</text>
+<text class="hood" data-h="The Loop" x="357" y="486" text-anchor="start">THE LOOP</text>
+<text class="hood" data-h="Chinatown" x="338" y="603" text-anchor="middle">CHINATOWN</text>
+<text class="hood" data-h="Pilsen" x="250" y="581" text-anchor="middle">PILSEN</text>
+<text class="hood" data-h="Little Village" x="150" y="625" text-anchor="middle">LITTLE VILLAGE</text>
+<text class="hood" data-h="Bridgeport" x="298" y="673" text-anchor="middle">BRIDGEPORT</text>
+<text class="hood" data-h="Bronzeville" x="372" y="721" text-anchor="middle">BRONZEVILLE</text>
+<text class="hood" data-h="Hyde Park" x="428" y="803" text-anchor="middle">HYDE PARK</text>
+</g>
+<text class="water" x="500" y="400">LAKE MICHIGAN</text>
+<text class="rlabel" x="-70" y="104" transform="rotate(16 -70 104)">CHICAGO RIVER</text>
+        <circle id="halo" cx="0" cy="0" r="0" opacity="0"/>
+        <g id="pins"></g>
+      </svg>
+      <div class="zoom"><button type="button" id="zin" aria-label="Zoom in">+</button><button type="button" id="zout" aria-label="Zoom out">&minus;</button></div>
+      <div class="panel">
+        <div class="card" id="card"></div>
+        <div class="ph">
+          <div class="k" id="pk">Showing</div>
+          <h3 id="pn">All of Chicago</h3>
+          <div class="cnt" id="pc"></div>
+          <button class="reset hidden" type="button" id="reset">&larr; Whole city</button>
+        </div>
+        <ul id="plist"></ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <a href="../">&larr; Gallery</a>
+    <span class="g">Stoop is a community board for Chicago. Stoop never handles money. You deal directly with your neighbor.</span>
+    <span>v14 &middot; Fill in the blank</span>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const HOODS = {"Rogers Park":[256,38],"Andersonville":[256,138],"Uptown":[294,192],"Lincoln Square":[206,190],"Lakeview":[298,272],"Lincoln Park":[302,338],"Logan Square":[168,316],"Wicker Park":[240,384],"Humboldt Park":[140,404],"West Loop":[290,478],"The Loop":[345,482],"Chinatown":[338,612],"Pilsen":[250,590],"Little Village":[150,634],"Bridgeport":[298,682],"Bronzeville":[372,730],"Hyde Park":[428,812]};
+const RAW = [
+  ["Trek FX 2 hybrid bike, 54 cm, new tires", "For Sale", "Logan Square", 180, "", 4, "Tuned in August. Comes with a lock but not the key, sorry."],
+  ["Moving boxes, about 40, flattened", "Free", "Lakeview", 0, "", 9, "Some say KITCHEN in Sharpie. Stacked in the gangway off Roscoe."],
+  ["Room in a 2-flat, available Nov 1", "Housing", "Pilsen", 850, "/mo", 15, "Two artists and a calm dog. Radiator heat, 6 min to the 18th St Pink Line."],
+  ["Barista, early shifts", "Jobs", "Wicker Park", 19, "/hr", 38, "Corner café on Damen. Tips are good, regulars are chatty."],
+  ["Lost: grey tabby, answers to “Pierogi”", "Community", "Bridgeport", null, "", 51, "Last seen near Halsted and 31st. Very food motivated."],
+  ["Schwinn single-speed bike, needs a chain", "For Sale", "Humboldt Park", 60, "", 64, "Frame is solid. Has lived in a dry garage since 2019."],
+  ["Window AC, 8,000 BTU, works", "For Sale", "Rogers Park", 75, "", 80, "Loud, but it got us through July. Brackets included."],
+  ["Help carrying an upright piano", "Gigs", "Bronzeville", 120, "", 110, "One flight down, Saturday 10am. Need three people. Pizza after."],
+  ["Furnished studio sublet, Dec to May", "Housing", "Wicker Park", 1150, "/mo", 130, "Going abroad. Very good couch, mediocre plant. Laundry in building."],
+  ["Algebra and SAT math tutor", "Services", "Hyde Park", 40, "/hr", 170, "Grad student. At the Harper library or your kitchen table."],
+  ["Tomato cages and potting soil", "Free", "Little Village", 0, "", 190, "Garden is done for the year. On the front steps off 26th St."],
+  ["Birch bookshelf, 5 shelves", "For Sale", "Andersonville", 95, "", 240, "Swedish, of course. Comes apart with one hex key."],
+  ["Bike tune-ups in my garage", "Services", "Uptown", 35, "", 300, "Brakes, gears, truing. Same day if you drop it off by 10."],
+  ["Drafting table, tilting oak top", "For Sale", "Lincoln Park", 65, "", 340, "From a retired architect. A little paint on one leg."],
+  ["Taquería prep cook, weekends", "Jobs", "Little Village", 18, "/hr", 390, "Fri to Sun mornings. Must love cilantro. Spanish a plus."],
+  ["Snow shoveling, whole winter", "Gigs", "Lincoln Square", 300, "", 450, "Corner lot plus the neighbor's walk. One reliable person, all season."],
+  ["Yuba cargo bike with kid seat", "For Sale", "Logan Square", 1400, "", 520, "Kid outgrew it. Hauled groceries up Milwaukee for four years."],
+  ["Green velvet couch, curb by 6pm", "Free", "Humboldt Park", 0, "", 560, "No stains, one cat scratch. Out front on Division. Bring a friend."],
+  ["Block party on Throop, Sat 10/17", "Community", "Bridgeport", null, "", 640, "Street closed noon to 8. Bring a chair and a dish."],
+  ["Vintage Pyrex bowls, set of 4", "For Sale", "Chinatown", 45, "", 700, "Butterprint pattern. Found in my aunt's basement on Wentworth."]
+];
+let L = RAW.map((r, i) => ({ id: i, t: r[0], c: r[1], h: r[2], p: r[3], u: r[4], m: r[5], d: r[6] }));
+const VERBS = [
+  ["selling", "For Sale", "for", "", "a desk"],
+  ["giving away", "Free", null, "", "a couch"],
+  ["renting out", "Housing", "for", "/mo", "a room"],
+  ["hiring", "Jobs", "at", "/hr", "a barista"],
+  ["offering", "Services", "for", "", "bike repair"],
+  ["paying for help with", "Gigs", "for", "", "moving a piano"],
+  ["announcing", "Community", null, "", "a block party"]
+];
+
+const $ = s => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ago = m => m < 1 ? "just now" : m < 60 ? m + " min" : Math.floor(m / 60) + " hr";
+const money = l => l.p === null ? "&mdash;" : l.p === 0 ? "Free" : "$" + l.p.toLocaleString() + (l.u || "");
+function pos(l) {
+  const [x, y] = HOODS[l.h], a = (0.12 + ((l.id * 0.618) % 1) * 0.76) * Math.PI, r = 9 + (l.id % 3) * 7;
+  return [x + Math.cos(a) * r * 1.3, y + Math.sin(a) * r];
+}
+
+/* ---------- blanks: auto-sizing ---------- */
+const fq = $("#fq"), fh = $("#fh"), fp = $("#fp"), pv = $("#pv"), pt = $("#pt"), ph = $("#ph"), pp = $("#pp");
+const names = Object.keys(HOODS).sort();
+fh.innerHTML = `<option value="">any neighborhood</option>` + names.map(n => `<option>${n}</option>`).join("");
+ph.innerHTML = `<option value="">my neighborhood</option>` + names.map(n => `<option>${n}</option>`).join("");
+pv.innerHTML = VERBS.map((v, i) => `<option value="${i}">${v[0]}</option>`).join("");
+const meas = document.createElement("span"); meas.className = "meas"; document.body.appendChild(meas);
+function fit(el) {
+  const cs = getComputedStyle(el), fs = parseFloat(cs.fontSize);
+  meas.style.fontSize = cs.fontSize;
+  meas.textContent = el.tagName === "SELECT" ? el.options[el.selectedIndex].text : (el.value || el.placeholder);
+  el.style.width = Math.ceil(meas.getBoundingClientRect().width + (el.tagName === "SELECT" ? fs * .7 : fs * .12)) + "px";
+}
+const blanks = [fq, fh, fp, pv, pt, ph, pp];
+const fitAll = () => blanks.forEach(fit);
+blanks.forEach(el => el.addEventListener("input", () => fit(el)));
+addEventListener("resize", () => { fitAll(); setView(view, false); });
+[fp, pp].forEach(el => el.addEventListener("input", () => { const v = el.value.replace(/[^\d]/g, ""); if (v !== el.value) { el.value = v; fit(el); } }));
+
+/* ---------- filtering ---------- */
+const STOP = new Set(["a", "an", "the", "some", "any", "anything", "for", "of"]);
+function terms() {
+  return fq.value.toLowerCase().split(/[^a-z0-9à-ÿ$]+/).filter(w => w && !STOP.has(w)).map(w => w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w);
+}
+function matches(l) {
+  const ws = terms(), hay = (l.t + " " + l.d + " " + l.c + " " + l.h).toLowerCase();
+  if (!ws.every(w => hay.includes(w))) return false;
+  if (fh.value && l.h !== fh.value) return false;
+  if (fp.value) { if (l.p === null || l.p > +fp.value) return false; }
+  return true;
+}
+let selId = null;
+function render() {
+  const rows = L.filter(matches).sort((a, b) => a.m - b.m);
+  $("#rows").innerHTML = rows.map(l => `<tr data-id="${l.id}">
+    <td class="ag">${ago(l.m)}</td>
+    <td class="ti">${esc(l.t)}<small>${esc(l.d)}</small></td>
+    <td class="nb"><button type="button" data-h="${esc(l.h)}">${esc(l.h)}</button></td>
+    <td class="ca">${l.c}</td>
+    <td class="pr${l.p === 0 ? " free" : ""}">${money(l)}</td></tr>`).join("");
+  $("#none").style.display = rows.length ? "none" : "block";
+  // echo of the sentence
+  const bits = [];
+  if (fq.value.trim()) bits.push(`<span class="chip">&ldquo;${esc(fq.value.trim())}&rdquo;</span>`);
+  if (fh.value) bits.push(`<span class="chip">in ${esc(fh.value)}</span>`);
+  if (fp.value) bits.push(`<span class="chip">under $${(+fp.value).toLocaleString()}</span>`);
+  $("#echo").innerHTML = `<span>Showing <b>${rows.length}</b> of ${L.length}</span>` + bits.join("") + (bits.length ? `<button type="button" id="clear">Clear the blanks</button>` : `<span style="color:var(--grey)">&middot; everything, citywide</span>`);
+  const c = $("#clear"); if (c) c.onclick = () => { fq.value = ""; fp.value = ""; fh.value = ""; fitAll(); render(); focusHood(""); };
+  if (!bits.length) { $("#findHint").innerHTML = `Type in any blank and the board filters as you go. Try: <a href="#" id="ex">a bike in Logan Square under $200</a>.`; $("#ex").onclick = ev => { ev.preventDefault(); fq.value = "a bike"; fh.value = "Logan Square"; fp.value = "200"; fitAll(); render(); focusHood(fh.value); }; }
+  else $("#findHint").innerHTML = rows.length ? `<b>${rows.length} ${rows.length === 1 ? "listing matches" : "listings match"}.</b> Press the arrow to see ${rows.length === 1 ? "it" : "them"}.` : `<b>No matches yet.</b> Try fewer words, or post it below.`;
+  renderPins(); renderPanel();
+}
+
+/* ---------- map ---------- */
+const svg = $("#map"), pinsG = $("#pins"), halo = $("#halo");
+let view = null, kNow = 1;
+function cityView() {
+  const w = svg.clientWidth, h = svg.clientHeight, a = w / h, narrow = w < 700;
+  const vh = narrow ? 930 : 940, vw = vh * a;
+  const cx = narrow ? 300 : 230 + vw * 0.2;
+  return [cx - vw / 2, narrow ? -15 : -20, vw, vh];
+}
+function hoodView(n) {
+  const [x, y] = HOODS[n], w = svg.clientWidth, h = svg.clientHeight, a = w / h, narrow = w < 700;
+  const vh = 230, vw = vh * a, cx = narrow ? x : x + vw * 0.18;
+  return [cx - vw / 2, y - vh / 2, vw, vh];
+}
+function applyVB(v) {
+  svg.setAttribute("viewBox", v.map(n => n.toFixed(2)).join(" "));
+  kNow = Math.max(v[2] / svg.clientWidth, v[3] / svg.clientHeight);
+  svg.style.setProperty("--k", kNow.toFixed(4));
+  pinsG.querySelectorAll(".pin").forEach(g => g.setAttribute("transform", `translate(${g.dataset.x},${g.dataset.y}) scale(${kNow.toFixed(4)})`));
+}
+let anim = null, curVB = null;
+function setView(target, animate = true) {
+  view = target;
+  const to = target === null ? cityView() : Array.isArray(target) ? target : hoodView(target);
+  if (!curVB || !animate || matchMedia("(prefers-reduced-motion: reduce)").matches) { curVB = to; applyVB(to); return; }
+  const from = curVB.slice(), t0 = performance.now(), dur = 700;
+  cancelAnimationFrame(anim);
+  const step = now => {
+    const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    curVB = from.map((f, i) => f + (to[i] - f) * e); applyVB(curVB);
+    if (t < 1) anim = requestAnimationFrame(step);
+  };
+  anim = requestAnimationFrame(step);
+}
+function zoomBy(f) {
+  const v = curVB, cx = v[0] + v[2] / 2, cy = v[1] + v[3] / 2, w = Math.min(Math.max(v[2] * f, 120), 3000), h = w * v[3] / v[2];
+  setView([cx - w / 2, cy - h / 2, w, h]);
+}
+$("#zin").onclick = () => zoomBy(.6);
+$("#zout").onclick = () => zoomBy(1.6);
+
+function renderPins() {
+  const anyFilter = fq.value.trim() || fh.value || fp.value;
+  pinsG.innerHTML = "";
+  [...L].sort((a, b) => pos(a)[1] - pos(b)[1]).forEach(l => {
+    const [x, y] = pos(l), g = document.createElementNS(NS, "g"), ok = matches(l);
+    g.setAttribute("class", "pin" + (ok ? (anyFilter ? " match" : "") : " dim") + (l.id === selId ? " sel" : "") + (l.fresh ? " new" : ""));
+    g.dataset.x = x.toFixed(1); g.dataset.y = y.toFixed(1); g.dataset.id = l.id;
+    g.setAttribute("transform", `translate(${x},${y}) scale(${kNow})`);
+    g.innerHTML = `<circle class="ring" r="11"/><circle r="5.5"/><title>${esc(l.t)} (${l.h})</title>`;
+    pinsG.appendChild(g);
+  });
+  document.querySelectorAll("#map .hood").forEach(t => t.classList.toggle("on", t.dataset.h === fh.value));
+}
+pinsG.addEventListener("click", e => { const g = e.target.closest(".pin"); if (g) select(+g.dataset.id, false); });
+document.querySelectorAll("#map .hood").forEach(t => t.addEventListener("click", () => { fh.value = t.dataset.h; fit(fh); render(); focusHood(fh.value); }));
+
+function focusHood(n) {
+  if (n) { const [x, y] = HOODS[n]; halo.setAttribute("cx", x); halo.setAttribute("cy", y + 6); halo.setAttribute("r", 34); halo.setAttribute("opacity", 1); }
+  else halo.setAttribute("opacity", 0);
+  setView(n || null);
+}
+function renderPanel() {
+  const n = fh.value, inArea = L.filter(l => matches(l)).sort((a, b) => a.m - b.m);
+  $("#pk").textContent = n ? "Zoomed to" : "Showing";
+  $("#pn").textContent = n || "All of Chicago";
+  $("#pc").innerHTML = `<b>${inArea.length}</b> ${inArea.length === 1 ? "listing" : "listings"} ${n ? "here" : "on the map"}${fq.value.trim() || fp.value ? " that fit your sentence" : ""}. Tap a dot or a name.`;
+  $("#reset").classList.toggle("hidden", !n);
+  $("#plist").innerHTML = inArea.map(l => `<li data-id="${l.id}" class="${l.id === selId ? "sel" : ""}"><div><b>${esc(l.t)}</b><span>${esc(l.h)} &middot; ${ago(l.m)}</span></div><div class="p">${money(l)}</div></li>`).join("") || `<li style="cursor:default"><div><b>Nothing here yet.</b><span>Be the first on the block.</span></div></li>`;
+}
+$("#plist").addEventListener("click", e => { const li = e.target.closest("li[data-id]"); if (li) select(+li.dataset.id, false); });
+$("#reset").onclick = () => { fh.value = ""; fit(fh); render(); focusHood(""); };
+
+function select(id, scroll) {
+  selId = id; const l = L[id];
+  const card = $("#card");
+  card.innerHTML = `<div class="k">${l.c} &middot; ${esc(l.h)} &middot; ${ago(l.m)}</div><h4>${esc(l.t)}</h4><div class="pp">${money(l)}</div><p>${esc(l.d)}</p><button type="button">Message the poster &rarr;</button>`;
+  card.classList.add("show");
+  card.querySelector("button").onclick = () => toast("Sent. Replies go straight to you. Stoop never sees the money.");
+  renderPins(); renderPanel();
+  const [x, y] = pos(l), v = hoodView(l.h);
+  setView([x - v[2] / 2 + (svg.clientWidth < 700 ? 0 : v[2] * .18), y - v[3] / 2, v[2], v[3]]);
+  if (scroll) $("#mapsec").scrollIntoView({ behavior: "smooth" });
+}
+
+/* ---------- table interactions ---------- */
+$("#rows").addEventListener("click", e => {
+  const b = e.target.closest("button[data-h]");
+  if (b) { fh.value = b.dataset.h; fit(fh); render(); focusHood(fh.value); return; }
+  const tr = e.target.closest("tr[data-id]"); if (tr) select(+tr.dataset.id, true);
+});
+$("#flip").onclick = () => { pt.value = fq.value.trim(); if (fh.value) ph.value = fh.value; fitAll(); pt.focus(); $("#post").scrollIntoView({ behavior: "smooth", block: "center" }); };
+
+/* ---------- search sentence ---------- */
+[fq, fp].forEach(el => el.addEventListener("input", render));
+fh.addEventListener("change", () => { fit(fh); render(); focusHood(fh.value); });
+$("#find").addEventListener("submit", e => { e.preventDefault(); render(); $("#listings").scrollIntoView({ behavior: "smooth" }); });
+
+/* ---------- post sentence ---------- */
+function syncVerb() {
+  const v = VERBS[+pv.value];
+  pt.placeholder = v[4];
+  $("#pricePart").classList.toggle("hidden", v[2] === null);
+  $("#pre").textContent = v[2] || "";
+  $("#pre").classList.toggle("hidden", !v[2]);
+  $("#suf").textContent = v[3];
+  fitAll();
+}
+pv.addEventListener("change", syncVerb);
+ph.addEventListener("change", () => fit(ph));
+$("#post").addEventListener("submit", e => {
+  e.preventDefault();
+  const v = VERBS[+pv.value], form = $("#post");
+  form.querySelectorAll(".bad").forEach(x => x.classList.remove("bad"));
+  const bad = [];
+  if (!pt.value.trim()) bad.push(pt);
+  if (!ph.value) bad.push(ph.parentNode);
+  if (v[2] !== null && !pp.value) bad.push(pp);
+  if (bad.length) {
+    bad.forEach(b => b.classList.add("bad"));
+    form.classList.remove("shake"); void form.offsetWidth; form.classList.add("shake");
+    $("#postHint").innerHTML = `<b>Almost.</b> Fill in the ${bad.map(b => b === pt ? "what" : b === pp ? "price" : "neighborhood").join(" and the ")}.`;
+    (bad[0].tagName === "INPUT" ? bad[0] : bad[0].querySelector("select")).focus();
+    return;
+  }
+  let t = pt.value.trim().replace(/^(a|an|my|some)\s+/i, "");
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+  const price = v[2] === null ? (v[1] === "Free" ? 0 : null) : (pp.value ? +pp.value : null);
+  const l = { id: L.length, t, c: v[1], h: ph.value, p: price, u: v[3], m: 0, d: "Posted from the sentence above. Ask me anything.", fresh: true };
+  L.forEach(x => x.fresh = false);
+  L.push(l);
+  fq.value = ""; fp.value = ""; fh.value = "";
+  pt.value = ""; pp.value = ""; fitAll();
+  selId = null; render();
+  $("#postHint").innerHTML = `<span class="ok">Posted. &ldquo;${esc(t)}&rdquo; is #1 on the board and pinned in ${esc(l.h)}.</span>`;
+  const tr = $(`#rows tr[data-id="${l.id}"]`); if (tr) tr.classList.add("flash");
+  $("#listings").scrollIntoView({ behavior: "smooth" });
+  fh.value = ""; focusHood(""); halo.setAttribute("opacity", 0);
+});
+
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 2600); }
+
+/* ---------- start: prefill the example sentence ---------- */
+syncVerb();
+render();
+setView(null, false);
+document.querySelector("#map .water").setAttribute("x", 640);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+</script>
+</body>
+</html>
