@@ -52,6 +52,11 @@
   .num { font: 700 13px ui-monospace, Menlo, monospace; color: var(--accent); }
   .title { font-weight: 650; font-size: 15px; }
   .note { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+  .verdict { font-size: 12.5px; margin: 6px 0 0; color: #3d3a34; }
+  .verdict b { font: 700 10.5px/1 ui-monospace, Menlo, monospace; letter-spacing: .1em; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; margin-right: 6px; }
+  .verdict.kept b { background: var(--ink); color: var(--paper); }
+  .verdict.dropped b { border: 1px solid var(--muted); color: var(--muted); }
+  .card:has(.verdict.dropped) .thumb { opacity: .55; filter: grayscale(.6); }
   .card.final .thumb { border-width: 3px; border-color: var(--accent); }
 
   footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
@@ -78,21 +83,31 @@
 
 <script>
   // One entry per version. Add notes here as each version is built.
+  // One entry per version. verdict: "kept" / "dropped" + why, filled in after each review round.
   const VERSIONS = [
-    { n: 1,  title: "Broadsheet Classifieds", note: "1950s newspaper classifieds page: dense columns, tiny type, display ads." },
-    { n: 2,  title: "Brutalist Manifesto", note: "Raw HTML, giant type, the board as a protest against platforms." },
-    { n: 3,  title: "A Quiet Letter", note: "Calm single column that reads like a note from a neighbor." },
-    { n: 4,  title: "Laundromat Corkboard", note: "Pinned index cards and flyers with tear-off phone tabs." },
-    { n: 5,  title: "Dial-up BBS", note: "1990s green-screen bulletin board system driven by keyboard menus." },
-    { n: 6,  title: "Neighborhood Map", note: "Map first: an illustrated street grid with listings as pins." },
-    { n: 7,  title: "Swiss Grid Poster", note: "International Typographic Style: strict grid, numbers as structure." },
-    { n: 8,  title: "Mail-Order Catalog", note: "1970s department-store catalog with item numbers and line drawings." },
-    { n: 9,  title: "Photocopied Zine", note: "Cut-and-paste punk zine: tape, ransom letters, xerox grain." },
-    { n: 10, title: "Local Trading Floor", note: "Stock-ticker dashboard showing live prices for neighborhood goods." },
+    { n: 1,  title: "Broadsheet Classifieds", note: "1950s newspaper classifieds page: dense columns, tiny type, display ads.", verdict: "dropped", why: "Kitschy, and not in a good way." },
+    { n: 2,  title: "Brutalist Manifesto", note: "Raw HTML, giant type, the board as a protest against platforms.", verdict: "kept", why: "Kept the type: bold and modern, but minimal." },
+    { n: 3,  title: "A Quiet Letter", note: "Calm single column that reads like a note from a neighbor.", verdict: "dropped", why: "Too slow to scan when you're hunting for something." },
+    { n: 4,  title: "Laundromat Corkboard", note: "Pinned index cards and flyers with tear-off phone tabs.", verdict: "dropped", why: "Kitschy, and not in a good way." },
+    { n: 5,  title: "Dial-up BBS", note: "1990s green-screen bulletin board system driven by keyboard menus.", verdict: "dropped", why: "A costume, not a tool for everyday neighbors." },
+    { n: 6,  title: "Neighborhood Map", note: "Map first: an illustrated street grid with listings as pins.", verdict: "kept", why: "Kept the map: seeing what's near you is the point." },
+    { n: 7,  title: "Swiss Grid Poster", note: "International Typographic Style: strict grid, numbers as structure.", verdict: "kept", why: "Kept the type and the recent-listings table." },
+    { n: 8,  title: "Mail-Order Catalog", note: "1970s department-store catalog with item numbers and line drawings.", verdict: "dropped", why: "Charming, but retro decoration gets in the way." },
+    { n: 9,  title: "Photocopied Zine", note: "Cut-and-paste punk zine: tape, ransom letters, xerox grain.", verdict: "dropped", why: "Too chaotic, and kitschy." },
+    { n: 10, title: "Local Trading Floor", note: "Stock-ticker dashboard showing live prices for neighborhood goods.", verdict: "dropped", why: "The finance metaphor doesn't make sense here." },
+    { n: 11, title: "Swiss Synthesis", note: "Direct combo: Find | Post split hero, v07 table, Swiss-style map, rows and pins linked." },
+    { n: 12, title: "The Giant Field", note: "One enormous search input fills the first screen. Post sits at the same size beneath it." },
+    { n: 13, title: "Split Screen", note: "LOOKING (black) and SELLING (white) halves. Hover a side and it expands." },
+    { n: 14, title: "Fill in the Blank", note: "Search and post as giant editable sentences: \"I'm looking for ___ in ___.\"" },
+    { n: 15, title: "Map + List Workspace", note: "Compact Search | Post tabs above a two-pane list and sticky map." },
+    { n: 16, title: "One Bar, Two Modes", note: "A single command bar with a FIND / POST toggle, typeahead, and a radius slider on the map." },
+    { n: 17, title: "Transit Diagram", note: "The map becomes a CTA L diagram, and listings become a departure board." },
+    { n: 18, title: "Night Mode Index", note: "Giant SEARCH / POST words on black that turn into their own inputs when clicked." },
+    { n: 19, title: "Linked Columns", note: "Search, listings, and map on one screen as three linked columns." },
   ];
   const PHASES = [
-    { from: 1,  to: 10, name: "Round 1: Go wide",  story: "Ten radically different directions across era, medium, and tone, to find out what a neighborhood board could feel like before deciding what it should be." },
-    { from: 11, to: 19, name: "Round 2: Narrow down", story: "Coming next: combining the directions that worked for real people." },
+    { from: 1,  to: 10, name: "Round 1: Go wide",  story: "Ten radically different directions across era, medium, and tone. The review cut seven: the nostalgic ones (newspaper, corkboard, zine, catalog, BBS) read as kitsch or costume, and the trading floor didn't fit. What survived was the bold, minimal type of v02 and v07, v07's recent-listings table, and v06's map." },
+    { from: 11, to: 19, name: "Round 2: Narrow down", story: "One brief, nine layouts. Search becomes the tentpole and shares the hero with Post a listing at equal weight. Then come recent listings, then the map, all in Chicago and in the v02/v07 type. Each version tests a different way to give search and post equal footing." },
     { from: 20, to: 25, name: "Round 3: Converge", story: "Coming next: refining toward the final version, v25." },
   ];
 
@@ -113,6 +128,7 @@
             <div class="thumb"><iframe src="v${pad(n)}/" loading="lazy" tabindex="-1" aria-hidden="true" title="v${pad(n)} preview"></iframe></div>
             <div class="meta"><span class="num">v${pad(n)}</span><span class="title">${v.title}</span></div>
             <p class="note">${v.note}</p>
+            ${v.verdict ? `<p class="verdict ${v.verdict}"><b>${v.verdict}</b> ${v.why}</p>` : ""}
           </a>`);
       } else {
         grid.insertAdjacentHTML("beforeend", `
