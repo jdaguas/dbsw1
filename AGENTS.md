@@ -37,3 +37,6 @@
   - Post needs more body: title + description + photo upload, not just a one-word title.
   - Palette: light blue, cream, white. No black/white scheme.
 - v20–v25: converge. v20 = v16 hero + v15 workspace + rich post + new palette; later versions refine it.
+- **v20 review (user's decisions):** "almost perfect, just minor tweaks." Drop the word "Age". Add log in/sign up so people can favorite listings and organize them. Grey out listings you've already viewed.
+  - v21 "Posted" wording + viewed = grey · v22 log in/sign up dialog · v23 favorites · v24 collections to organize favorites · v25 final polish (mobile map scroll, consistency).
+  - Sign-in, favorites and viewed state are in memory only (the no-storage rule).
