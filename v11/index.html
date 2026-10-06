@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoop / Chicago: Find or Post</title>
+<style>
+  :root { --k: #111; --w: #fff; --r: #e3001b; --g: #8a8a8a; --l: #d9d9d9; --pad: 40px; --gap: 20px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--k); background: var(--w); font-size: 15px; line-height: 1.35; }
+  button, input, select { font: inherit; color: inherit; }
+  a { color: inherit; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 0 var(--pad); }
+  .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gap); }
+  .sq { display: inline-block; width: 9px; height: 9px; background: var(--r); margin-right: 7px; vertical-align: 0; }
+
+  /* top bar */
+  .top { padding: 18px 0 14px; border-bottom: 2px solid var(--k); font-size: 13px; font-weight: 700; align-items: baseline; }
+  .top .back { grid-column: 1 / span 2; text-decoration: none; }
+  .top .back:hover { color: var(--r); }
+  .top .brand { grid-column: 3 / span 2; }
+  .top .tag { grid-column: 5 / span 4; font-weight: 400; color: var(--g); }
+  .top .date { grid-column: 9 / span 2; font-weight: 400; }
+  .top .live { grid-column: 11 / span 2; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* hero: two strict halves */
+  .hero { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 2px solid var(--k); }
+  .half { display: flex; flex-direction: column; padding: 16px 0 40px; min-height: 680px; }
+  .half.find { padding-right: calc(var(--gap) / 2 + 10px); border-right: 2px solid var(--k); }
+  .half.post { padding-left: calc(var(--gap) / 2 + 10px); }
+  .kick { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
+  .kick span + span { font-weight: 400; color: var(--g); }
+  .big { font-size: 236px; font-weight: 700; letter-spacing: -.075em; line-height: .78; margin: 34px 0 0 -.06em; }
+  .big b { color: var(--r); }
+  .lede { font-size: 21px; line-height: 1.25; margin: 26px 0 0; max-width: 22em; min-height: 3.75em; }
+  .ctl { margin-top: auto; }
+  .flabel { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; padding-bottom: 6px; }
+  .flabel span + span { color: var(--g); font-weight: 400; }
+
+  .sbox { display: grid; grid-template-columns: 1fr auto; border-top: 2px solid var(--k); border-bottom: 2px solid var(--k); }
+  .sbox input { border: 0; outline: 0; background: transparent; font-size: 34px; font-weight: 700; letter-spacing: -.02em; padding: 18px 0; min-width: 0; }
+  .sbox input::placeholder { color: #c4c4c4; }
+  .sbox input::-webkit-search-cancel-button { display: none; }
+  .btn { border: 0; background: var(--k); color: var(--w); font-weight: 700; cursor: pointer; }
+  .btn:hover { background: var(--r); }
+  .sbox .btn { font-size: 30px; padding: 0 24px; }
+  .try { font-size: 13px; padding: 10px 0 0; color: var(--g); }
+  .try button { border: 0; background: none; font-weight: 700; color: var(--k); cursor: pointer; padding: 0 2px; text-decoration: underline; text-underline-offset: 3px; }
+  .try button:hover { color: var(--r); }
+
+  .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: var(--gap); margin-top: 22px; }
+  .chip { display: flex; justify-content: space-between; align-items: baseline; border: 0; border-bottom: 1px solid var(--l); background: none; text-align: left; padding: 11px 0 9px; cursor: pointer; font-size: 14px; font-weight: 700; }
+  .chip:nth-child(-n+4) { border-top: 1px solid var(--k); }
+  .chip small { font-weight: 400; color: var(--g); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .chip:hover { color: var(--r); }
+  .chip[aria-pressed="true"] { color: var(--r); }
+  .chip[aria-pressed="true"] span::before { content: ""; display: inline-block; width: 9px; height: 9px; background: var(--r); margin-right: 7px; }
+  .chip[aria-pressed="true"] small { color: var(--r); }
+
+  .frow { display: grid; grid-template-columns: 96px 1fr; align-items: baseline; border-bottom: 1px solid var(--l); }
+  .frow:first-of-type { border-top: 2px solid var(--k); }
+  .frow label { font-size: 11px; font-weight: 700; }
+  .frow input, .frow select { border: 0; outline: 0; background: transparent; font-size: 24px; font-weight: 700; letter-spacing: -.015em; padding: 13px 0 12px; min-width: 0; width: 100%; border-radius: 0; -webkit-appearance: none; appearance: none; }
+  .frow select { cursor: pointer; background: linear-gradient(45deg, transparent 50%, var(--k) 50%) right 6px center / 8px 8px no-repeat; }
+  .frow input::placeholder { color: #c4c4c4; }
+  .frow:focus-within label { color: var(--r); }
+  .post .chips { margin-top: 18px; }
+  .post .chip { font-size: 13px; }
+  .send { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: var(--gap); margin-top: 18px; }
+  .send .btn { font-size: 20px; padding: 17px 22px; text-align: left; display: flex; justify-content: space-between; }
+  .send .note { font-size: 12px; color: var(--g); max-width: 15em; }
+  .done { font-size: 13px; font-weight: 700; padding-top: 10px; min-height: 28px; }
+
+  /* section labels */
+  .label { border-top: 2px solid var(--k); padding: 10px 0 0; font-size: 13px; font-weight: 700; align-items: baseline; }
+  .label .no { grid-column: 1; }
+  .label .ttl { grid-column: 2 / span 5; }
+  .label .note { grid-column: 7 / span 6; font-weight: 400; color: var(--g); }
+  section.blk { padding: 70px 0 0; }
+  section.blk:first-of-type { border-top: 0; }
+  .h2 { font-size: 96px; font-weight: 700; letter-spacing: -.055em; line-height: .85; margin: 30px 0 30px -.04em; }
+  .h2 b { color: var(--r); }
+
+  /* table */
+  .row { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gap); padding: 12px 0 11px; border-bottom: 1px solid var(--l); align-items: baseline; cursor: default; }
+  .row.head { border-bottom: 2px solid var(--k); font-size: 11px; font-weight: 700; padding: 0 0 8px; }
+  .row .n { grid-column: 1; font-size: 30px; font-weight: 700; letter-spacing: -.04em; line-height: .9; font-variant-numeric: tabular-nums; }
+  .row.head .n { font-size: 11px; letter-spacing: 0; }
+  .row .ti { grid-column: 2 / span 4; font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  .row .ti small { display: block; font-weight: 400; font-size: 13px; color: #555; margin-top: 3px; letter-spacing: 0; }
+  .row .ca { grid-column: 6 / span 2; font-size: 13px; }
+  .row .nb { grid-column: 8 / span 2; font-size: 13px; }
+  .row .ag { grid-column: 10; font-size: 13px; color: var(--g); font-variant-numeric: tabular-nums; }
+  .row .pr { grid-column: 11 / span 2; white-space: nowrap; font-weight: 700; font-size: 18px; text-align: right; font-variant-numeric: tabular-nums; }
+  .row.head .ti, .row.head .pr { font-size: 11px; }
+  .row .pr.free { color: var(--r); }
+  .row.hl { background: #f3f3f3; box-shadow: -10px 0 0 #f3f3f3, 10px 0 0 #f3f3f3; }
+  .row.hl .n, .row.hl .ti { color: var(--r); }
+  .row.fresh { animation: fresh 2.4s ease-out; }
+  @keyframes fresh { 0%, 40% { background: var(--r); color: var(--w); box-shadow: -10px 0 0 var(--r), 10px 0 0 var(--r); } }
+  .empty { padding: 34px 0; font-size: 28px; font-weight: 700; letter-spacing: -.02em; display: none; }
+  .empty button { border: 0; background: none; font-weight: 700; color: var(--r); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+  .tfoot { display: flex; gap: 40px; font-size: 13px; padding-top: 14px; }
+  .tfoot b { color: var(--r); }
+  .tfoot button { border: 0; background: none; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* map */
+  .mapbox { position: relative; margin-top: 30px; border-top: 2px solid var(--k); border-bottom: 2px solid var(--k); }
+  #svg { display: block; width: 100%; height: auto; }
+  .m-land { fill: #fff; }
+  .m-minor { stroke: #efefef; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .m-half { stroke: #dedede; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .m-major { stroke: #111; stroke-width: .7; fill: none; vector-effect: non-scaling-stroke; }
+  .m-parks { fill: #f1f1f1; }
+  .m-lake { fill: #e7e7e7; stroke: #111; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .m-pier { fill: #fff; stroke: #111; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .m-river { stroke: #111; stroke-width: 3; fill: none; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .m-loop { fill: none; stroke: #111; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+  .m-labels text { font: 700 1.5px "Helvetica Neue", Helvetica, Arial, sans-serif; text-anchor: middle; fill: #111; paint-order: stroke; stroke: #fff; stroke-width: .5px; letter-spacing: -.01em; }
+  .m-labels text.on { fill: var(--r); }
+  .m-axis text { font: 400 1.1px "Helvetica Neue", Helvetica, Arial, sans-serif; fill: #8a8a8a; }
+  .m-lakelabel { font: 700 5px "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: -.2px; fill: #111; }
+  .pin { cursor: pointer; }
+  .pin circle { fill: var(--r); stroke: #fff; stroke-width: .3; transition: transform .12s; }
+  .pin text { font: 700 1.35px "Helvetica Neue", Helvetica, Arial, sans-serif; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; font-variant-numeric: tabular-nums; }
+  .pin.hl circle { transform: scale(1.6); fill: var(--k); stroke: var(--r); stroke-width: .6; }
+  .pin.hl text { font-size: 1.8px; }
+  .pin.off { pointer-events: none; }
+  .pin.off circle { transform: scale(.36); fill: #b9b9b9; stroke: none; }
+  .pin.off text { display: none; }
+
+  .panel { position: absolute; top: 28px; left: calc((100% + var(--gap)) * 7 / 12); width: calc((100% + var(--gap)) * 5 / 12 - var(--gap)); }
+  .sel { border-top: 2px solid var(--k); padding-top: 10px; min-height: 360px; }
+  .sel .k { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; }
+  .sel .k span + span { color: var(--g); font-weight: 400; }
+  .sel .sn { font-size: 120px; font-weight: 700; letter-spacing: -.07em; line-height: .8; color: var(--r); margin: 22px 0 0 -.05em; font-variant-numeric: tabular-nums; }
+  .sel h3 { font-size: 28px; letter-spacing: -.025em; line-height: 1.05; margin-top: 18px; }
+  .sel .sp { font-size: 44px; font-weight: 700; letter-spacing: -.04em; margin-top: 12px; }
+  .sel dl { display: grid; grid-template-columns: 110px 1fr; font-size: 13px; margin-top: 14px; border-top: 1px solid var(--k); }
+  .sel dt, .sel dd { padding: 6px 0; border-bottom: 1px solid var(--l); }
+  .sel dt { font-weight: 700; }
+  .sel p { font-size: 14px; margin-top: 12px; max-width: 30em; }
+  .idx { margin-top: 26px; border-top: 2px solid var(--k); padding-top: 10px; }
+  .idx .k { font-size: 11px; font-weight: 700; display: flex; justify-content: space-between; }
+  .idx .k span + span { color: var(--g); font-weight: 400; }
+  .idx ul { list-style: none; columns: 2; column-gap: var(--gap); margin-top: 10px; }
+  .idx li { break-inside: avoid; }
+  .idx button { width: 100%; display: flex; justify-content: space-between; border: 0; border-bottom: 1px solid var(--l); background: none; padding: 5px 0; font-size: 13px; cursor: pointer; text-align: left; }
+  .idx button b { font-variant-numeric: tabular-nums; }
+  .idx button:hover { color: var(--r); }
+
+  .foot { border-top: 2px solid var(--k); margin-top: 70px; padding: 14px 0 40px; font-size: 12px; }
+  .foot div:nth-child(1) { grid-column: 1 / span 3; font-weight: 700; }
+  .foot div:nth-child(2) { grid-column: 4 / span 6; color: var(--g); }
+  .foot div:nth-child(3) { grid-column: 10 / span 3; text-align: right; }
+
+  @media (max-width: 1100px) {
+    .big { font-size: 20vw; }
+    .h2 { font-size: 72px; }
+  }
+  @media (max-width: 860px) {
+    :root { --pad: 18px; --gap: 12px; }
+    .grid, .row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .top .brand { grid-column: 3 / span 2; }
+    .top .tag, .top .date { display: none; }
+    .top .live { grid-column: 1 / -1; text-align: left; padding-top: 4px; font-weight: 400; }
+    .hero { grid-template-columns: 1fr; }
+    .half { min-height: 0; padding-bottom: 34px; }
+    .half.find { padding-right: 0; border-right: 0; border-bottom: 2px solid var(--k); }
+    .half.post { padding-left: 0; padding-top: 16px; }
+    .big { font-size: 34vw; margin-top: 22px; }
+    .lede { font-size: 18px; min-height: 0; margin-bottom: 24px; }
+    .sbox input { font-size: 24px; }
+    .chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .chip:nth-child(-n+4) { border-top: 0; }
+    .chip:nth-child(-n+2) { border-top: 1px solid var(--k); }
+    .send { grid-template-columns: 1fr; row-gap: 10px; }
+    .label .no { grid-column: 1; }
+    .label .ttl { grid-column: 2 / span 3; }
+    .label .note { grid-column: 1 / -1; padding-top: 4px; }
+    .h2 { font-size: 52px; }
+    .row .ag, .row.head { display: none; }
+    .row .n { grid-column: 1; font-size: 22px; }
+    .row .ti { grid-column: 2 / span 3; }
+    .row .ca { grid-column: 2 / span 2; grid-row: 2; padding-top: 4px; }
+    .row .nb { grid-column: 2 / span 2; grid-row: 3; }
+    .row .pr { grid-column: 4; grid-row: 2 / span 2; align-self: center; }
+    .panel { position: static; width: auto; padding: 20px 0 10px; }
+    .sel { min-height: 0; }
+    .sel .sn { font-size: 80px; }
+    .foot div:nth-child(n) { grid-column: 1 / -1; text-align: left; margin-bottom: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top grid">
+    <a class="back" href="../">&larr; Gallery</a>
+    <div class="brand">Stoop / Chicago</div>
+    <div class="tag">Classifieds for your neighborhood. No fees, no algorithm.</div>
+    <div class="date">Mon 5 Oct 2026</div>
+    <div class="live"><span class="sq"></span><span id="liveN">20</span> listings this hour</div>
+  </header>
+
+  <section class="hero">
+    <div class="half find">
+      <div class="kick"><span>1a &nbsp;Search</span><span>For the people looking</span></div>
+      <h1 class="big">Find<b>.</b></h1>
+      <p class="lede">Every listing on the board, newest first. Type a thing, a price, or a neighborhood. The table and the map follow along.</p>
+      <div class="ctl">
+        <form class="search" id="sform" role="search">
+          <div class="flabel"><label for="q">What are you looking for?</label><span id="sCount">20 of 20 listings</span></div>
+          <div class="sbox">
+            <input id="q" type="search" placeholder="bike, sublet, Pilsen" autocomplete="off">
+            <button class="btn" type="submit" aria-label="Show results">&rarr;</button>
+          </div>
+        </form>
+        <div class="try">Try: <button type="button">free</button> <button type="button">piano</button> <button type="button">Wicker Park</button> <button type="button">/mo</button></div>
+        <div class="chips" id="fchips"></div>
+      </div>
+    </div>
+
+    <div class="half post">
+      <div class="kick"><span>1b &nbsp;Post a listing</span><span>For the people letting go</span></div>
+      <h2 class="big">Post<b>.</b></h2>
+      <p class="lede">Three fields and a category. It goes to the top of the board and onto the map the moment you hit post. No account, no fee.</p>
+      <form class="ctl" id="pform" autocomplete="off">
+        <div class="frow"><label for="pt">What</label><input id="pt" required maxlength="70" placeholder="Oak dresser, 4 drawers"></div>
+        <div class="frow"><label for="pp">Price</label><input id="pp" maxlength="16" placeholder="$60, or Free"></div>
+        <div class="frow"><label for="pn">Where</label><select id="pn"></select></div>
+        <div class="chips" id="pchips" role="radiogroup" aria-label="Category"></div>
+        <div class="send">
+          <button class="btn" type="submit">Post it to the board <span>&rarr;</span></button>
+          <span class="note">Replies come to you by relay email. We never show your address.</span>
+        </div>
+        <div class="done" id="done" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
+
+  <section class="blk" id="listings">
+    <div class="label grid"><div class="no">2</div><div class="ttl">Recent listings</div><div class="note">Sorted by time posted, newest first. That is the only sort. Numbers match the pins on the map.</div></div>
+    <h2 class="h2">On the board<b>.</b></h2>
+    <div id="tbl"></div>
+    <div class="empty" id="empty">Nothing matches. <button type="button" id="postIt">Post it yourself &rarr;</button></div>
+    <div class="tfoot"><span>Showing <b id="tN">20</b> of <span id="tAll">20</span></span><span id="tFilter"></span></div>
+  </section>
+
+  <section class="blk" id="map">
+    <div class="label grid"><div class="no">3</div><div class="ttl">Map</div><div class="note">Hover a pin or a table row; they point at each other. Grey dots are listings outside your search.</div></div>
+    <div class="mapbox">
+      <svg id="svg" viewBox="-60 -80 166 146" role="img" aria-label="Map of Chicago neighborhoods with listing pins"></svg>
+      <aside class="panel">
+        <div class="sel" id="sel"></div>
+        <div class="idx"><div class="k"><span>By neighborhood</span><span>Click to search</span></div><ul id="idx"></ul></div>
+      </aside>
+    </div>
+  </section>
+
+  <footer class="foot grid">
+    <div>Stoop &copy; 2026</div>
+    <div>A community board for Chicago. Deal directly with your neighbors. Stoop never touches the money.</div>
+    <div><a href="../">&larr; Gallery</a></div>
+  </footer>
+</div>
+
+<script>
+/* ---------- Stoop: shared listings + stylized Chicago geometry ----------
+   Map units: 1 unit = 100 address numbers = 1/8 mile. State & Madison = (0,0).
+   +x is east, +y is south. 8 units = 1 mile. */
+const NS = "http://www.w3.org/2000/svg";
+const CATS = ["For Sale", "Free", "Housing", "Jobs", "Gigs", "Services", "Community"];
+const HOODS = {
+  "Rogers Park": [-15, -70], "Andersonville": [-15, -54], "Uptown": [-9, -46], "Lincoln Square": [-23, -49],
+  "Albany Park": [-38, -49], "Lakeview": [-9, -34], "Avondale": [-33, -34], "Logan Square": [-30, -25],
+  "Lincoln Park": [-7, -23], "Bucktown": [-20, -20], "Wicker Park": [-16, -14], "Humboldt Park": [-38, -12],
+  "Ukrainian Village": [-22, -8], "Garfield Park": [-46, 2], "West Loop": [-11, 0], "Loop": [-0.5, 7],
+  "Pilsen": [-16, 19], "Chinatown": [-2, 23], "Little Village": [-31, 23], "Bridgeport": [-8, 32],
+  "Back of the Yards": [-18, 46], "Bronzeville": [3, 38], "Hyde Park": [12, 54], "Woodlawn": [11, 63]
+};
+const SHORE = [[-12,-95],[-12,-76],[-11,-70],[-10,-64],[-9,-58],[-7,-52],[-5,-48],[-4,-44],[-3,-38],[-2,-32],[-1,-27],[0,-22],[1,-16],[1,-11],[2,-8],[4,-5],[4,-3],[4,2],[4.5,8],[6,11],[6,14],[5,18],[5,22],[7,31],[9,39],[12,47],[16,51],[19,55],[18,57],[21,63],[23,67],[26,72],[29,79],[32,95]];
+const RIVERS = [
+  [[4.5,-3.2],[-4,-3.2]],
+  [[-4,-3.2],[-5.5,-5.5],[-7.5,-8],[-10,-11],[-12.5,-14.5],[-14.5,-17.5],[-17,-20],[-20,-22],[-23.5,-24],[-26,-27],[-27.5,-30],[-28,-34],[-29,-38],[-30.5,-42],[-32,-46],[-34,-50],[-38,-54],[-44,-60],[-52,-68],[-62,-74]],
+  [[-32,-46],[-31,-52],[-30,-58],[-29,-64],[-29,-72],[-30,-95]],
+  [[-4,-3.2],[-4,4],[-4.5,10],[-5,14],[-5.5,18],[-7.5,21],[-10,23.5],[-13,25],[-16,26],[-19,27.5],[-25,30],[-32,33.5],[-40,37.5],[-50,42],[-70,51]],
+  [[-10,23.5],[-10.5,28],[-11,33]]
+];
+const DIAG = [
+  [[-6,-4],[-12,-10],[-16,-15],[-22,-20],[-28,-26],[-34,-31],[-40,-36],[-48,-43],[-70,-62]],          /* Milwaukee */
+  [[-4,-17],[-10,-24],[-16,-31],[-20,-38],[-24,-47],[-28,-54],[-36,-64],[-46,-76]],                    /* Lincoln */
+  [[0,-6],[-2,-14],[-4,-22],[-8,-30],[-10,-36],[-12,-44],[-15,-52],[-17,-60],[-17,-95]],               /* Clark */
+  [[0,18],[-6,22],[-12,26],[-20,31],[-30,38],[-40,45],[-70,62]],                                       /* Archer */
+  [[-6,-1],[-14,3],[-22,8],[-30,13],[-40,18],[-70,30]]                                                 /* Ogden */
+];
+const MAJOR_EW = [-76,-64,-56,-48,-40,-32,-24,-16,-8,0,12,22,31,39,47,55,63];
+const MAJOR_NS = [-56,-48,-40,-32,-24,-16,-8,0,8,16];
+const HALF_EW = [-72,-68,-60,-52,-44,-36,-28,-20,-12,-4,4,8,16,18,26,35,43,51,59,67];
+const HALF_NS = [-52,-44,-36,-28,-20,-12,-4,4,12];
+const STREETS_NS = [[-48,"Cicero"],[-40,"Pulaski"],[-32,"Kedzie"],[-24,"Western"],[-16,"Ashland"],[-8,"Halsted"],[0,"State"]];
+const STREETS_EW = [[-76,"Howard"],[-64,"Devon"],[-48,"Lawrence"],[-40,"Irving Park"],[-32,"Belmont"],[-24,"Fullerton"],[-16,"North"],[-8,"Chicago"],[0,"Madison"],[12,"Roosevelt"],[22,"Cermak"],[31,"31st"],[39,"Pershing"],[47,"47th"],[55,"55th"],[63,"63rd"]];
+
+let LISTINGS = [
+  { t: "Walnut mid-century credenza", d: "One veneer chip on the left door. Came out of my grandma's place on 55th. Needs two people.", p: 340, c: "For Sale", n: "Hyde Park", a: 6, x: 10.5, y: 52 },
+  { t: "Moving boxes, about 40, flattened", d: "Some say KITCHEN in Sharpie. Stacked by the gangway, take as many as you want.", p: 0, c: "Free", n: "Logan Square", a: 11, x: -27.5, y: -27.5 },
+  { t: "Room in a 3BR two-flat, Nov 1", d: "Two artists and a very calm dog. Radiator heat, back porch, 6 min to the 18th St Pink Line.", p: 825, u: "/mo", c: "Housing", n: "Pilsen", a: 18, x: -13.5, y: 17 },
+  { t: "Trek FX 2 hybrid, 54cm, new tires", d: "Tuned in August. Comes with a Kryptonite lock but not the key, sorry.", p: 260, c: "For Sale", n: "Andersonville", a: 24, x: -12.5, y: -56.5 },
+  { t: "Help moving an upright piano down one flight", d: "About 400 lb. Need three strong people Saturday at 10am. Pizza after.", p: 120, c: "Gigs", n: "Bridgeport", a: 31, x: -5.5, y: 29.5 },
+  { t: "Barista, part-time, 6 to 11am", d: "Corner cafe on Division. Tips split evenly. Must tolerate regulars who talk a lot.", p: 19, u: "/hr", c: "Jobs", n: "Wicker Park", a: 47, x: -13.5, y: -12 },
+  { t: "Lost: grey tabby, answers to \"Pierogi\"", d: "Last seen near 26th and Pulaski. Very food motivated. Rattle a bag of treats.", p: null, c: "Community", n: "Little Village", a: 62, x: -37.5, y: 26 },
+  { t: "Hemming and alterations, same week", d: "22 years on Broadway. Bring it pinned, I'll do the rest.", p: 15, u: "+", c: "Services", n: "Uptown", a: 75, x: -6.5, y: -48.5 },
+  { t: "Window AC, 8,000 BTU, works", d: "Loud, but it got us through July. Brackets included. Second-floor walk-up.", p: 75, c: "For Sale", n: "Rogers Park", a: 96, x: -13, y: -72.5 },
+  { t: "Snow shoveling, whole winter, two walks", d: "One reliable person for the season. Corner lot off Southport, plus the neighbor's walk.", p: 300, c: "Gigs", n: "Lakeview", a: 118, x: -13.5, y: -36 },
+  { t: "Tomato cages and 6 bags of potting soil", d: "Garden is done for the year. On the front steps on King Drive, first come.", p: 0, c: "Free", n: "Bronzeville", a: 150, x: 4.5, y: 41 },
+  { t: "Block party on Kedzie, Sat Oct 17", d: "Bring a chair and a dish. Street closed noon to 8. Somebody's uncle is DJing.", p: null, c: "Community", n: "Humboldt Park", a: 170, x: -32.5, y: -14 },
+  { t: "Furnished studio sublet, Dec to May", d: "Going abroad. Very good couch, mediocre plant. Laundry in building, Blue Line at Damen.", p: 1150, u: "/mo", c: "Housing", n: "Wicker Park", a: 225, x: -19, y: -16.5 },
+  { t: "Algebra and SAT math tutor", d: "Grad student. At the Harper Library or your kitchen table, $40 an hour.", p: 40, u: "/hr", c: "Services", n: "Hyde Park", a: 290, x: 14.5, y: 57 },
+  { t: "120 LPs, mostly soul and house", d: "Selling as a lot. Frankie Knuckles in there. Come listen first.", p: 480, c: "For Sale", n: "Woodlawn", a: 340, x: 9, y: 61 },
+  { t: "Line cook at a taqueria on 26th St", d: "Nights and weekends. Spanish helpful, not required. Staff meal is excellent.", p: 18, u: "/hr", c: "Jobs", n: "Little Village", a: 410, x: -28, y: 26.5 },
+  { t: "Kids' bike, 16 in, with training wheels", d: "Outgrown in one summer. Streamers still attached. By the Western Brown Line.", p: 35, c: "For Sale", n: "Lincoln Square", a: 480, x: -25, y: -46.5 },
+  { t: "Kimball upright piano. You move it.", d: "Plays fine, needs a tuning. Ground floor, no steps. Bring four friends.", p: 0, c: "Free", n: "Uptown", a: 560, x: -11, y: -43.5 },
+  { t: "Garden 1BR, heat included", d: "Own entrance off the alley. Two blocks from the Logan Square Blue Line. Cats OK.", p: 1050, u: "/mo", c: "Housing", n: "Logan Square", a: 660, x: -32.5, y: -22.5 },
+  { t: "Seed and bulb swap, Sunday 10am", d: "Back room of the coffee shop on Clark. Bring seeds, leave with different seeds.", p: null, c: "Community", n: "Andersonville", a: 780, x: -16.5, y: -51.5 }
+];
+LISTINGS.forEach((l, i) => { l.id = i; l.u = l.u || ""; });
+let NEXT_ID = LISTINGS.length;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function money(l) { if (l.p === 0) return "Free"; if (l.p == null) return "–"; return "$" + l.p.toLocaleString("en-US") + l.u; }
+function ago(m) { if (m < 1) return "just now"; if (m < 60) return m + " min"; return Math.floor(m / 60) + " hr"; }
+function words(q) { return String(q).toLowerCase().split(/\s+/).filter(Boolean); }
+function matches(l, q, cat) {
+  if (cat && cat !== "All" && l.c !== cat) return false;
+  const hay = (l.t + " " + l.d + " " + l.n + " " + l.c + " " + money(l)).toLowerCase();
+  return words(q).every(w => hay.includes(w));
+}
+function parsePrice(s) {
+  s = String(s).trim().toLowerCase();
+  if (!s || /free/.test(s) || /^\$?0$/.test(s)) return { p: 0, u: "" };
+  const m = s.replace(/,/g, "").match(/\d+(\.\d+)?/);
+  if (!m) return { p: null, u: "" };
+  return { p: Math.round(+m[0]), u: /mo|month/.test(s) ? "/mo" : /hr|hour/.test(s) ? "/hr" : "" };
+}
+function newListing(t, priceStr, n, c) {
+  const h = HOODS[n], ang = Math.random() * Math.PI * 2, r = 1.6 + Math.random() * 1.4, pr = parsePrice(priceStr);
+  const l = { id: NEXT_ID++, t: t, d: "Just posted by a neighbor. Reply to ask about it.", p: pr.p, u: pr.u, c: c, n: n, a: 0,
+    x: +(h[0] + Math.cos(ang) * r).toFixed(1), y: +(h[1] + Math.sin(ang) * r).toFixed(1), fresh: true };
+  LISTINGS.unshift(l);
+  return l;
+}
+function shoreX(y) {
+  for (let i = 0; i < SHORE.length - 1; i++) {
+    const a = SHORE[i], b = SHORE[i + 1];
+    if (y >= a[1] && y <= b[1]) return a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]);
+  }
+  return y < 0 ? SHORE[0][0] : SHORE[SHORE.length - 1][0];
+}
+function svgEl(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const pts = a => a.map(p => p[0] + "," + p[1]).join(" ");
+const line = a => "M" + a.map(p => p[0] + " " + p[1]).join("L");
+function buildMap(svg, o) {
+  o = o || {};
+  svgEl("rect", { x: -300, y: -300, width: 700, height: 700, class: "m-land" }, svg);
+  let d = "";
+  for (let x = -62; x <= 40; x += 2) d += "M" + x + " -95V95";
+  for (let y = -94; y <= 94; y += 2) d += "M-80 " + y + "H60";
+  svgEl("path", { d: d, class: "m-minor" }, svg);
+  d = ""; HALF_NS.forEach(x => d += "M" + x + " -95V95"); HALF_EW.forEach(y => d += "M-80 " + y + "H60");
+  svgEl("path", { d: d, class: "m-half" }, svg);
+  d = ""; MAJOR_NS.forEach(x => d += "M" + x + " -95V95"); MAJOR_EW.forEach(y => d += "M-80 " + y + "H60"); DIAG.forEach(a => d += line(a));
+  svgEl("path", { d: d, class: "m-major" }, svg);
+  const parks = svgEl("g", { class: "m-parks" }, svg), lp = [];
+  for (let y = -16; y >= -58; y -= 2) lp.push([shoreX(y) + 1, y]);
+  for (let y = -58; y <= -16; y += 2) lp.push([shoreX(y) - 2.4, y]);
+  svgEl("polygon", { points: pts(lp) }, parks);
+  [[1, -2, 6, 14], [15, 56, 10, 10], [4, 51, 4, 9], [-36, -15, 5, 4.5], [-44, -2, 4, 3.5], [-26, 13, 4, 4]].forEach(r =>
+    svgEl("rect", { x: r[0], y: r[1], width: r[2], height: r[3] }, parks));
+  svgEl("polygon", { points: pts(SHORE.concat([[400, 95], [400, -95]])), class: "m-lake" }, svg);
+  svgEl("rect", { x: 4, y: -6.2, width: 9, height: 1.2, class: "m-pier" }, svg);
+  d = ""; RIVERS.forEach(a => d += line(a));
+  svgEl("path", { d: d, class: "m-river" }, svg);
+  svgEl("rect", { x: -2, y: -2, width: 3, height: 6, class: "m-loop" }, svg);
+  if (o.axis) {
+    const ax = svgEl("g", { class: "m-axis" }, svg);
+    STREETS_NS.forEach(s => { if (s[0] < shoreX(o.axis.top) - 2) { const t = svgEl("text", { x: s[0] + 0.5, y: o.axis.top }, ax); t.textContent = s[1]; } });
+    STREETS_EW.forEach(s => { const t = svgEl("text", { x: o.axis.left, y: s[0] - 0.6 }, ax); t.textContent = s[1]; });
+  }
+  const lab = svgEl("g", { class: "m-labels" }, svg);
+  for (const n in HOODS) {
+    const t = svgEl("text", { x: HOODS[n][0], y: HOODS[n][1] }, lab);
+    t.textContent = o.fmt ? o.fmt(n) : n; t.dataset.hood = n;
+  }
+  if (o.lake) o.lake.forEach(s => { const t = svgEl("text", { x: s[0], y: s[1], class: "m-lakelabel" }, svg); t.textContent = s[2]; });
+  return svgEl("g", { class: "m-pins" }, svg);
+}
+function hoodOptions(sel) { return Object.keys(HOODS).sort().map(n => "<option" + (n === sel ? " selected" : "") + ">" + n + "</option>").join(""); }
+function catOptions() { return CATS.map(c => "<option>" + c + "</option>").join(""); }
+
+
+const q = $("#q"), tbl = $("#tbl"), svg = $("#svg");
+let cat = "All", pcat = "For Sale", selId = 0;
+const pins = buildMap(svg, { axis: { top: -78.2, left: -59.4 }, lake: [[37.5, 60, "Lake Michigan"]] });
+$("#pn").innerHTML = hoodOptions("Logan Square");
+
+function chipsHTML(list, sel, counts) {
+  return list.map(c => `<button class="chip" type="button" data-c="${c}" aria-pressed="${c === sel}"><span>${c}</span>${counts ? `<small>${counts[c] || 0}</small>` : ""}</button>`).join("");
+}
+function num(i) { return String(i + 1).padStart(2, "0"); }
+
+function render() {
+  const vis = new Set(LISTINGS.filter(l => matches(l, q.value, cat)).map(l => l.id));
+  const counts = { All: 0 };
+  LISTINGS.forEach(l => { if (matches(l, q.value, "All")) { counts.All++; counts[l.c] = (counts[l.c] || 0) + 1; } });
+  $("#fchips").innerHTML = chipsHTML(["All"].concat(CATS), cat, counts);
+
+  tbl.innerHTML = `<div class="row head"><div class="n">No.</div><div class="ti">Item</div><div class="ca">Category</div><div class="nb">Neighborhood</div><div class="ag">Posted</div><div class="pr">Price</div></div>` +
+    LISTINGS.map((l, i) => vis.has(l.id) ? `<div class="row${l.fresh ? " fresh" : ""}" data-id="${l.id}"><div class="n">${num(i)}</div><div class="ti">${esc(l.t)}<small>${esc(l.d)}</small></div><div class="ca">${l.c}</div><div class="nb">${l.n}</div><div class="ag">${ago(l.a)}</div><div class="pr${l.p === 0 ? " free" : ""}">${money(l)}</div></div>` : "").join("");
+  LISTINGS.forEach(l => delete l.fresh);
+
+  pins.innerHTML = "";
+  LISTINGS.map((l, i) => [l, i]).reverse().forEach(([l, i]) => {
+    const g = svgEl("g", { class: "pin" + (vis.has(l.id) ? "" : " off"), transform: `translate(${l.x},${l.y})`, "data-id": l.id }, pins);
+    svgEl("circle", { r: 1.55 }, g);
+    svgEl("text", { y: .05 }, g).textContent = i + 1;
+  });
+
+  const n = vis.size;
+  $("#tN").textContent = n; $("#tAll").textContent = LISTINGS.length; $("#liveN").textContent = LISTINGS.length;
+  $("#sCount").textContent = n + " of " + LISTINGS.length + " listings";
+  $("#empty").style.display = n ? "none" : "block";
+  const f = [];
+  if (q.value.trim()) f.push(`matching “${esc(q.value.trim())}”`);
+  if (cat !== "All") f.push("in " + cat);
+  $("#tFilter").innerHTML = f.length ? f.join(" ") + ` &nbsp;<button type="button" id="clear">Clear</button>` : "Reply directly to the poster.";
+
+  const byHood = {};
+  LISTINGS.forEach(l => { if (vis.has(l.id)) byHood[l.n] = (byHood[l.n] || 0) + 1; });
+  const hoods = Object.keys(byHood).sort();
+  $("#idx").innerHTML = hoods.length ? hoods.map(h => `<li><button type="button" data-h="${h}">${h}<b>${byHood[h]}</b></button></li>`).join("") : `<li style="font-size:13px;color:#8a8a8a">No neighborhoods match.</li>`;
+  if (!vis.has(selId)) { const first = LISTINGS.find(l => vis.has(l.id)); selId = first ? first.id : null; }
+  showSel(selId);
+}
+
+function showSel(id) {
+  const i = LISTINGS.findIndex(l => l.id === id), l = LISTINGS[i];
+  if (!l) { $("#sel").innerHTML = `<div class="k"><span>Selected</span><span></span></div><div class="sn">00</div><h3>Nothing on the map matches your search.</h3>`; return; }
+  $("#sel").innerHTML = `<div class="k"><span>Selected</span><span>Hover any pin</span></div><div class="sn">${num(i)}</div>
+    <h3>${esc(l.t)}</h3><div class="sp"${l.p === 0 ? ' style="color:var(--r)"' : ""}>${money(l)}</div>
+    <dl><dt>Neighborhood</dt><dd>${l.n}</dd><dt>Category</dt><dd>${l.c}</dd><dt>Posted</dt><dd>${ago(l.a)}${l.a ? " ago" : ""}</dd></dl><p>${esc(l.d)}</p>`;
+  svg.querySelectorAll(".m-labels text").forEach(t => t.classList.toggle("on", t.dataset.hood === l.n));
+}
+
+function hl(id, on) {
+  const p = pins.querySelector(`.pin[data-id="${id}"]`), r = tbl.querySelector(`.row[data-id="${id}"]`);
+  if (p) { p.classList.toggle("hl", on); if (on) pins.appendChild(p); }
+  if (r) r.classList.toggle("hl", on);
+  if (on) { selId = id; showSel(id); }
+}
+
+tbl.addEventListener("mouseover", e => { const r = e.target.closest(".row[data-id]"); if (r) hl(+r.dataset.id, true); });
+tbl.addEventListener("mouseout", e => { const r = e.target.closest(".row[data-id]"); if (r) hl(+r.dataset.id, false); });
+pins.addEventListener("mouseover", e => { const p = e.target.closest(".pin"); if (p) hl(+p.dataset.id, true); });
+pins.addEventListener("mouseout", e => { const p = e.target.closest(".pin"); if (p) hl(+p.dataset.id, false); });
+pins.addEventListener("click", e => { const p = e.target.closest(".pin"); if (!p) return; const r = tbl.querySelector(`.row[data-id="${p.dataset.id}"]`); if (r) { r.scrollIntoView({ behavior: "smooth", block: "center" }); r.classList.add("hl"); setTimeout(() => r.classList.remove("hl"), 1400); } });
+
+q.addEventListener("input", render);
+$("#sform").addEventListener("submit", e => { e.preventDefault(); render(); $("#listings").scrollIntoView({ behavior: "smooth" }); });
+document.querySelectorAll(".try button").forEach(b => b.addEventListener("click", () => { q.value = b.textContent; render(); }));
+$("#fchips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (b) { cat = b.dataset.c; render(); } });
+document.addEventListener("click", e => {
+  if (e.target.id === "clear") { q.value = ""; cat = "All"; render(); }
+  const h = e.target.closest("#idx button"); if (h) { q.value = h.dataset.h; cat = "All"; render(); }
+});
+$("#postIt").addEventListener("click", () => { $("#pt").value = q.value; $("#pt").focus(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+
+function drawPChips() { $("#pchips").innerHTML = chipsHTML(CATS, pcat); }
+$("#pchips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (b) { pcat = b.dataset.c; drawPChips(); } });
+$("#pform").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#pt").value.trim(); if (!t) return;
+  const l = newListing(t, $("#pp").value, $("#pn").value, pcat);
+  q.value = ""; cat = "All"; selId = l.id;
+  render();
+  $("#done").innerHTML = `<span class="sq"></span>Posted as No. 01 in ${l.n}. It's at the top of the table and pinned on the map. <a href="#listings">See it &darr;</a>`;
+  $("#pt").value = ""; $("#pp").value = "";
+});
+
+drawPChips();
+render();
+</script>
+</body>
+</html>
