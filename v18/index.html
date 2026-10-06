@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STOOP / NIGHT INDEX: Chicago classifieds</title>
+<style>
+  :root {
+    --bg: #000; --fg: #fff; --dim: #6b6b6b; --line: #232323; --sig: #ffe500;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --pad: 40px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+  body { background: var(--bg); color: var(--fg); font: 15px/1.35 var(--sans); }
+  button, input, select { font: inherit; color: inherit; }
+  a { color: inherit; }
+  ::selection { background: var(--sig); color: #000; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 var(--pad); }
+  .mono { font-family: var(--mono); }
+
+  .bar { display: flex; gap: 28px; align-items: center; height: 56px; border-bottom: 1px solid var(--line); font: 12px var(--mono); letter-spacing: .04em; text-transform: uppercase; }
+  .bar .back { text-decoration: none; color: var(--fg); }
+  .bar .back:hover { color: var(--sig); }
+  .bar b { font: 700 15px var(--sans); letter-spacing: .14em; }
+  .bar .sp { flex: 1; }
+  .bar .dim { color: var(--dim); }
+  .bar .live i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--sig); margin-right: 8px; animation: blink 2s ease-in-out infinite; vertical-align: 1px; }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  /* hero lockup */
+  .lock { border-bottom: 1px solid var(--line); }
+  .line { position: relative; display: grid; grid-template-columns: 180px minmax(0, 1fr); border-top: 1px solid var(--line); min-height: 220px; }
+  .line:first-child { border-top: 0; }
+  .gut { padding: 22px 0 0; font: 12px/1.5 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .04em; }
+  .gut b { display: block; color: var(--fg); font-size: 13px; margin-bottom: 8px; }
+  .gut .k { color: var(--sig); }
+  .word {
+    display: block; white-space: nowrap; width: 100%; text-align: left; background: none; border: 0; cursor: pointer; color: var(--fg);
+    font: 700 228px/.8 var(--sans); letter-spacing: -.065em; padding: 26px 0 22px; margin-left: -.04em; text-transform: uppercase;
+    transition: color .15s;
+  }
+  .word .arr { font-weight: 400; font-size: .32em; letter-spacing: 0; vertical-align: .9em; margin-left: .25em; color: var(--sig); opacity: 0; transition: opacity .15s, transform .2s; display: inline-block; }
+  .word:hover, .word:focus-visible { color: var(--sig); outline: none; }
+  .word:hover .arr, .word:focus-visible .arr { opacity: 1; transform: translateX(8px); }
+  .panel { display: none; }
+  .line.open .word { display: none; }
+  .line.open .panel { display: block; }
+
+  .sq { width: 100%; background: none; border: 0; outline: none; color: var(--fg); caret-color: var(--sig);
+        font: 700 228px/.8 var(--sans); letter-spacing: -.065em; padding: 26px 0 0; margin-left: -.04em; text-transform: uppercase; height: 210px; }
+  .sq::placeholder { color: #262626; }
+  .sq::-webkit-search-cancel-button { display: none; }
+  .panel-foot { display: flex; gap: 22px; align-items: center; padding: 0 0 18px; font: 12px var(--mono); text-transform: uppercase; color: var(--dim); flex-wrap: wrap; }
+  .panel-foot b { color: var(--sig); font-weight: 400; }
+  .panel-foot button { background: none; border: 1px solid #3a3a3a; padding: 5px 10px; cursor: pointer; text-transform: uppercase; font: 12px var(--mono); color: var(--fg); }
+  .panel-foot button:hover { border-color: var(--sig); color: var(--sig); }
+
+  .pf { padding: 26px 0 0; }
+  .pf .what { width: 100%; background: none; border: 0; border-bottom: 2px solid #333; outline: none; color: var(--fg); caret-color: var(--sig);
+              font: 700 84px/1 var(--sans); letter-spacing: -.045em; padding: 0 0 12px; }
+  .pf .what::placeholder { color: #2c2c2c; }
+  .pf .what:focus { border-bottom-color: var(--sig); }
+  .pf .row3 { display: grid; grid-template-columns: 1fr 1.3fr 1.3fr 220px; gap: 0; margin-top: 0; border-bottom: 1px solid var(--line); }
+  .pf .f { padding: 16px 20px 16px 0; border-right: 1px solid var(--line); margin-right: 20px; }
+  .pf label { display: block; font: 11px var(--mono); text-transform: uppercase; color: var(--dim); margin-bottom: 6px; letter-spacing: .05em; }
+  .pf .f input, .pf .f select { width: 100%; background: none; border: 0; outline: none; color: var(--fg); font: 700 30px/1.1 var(--sans); letter-spacing: -.02em; appearance: none; -webkit-appearance: none; border-radius: 0; cursor: pointer; }
+  .pf .f input { cursor: text; }
+  .pf .f input::placeholder { color: #333; }
+  .pf .f select option { background: #000; color: #fff; }
+  .pf .f:focus-within label { color: var(--sig); }
+  .pf .go { background: var(--sig); color: #000; border: 0; cursor: pointer; font: 700 40px/1 var(--sans); letter-spacing: -.04em; text-align: left; padding: 0 20px; }
+  .pf .go:hover { background: var(--fg); }
+  .pf .msg { min-height: 1.2em; margin-top: 10px; font: 12px var(--mono); text-transform: uppercase; color: var(--sig); }
+
+  /* section heads */
+  .sh { display: grid; grid-template-columns: 180px 1fr auto; align-items: end; padding: 70px 0 14px; border-bottom: 1px solid var(--fg); }
+  .sh .n { font: 12px var(--mono); color: var(--dim); text-transform: uppercase; }
+  .sh h2 { font: 700 44px/.9 var(--sans); letter-spacing: -.04em; text-transform: uppercase; }
+  .sh p { font: 12px var(--mono); color: var(--dim); text-transform: uppercase; text-align: right; max-width: 34em; }
+  .sh p b { color: var(--fg); font-weight: 400; }
+
+  /* index */
+  .ix { list-style: none; }
+  .ix li { display: grid; grid-template-columns: 180px minmax(0, 1fr) 210px 150px; align-items: center; border-bottom: 1px solid var(--line); min-height: 112px; cursor: default; }
+  .ix .no { font: 700 104px/.8 var(--sans); letter-spacing: -.07em; color: #2b2b2b; font-variant-numeric: tabular-nums; transition: color .12s; padding-top: 6px; }
+  .ix .ti { font: 700 28px/1.08 var(--sans); letter-spacing: -.025em; padding: 18px 24px 18px 0; }
+  .ix .ti small { display: block; font: 13px/1.4 var(--sans); letter-spacing: 0; color: var(--dim); margin-top: 5px; }
+  .ix .mt { font: 12px/1.6 var(--mono); text-transform: uppercase; color: #a5a5a5; }
+  .ix .mt .lv { color: var(--sig); }
+  .ix .mt .lv::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--sig); margin-right: 7px; vertical-align: 0; animation: blink 2s infinite; }
+  .ix .pr { font: 700 36px/1 var(--sans); letter-spacing: -.04em; text-align: right; font-variant-numeric: tabular-nums; }
+  .ix .pr small { font-size: 14px; letter-spacing: 0; color: var(--dim); }
+  .ix .pr.free { color: var(--sig); }
+  .ix li:hover .no, .ix li.on .no { color: var(--sig); }
+  .ix li.new { animation: newrow 2s ease-out; }
+  @keyframes newrow { 0% { background: var(--sig); color: #000; } 100% { background: transparent; } }
+  .ix .empty { display: block; padding: 40px 0; font: 700 40px/1 var(--sans); letter-spacing: -.03em; min-height: 0; color: var(--dim); }
+  .ix .empty b { color: var(--fg); }
+
+  /* map */
+  .mapgrid { display: grid; grid-template-columns: 580px minmax(0, 1fr); gap: 40px; padding-top: 24px; }
+  .mapbox { position: relative; }
+  .mapbox svg { display: block; width: 100%; height: auto; }
+  .pin { cursor: pointer; transition: opacity .2s; }
+  .pin .c { fill: var(--sig); }
+  .pin .r { fill: none; stroke: var(--sig); stroke-width: 1.5; opacity: 0; }
+  .pin.recent .r { animation: pulse 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  .pin.recent .c { fill: var(--sig); }
+  .pin.old .c { fill: #fff; }
+  .pin.off { opacity: .06; pointer-events: none; }
+  .pin.on .c { r: 8; }
+  @keyframes pulse { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(4.2); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .pin.recent .r, .bar .live i, .ix .mt .lv::before { animation: none; } .pin.recent .r { opacity: .6; transform: scale(2); } }
+  .hood { font: 9px var(--mono); fill: #6b6b6b; text-transform: uppercase; letter-spacing: .08em; }
+  .tip { position: absolute; z-index: 3; pointer-events: none; display: none; background: #000; border: 1px solid #fff; padding: 10px 12px; width: 240px; }
+  .tip.show { display: block; }
+  .tip .a { font: 11px var(--mono); text-transform: uppercase; color: var(--dim); }
+  .tip .b { font: 700 18px/1.1 var(--sans); letter-spacing: -.02em; margin: 4px 0; }
+  .tip .c { font: 700 20px var(--sans); color: var(--sig); }
+
+  .side .big { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+  .side .big div { padding: 14px 0 18px; border-bottom: 1px solid var(--line); }
+  .side .big div:nth-child(odd) { border-right: 1px solid var(--line); }
+  .side .big div:nth-child(even) { padding-left: 20px; }
+  .side .big b { display: block; font: 700 96px/.85 var(--sans); letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
+  .side .big .y b { color: var(--sig); }
+  .side .big span { font: 11px var(--mono); text-transform: uppercase; color: var(--dim); }
+  .side h3 { font: 11px var(--mono); text-transform: uppercase; color: var(--dim); margin: 28px 0 8px; font-weight: 400; }
+  .hl { list-style: none; }
+  .hl li { display: grid; grid-template-columns: 150px 1fr 34px; gap: 12px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font: 12px var(--mono); text-transform: uppercase; cursor: pointer; }
+  .hl li i { display: block; height: 3px; background: #fff; transition: width .25s; }
+  .hl li.z { color: #3a3a3a; } .hl li.z i { background: #3a3a3a; }
+  .hl li em { font-style: normal; text-align: right; }
+  .hl li:hover { color: var(--sig); } .hl li:hover i { background: var(--sig); }
+  .legend { display: flex; gap: 22px; margin-top: 18px; font: 11px var(--mono); text-transform: uppercase; color: var(--dim); }
+  .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; background: #fff; }
+  .legend span.y::before { background: var(--sig); box-shadow: 0 0 0 3px rgba(255,229,0,.25); }
+
+  footer { margin-top: 80px; border-top: 1px solid var(--line); padding: 16px 0 40px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; font: 11px var(--mono); text-transform: uppercase; color: var(--dim); }
+  footer a { color: var(--fg); }
+
+  @media (max-width: 900px) {
+    :root { --pad: 16px; }
+    .bar .dim, #clock { display: none; }
+    .bar { gap: 14px; white-space: nowrap; font-size: 11px; }
+    .line { grid-template-columns: 1fr; min-height: 0; }
+    .gut { padding-top: 14px; display: flex; gap: 14px; }
+    .gut b { margin: 0; }
+    .gut span:not(.k) { display: none; }
+    .word, .sq { font-size: 21vw; padding: 8px 0 12px; height: auto; }
+    .word .arr { display: none; }
+    .bar .live { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .bar .sp { display: none; }
+    .pf .what { font-size: 40px; }
+    .pf .row3 { grid-template-columns: 1fr 1fr; }
+    .pf .f { margin-right: 0; padding-right: 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .pf .f input, .pf .f select { font-size: 22px; }
+    .pf .go { grid-column: 1 / -1; padding: 16px 20px; font-size: 32px; }
+    .sh { grid-template-columns: 1fr; gap: 6px; }
+    .sh p { text-align: left; }
+    .ix li { grid-template-columns: 64px minmax(0, 1fr) auto; min-height: 0; padding: 12px 0; }
+    .ix .no { font-size: 48px; align-self: start; }
+    .ix .ti { font-size: 19px; padding: 0 10px 0 0; grid-column: 2; }
+    .ix .mt { grid-column: 2 / -1; grid-row: 2; }
+    .ix .pr { grid-column: 3; grid-row: 1; font-size: 22px; align-self: start; }
+    .mapgrid { grid-template-columns: 1fr; }
+    .side .big b { font-size: 64px; }
+    .hl li { grid-template-columns: 130px 1fr 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <a class="back" href="../">&larr; Gallery</a>
+    <b>STOOP</b>
+    <span class="dim">Chicago classifieds &middot; No fees &middot; No algorithm</span>
+    <span class="sp"></span>
+    <span class="live" id="liveStat"><i></i>0 live</span>
+    <span id="clock">--:--</span>
+  </div>
+
+  <section class="lock" aria-label="Search or post">
+    <div class="line" id="lineS">
+      <div class="gut"><b>01 / Search</b><span>Every listing in<br>every neighborhood.</span><br><span class="k" id="sCount">20 listings</span></div>
+      <div>
+        <button class="word" id="wS" type="button" aria-controls="pS">Search<span class="arr" aria-hidden="true">&rarr;</span></button>
+        <div class="panel" id="pS">
+          <input class="sq" id="q" type="search" placeholder="Search" autocomplete="off" aria-label="Search listings" spellcheck="false">
+          <div class="panel-foot"><span><b id="mCount">20</b> matches</span><span>Try</span>
+            <button type="button" class="try">Bike</button><button type="button" class="try">Free</button><button type="button" class="try">Pilsen</button><button type="button" class="try">Room</button>
+            <button type="button" id="closeS">Esc / clear</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="line" id="lineP">
+      <div class="gut"><b>02 / Post</b><span>Four fields.<br>Zero dollars.</span><br><span class="k">Under a minute</span></div>
+      <div>
+        <button class="word" id="wP" type="button" aria-controls="pP">Post<span class="arr" aria-hidden="true">&rarr;</span></button>
+        <form class="panel pf" id="pP" autocomplete="off">
+          <label for="fT" style="position:absolute;left:-9999px">What is it</label>
+          <input class="what" id="fT" maxlength="70" placeholder="What is it?">
+          <div class="row3">
+            <div class="f"><label for="fP">Price, $</label><input id="fP" inputmode="numeric" placeholder="0 = free"></div>
+            <div class="f"><label for="fH">Neighborhood</label><select id="fH"></select></div>
+            <div class="f"><label for="fC">Category</label><select id="fC"></select></div>
+            <button class="go" type="submit">Post &crarr;</button>
+          </div>
+          <div class="msg" id="msg" role="status"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="index">
+    <div class="sh"><span class="n">03</span><h2>Index</h2><p>Newest first. Numbered, never ranked. <b id="ixStat"></b></p></div>
+    <ol class="ix" id="ix"></ol>
+  </section>
+
+  <section id="map">
+    <div class="sh"><span class="n">04</span><h2>Map</h2><p>One dot per listing. <b>Yellow pulse</b> = posted in the last hour.</p></div>
+    <div class="mapgrid">
+      <div class="mapbox" id="mapbox">
+        <svg id="svg" viewBox="0 0 600 820" role="img" aria-label="Dot-matrix map of Chicago with listing pins">
+          <g id="dots"></g>
+          <path id="shore" fill="none" stroke="#5a5a5a" stroke-width="1"/>
+          <path d="M399,445 L352,445 M352,445 L335,410 L310,360 L290,300 L268,230 L250,170 L245,100 M352,445 L350,500 L335,530 L290,548 L200,565 L150,590" fill="none" stroke="#9a9a9a" stroke-width="1.6" stroke-linejoin="round"/>
+          <rect x="356" y="450" width="36" height="28" fill="none" stroke="#fff" stroke-width="1"/>
+          <text x="374" y="492" class="hood" text-anchor="middle" style="fill:#fff">Loop</text>
+          <text x="520" y="330" class="hood" style="letter-spacing:.4em">Lake</text>
+          <text x="520" y="344" class="hood" style="letter-spacing:.4em">Michigan</text>
+          <text x="236" y="114" class="hood" text-anchor="end" style="font-size:8px">N. Branch</text>
+          <text x="160" y="604" class="hood" style="font-size:8px">Sanitary &amp; Ship Canal</text>
+          <g id="labels"></g>
+          <g id="pins"></g>
+          <g transform="translate(40,760)"><path d="M0,-20 L5,0 L-5,0 Z" fill="#fff"/><text x="0" y="12" class="hood" text-anchor="middle" style="fill:#fff">N</text>
+            <text x="16" y="-6" class="hood">1 dot &asymp; 1/3 mile</text></g>
+        </svg>
+        <div class="tip" id="tip"></div>
+      </div>
+      <div class="side">
+        <div class="big">
+          <div class="y"><b id="kHour">0</b><span>Posted in the last hour</span></div>
+          <div><b id="kAll">0</b><span>Live listings</span></div>
+          <div><b id="kHood">0</b><span>Neighborhoods active</span></div>
+          <div><b>$0</b><span>Fees, ever</span></div>
+        </div>
+        <h3>By neighborhood (matching your search). Click to search it.</h3>
+        <ul class="hl" id="hl"></ul>
+        <div class="legend"><span class="y">Last hour</span><span>Earlier today</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Stoop &copy; 2026 &middot; A community board for Chicago</span>
+    <span>No ads &middot; No tracking &middot; Reply directly to the poster</span>
+    <a href="../">&larr; Back to the Gallery</a>
+  </footer>
+</div>
+
+<script>
+const HOODS = {
+  "Rogers Park": [430, 42], "Andersonville": [393, 132], "Uptown": [426, 184], "Lincoln Square": [328, 158],
+  "Lakeview": [400, 272], "Logan Square": [238, 300], "Wicker Park": [298, 370], "Humboldt Park": [200, 380],
+  "West Loop": [316, 446], "The Loop": [376, 462], "Pilsen": [296, 522], "Little Village": [214, 556],
+  "Bridgeport": [345, 592], "Bronzeville": [394, 626], "Hyde Park": [456, 694]
+};
+const CATS = ["For Sale","Free","Housing","Jobs","Gigs","Services","Community"];
+let L = [
+  ["Walnut mid-century credenza, one chipped door","For Sale","Hyde Park",340,"",6,"Out of my grandma's place on 55th. Two people and patience."],
+  ["40 moving boxes, flattened, some say KITCHEN","Free","Logan Square",0,"",11,"By the gangway. Take as many as you want."],
+  ["Room in a 3BR two-flat, Nov 1","Housing","Pilsen",825,"/mo",18,"Two artists, one calm dog, radiator heat, back porch."],
+  ["Trek FX 2 hybrid, 54cm, new tires","For Sale","Andersonville",260,"",24,"Tuned in August. Lock included, key not, sorry."],
+  ["Help moving an upright piano, one flight","Gigs","Bridgeport",120,"",33,"Saturday 10am, need three strong people. Pizza after."],
+  ["Barista, early mornings, 25 hrs a week","Jobs","Wicker Park",19,"/hr",47,"Corner cafe on Division. Regulars talk a lot."],
+  ["Lost: orange cat “Mango,” near the boathouse","Community","Humboldt Park",null,"",58,"Very friendly, very dumb. Shake a treat bag."],
+  ["Taqueria counter help, nights","Jobs","Pilsen",18,"/hr",75,"18th St. Spanish helpful, smile required."],
+  ["Window AC, 8,000 BTU, loud but works","For Sale","Rogers Park",75,"",82,"Got us through July. Brackets included."],
+  ["Tamales for your party, 5 dozen minimum","Services","Little Village",90,"",96,"Pork, chicken, rajas. Order by Thursday for Saturday."],
+  ["Snow shoveling, whole winter, corner lot","Gigs","Lakeview",300,"",131,"Need one reliable person for the season."],
+  ["Tomato cages and 6 bags of potting soil","Free","Bronzeville",0,"",168,"Garden's done. On the front steps, first come."],
+  ["Studio sublet, Dec to May, furnished","Housing","Wicker Park",1150,"/mo",212,"Very good couch, mediocre plant, laundry in building."],
+  ["Algebra and SAT math tutor","Services","Hyde Park",40,"/hr",288,"Grad student. Harper Library or your kitchen table."],
+  ["120 LPs, mostly soul and house","For Sale","Bronzeville",480,"",341,"Lot only. Frankie Knuckles in there. Come listen first."],
+  ["Sox vs. Cubs, 2 tickets, section 140","For Sale","Bridgeport",110,"",404,"Face value. Must be a Sox fan, I will ask."],
+  ["Weekend brunch line cook","Jobs","Uptown",20,"/hr",462,"Broadway diner. Flip eggs without breaking yolks."],
+  ["Block party on Farragut, bring a chair","Community","Andersonville",null,"",523,"Saturday noon to 8. Street closed, grill open."],
+  ["Bike tune-ups in your gangway","Services","Lincoln Square",35,"",700,"Brakes, gears, flats. I come to you on a cargo bike."],
+  ["Garage parking spot, Nov to March","Housing","Lakeview",150,"/mo",815,"Off Southport. Never shovel your car out again."]
+].map((r, i) => ({ id: i, t: r[0], c: r[1], h: r[2], p: r[3], u: r[4], m: r[5], d: r[6] }));
+
+const $ = s => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const t0 = Date.now();
+const mins = r => r.m + Math.floor((Date.now() - t0) / 60000);
+const ago = m => m < 1 ? "Just now" : m < 60 ? m + " min ago" : Math.floor(m / 60) + " hr ago";
+const price = r => r.p === 0 ? "Free" : r.p === null ? "&ndash;" : "$" + r.p.toLocaleString() + (r.u ? "<small>" + r.u + "</small>" : "");
+const q = $("#q");
+
+// ----- dot-matrix land -----
+const LAND = [[468,10],[462,120],[452,200],[440,290],[418,370],[400,440],[398,500],[420,580],[450,650],[500,710],[560,760],[590,800],[590,815],
+  [210,815],[210,640],[150,620],[150,470],[90,470],[90,330],[40,300],[40,200],[10,190],[10,130],[120,130],[200,110],[280,100],[330,60],[380,40],[380,10]];
+const SHORE = LAND.slice(0, 13);
+$("#shore").setAttribute("d", "M" + SHORE.map(p => p.join(",")).join(" L"));
+function inside(x, y, P) {
+  let c = false;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const [xi, yi] = P[i], [xj, yj] = P[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+(function () {
+  let h = "";
+  for (let y = 14; y < 815; y += 11) for (let x = 14; x < 590; x += 11) {
+    if (!inside(x, y, LAND)) continue;
+    const loop = x > 352 && x < 396 && y > 446 && y < 482;
+    h += `<circle cx="${x}" cy="${y}" r="${loop ? 1.9 : 1.5}" fill="${loop ? "#6a6a6a" : "#3a3a3a"}"/>`;
+  }
+  // lake: sparse horizontal dashes for water
+  for (let y = 30; y < 815; y += 22) h += `<line x1="${SHORE.reduce((a, p, i) => i && SHORE[i - 1][1] <= y && p[1] >= y ? SHORE[i - 1][0] + (p[0] - SHORE[i - 1][0]) * (y - SHORE[i - 1][1]) / (p[1] - SHORE[i - 1][1]) + 18 : a, 480)}" y1="${y}" x2="600" y2="${y}" stroke="#141414" stroke-width="1"/>`;
+  $("#dots").innerHTML = h;
+  $("#labels").innerHTML = Object.entries(HOODS).filter(([n]) => n !== "The Loop").map(([n, [x, y]]) => `<text class="hood" x="${x}" y="${y + 18}" text-anchor="middle">${esc(n)}</text>`).join("");
+})();
+
+// stable jitter per listing so pins in one hood don't stack
+function pos(r) {
+  const [x, y] = HOODS[r.h], a = (r.id * 2.399) % (Math.PI * 2), d = r.id % 2 ? 9 : 4 + (r.id % 3) * 4;
+  return [x + Math.cos(a) * d, y - 4 + Math.sin(a) * d * .6];
+}
+
+function match(r) {
+  const words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+  const hay = (r.t + " " + r.c + " " + r.h + " " + r.d + (r.p === 0 ? " free" : "")).toLowerCase();
+  return words.every(w => hay.includes(w));
+}
+
+const ix = $("#ix"), pins = $("#pins"), tip = $("#tip");
+function render(newId) {
+  const all = L.slice().sort((a, b) => mins(a) - mins(b));
+  const rows = all.filter(match);
+  ix.innerHTML = rows.length ? rows.map((r, i) => {
+    const m = mins(r);
+    return `<li data-id="${r.id}"${r.id === newId ? ' class="new"' : ""}><span class="no">${String(i + 1).padStart(2, "0")}</span>
+      <span class="ti">${esc(r.t)}<small>${esc(r.d)}</small></span>
+      <span class="mt">${esc(r.h)}<br>${r.c}<br><span class="${m < 60 ? "lv" : ""}">${ago(m)}</span></span>
+      <span class="pr${r.p === 0 ? " free" : ""}">${price(r)}</span></li>`;
+  }).join("") : `<li class="empty">Nothing matches <b>&ldquo;${esc(q.value)}&rdquo;</b>. Post it yourself.</li>`;
+
+  pins.innerHTML = "";
+  all.slice().reverse().forEach(r => {
+    const [x, y] = pos(r), m = mins(r);
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "pin " + (m < 60 ? "recent" : "old") + (match(r) ? "" : " off"));
+    g.dataset.id = r.id;
+    g.innerHTML = `<circle class="r" cx="${x}" cy="${y}" r="5"/><circle class="c" cx="${x}" cy="${y}" r="${m < 60 ? 5 : 3.6}"/>`;
+    pins.appendChild(g);
+  });
+
+  const hour = L.filter(r => mins(r) < 60).length;
+  $("#liveStat").innerHTML = `<i></i>${L.length} live &middot; ${hour} in the last hour`;
+  $("#sCount").textContent = L.length + " listings";
+  $("#mCount").textContent = rows.length;
+  $("#ixStat").textContent = rows.length + " of " + L.length;
+  $("#kHour").textContent = String(rows.filter(r => mins(r) < 60).length).padStart(2, "0");
+  $("#kAll").textContent = String(rows.length).padStart(2, "0");
+  const counts = {}; rows.forEach(r => counts[r.h] = (counts[r.h] || 0) + 1);
+  $("#kHood").textContent = String(Object.keys(counts).length).padStart(2, "0");
+  const max = Math.max(1, ...Object.values(counts));
+  $("#hl").innerHTML = Object.keys(HOODS).filter(h => L.some(r => r.h === h))
+    .sort((a, b) => (counts[b] || 0) - (counts[a] || 0) || a.localeCompare(b))
+    .map(h => `<li data-h="${esc(h)}" class="${counts[h] ? "" : "z"}"><span>${esc(h)}</span><i style="width:${(counts[h] || 0) / max * 100}%"></i><em>${String(counts[h] || 0).padStart(2, "0")}</em></li>`).join("");
+}
+
+// tooltip + row/pin linking
+function showTip(id) {
+  const r = L.find(x => x.id == id); if (!r) return;
+  const [x, y] = pos(r), box = $("#mapbox").getBoundingClientRect(), sc = box.width / 600;
+  tip.innerHTML = `<div class="a">${esc(r.h)} &middot; ${r.c} &middot; ${ago(mins(r))}</div><div class="b">${esc(r.t)}</div><div class="c">${price(r).replace(/<[^>]+>/g, "")}</div>`;
+  tip.classList.add("show");
+  let lx = x * sc + 14, ly = y * sc - 20;
+  if (lx + 250 > box.width) lx = x * sc - 254;
+  tip.style.left = Math.max(0, lx) + "px"; tip.style.top = Math.max(0, ly) + "px";
+}
+function hideTip() { tip.classList.remove("show"); }
+pins.addEventListener("mouseover", e => { const g = e.target.closest(".pin"); if (!g) return; g.classList.add("on"); showTip(g.dataset.id); const li = ix.querySelector(`li[data-id="${g.dataset.id}"]`); if (li) li.classList.add("on"); });
+pins.addEventListener("mouseout", e => { const g = e.target.closest(".pin"); if (!g) return; g.classList.remove("on"); hideTip(); ix.querySelectorAll("li.on").forEach(l => l.classList.remove("on")); });
+pins.addEventListener("click", e => { const g = e.target.closest(".pin"); if (!g) return; const li = ix.querySelector(`li[data-id="${g.dataset.id}"]`); if (li) li.scrollIntoView({ behavior: "smooth", block: "center" }); });
+ix.addEventListener("mouseover", e => { const li = e.target.closest("li[data-id]"); pins.querySelectorAll(".on").forEach(p => p.classList.remove("on")); if (li) { const p = pins.querySelector(`[data-id="${li.dataset.id}"]`); if (p) p.classList.add("on"); } });
+ix.addEventListener("mouseleave", () => pins.querySelectorAll(".on").forEach(p => p.classList.remove("on")));
+
+// ----- hero: words transform in place -----
+const lineS = $("#lineS"), lineP = $("#lineP");
+function openS() { lineS.classList.add("open"); q.focus(); }
+function closeS() { q.value = ""; lineS.classList.remove("open"); render(); $("#wS").focus(); }
+$("#wS").onclick = openS;
+$("#closeS").onclick = closeS;
+q.addEventListener("input", () => render());
+q.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeS();
+  if (e.key === "Enter") $("#index").scrollIntoView({ behavior: "smooth" });
+});
+q.addEventListener("blur", () => { setTimeout(() => { if (!q.value && !lineS.contains(document.activeElement)) lineS.classList.remove("open"); }, 150); });
+document.querySelectorAll(".try").forEach(b => b.onclick = () => { q.value = b.textContent; render(); q.focus(); });
+$("#hl").addEventListener("click", e => { const li = e.target.closest("li[data-h]"); if (!li) return; lineS.classList.add("open"); q.value = li.dataset.h; render(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+
+Object.keys(HOODS).sort().forEach(h => $("#fH").insertAdjacentHTML("beforeend", `<option>${esc(h)}</option>`));
+CATS.forEach(c => $("#fC").insertAdjacentHTML("beforeend", `<option>${c}</option>`));
+$("#wP").onclick = () => { lineP.classList.add("open"); $("#fT").focus(); };
+$("#pP").addEventListener("keydown", e => { if (e.key === "Escape") { lineP.classList.remove("open"); $("#wP").focus(); } });
+$("#pP").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#fT").value.trim(), raw = $("#fP").value.replace(/[$,\s]/g, ""), msg = $("#msg");
+  if (!t) { msg.textContent = "Say what it is first."; $("#fT").focus(); return; }
+  if (raw && isNaN(+raw)) { msg.textContent = "Price should be a number. 0 means free."; $("#fP").focus(); return; }
+  const c = $("#fC").value;
+  const r = { id: L.length, t, c, h: $("#fH").value, p: raw === "" ? (c === "Community" ? null : 0) : Math.round(+raw),
+              u: c === "Housing" ? "/mo" : c === "Jobs" ? "/hr" : "", m: -Math.floor((Date.now() - t0) / 60000), d: "Just posted by a neighbor." };
+  L.push(r);
+  $("#fT").value = ""; $("#fP").value = "";
+  msg.textContent = "Posted to " + r.h + ". It is #01 on the index and pulsing on the map.";
+  q.value = ""; lineS.classList.remove("open");
+  render(r.id);
+  setTimeout(() => { lineP.classList.remove("open"); msg.textContent = ""; }, 2600);
+  $("#index").scrollIntoView({ behavior: "smooth" });
+});
+
+function tick() { const d = new Date(); $("#clock").textContent = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + " CT"; }
+tick(); setInterval(tick, 15000); setInterval(() => render(), 60000);
+render();
+</script>
+</body>
+</html>
